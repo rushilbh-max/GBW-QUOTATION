@@ -364,7 +364,7 @@ textarea.c-inp{resize:none;height:72px}
 .td-code-val{font-family:'Cinzel',serif;font-size:8.5px;color:#1A2535;letter-spacing:.3px;white-space:nowrap}
 .td-qty{font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:#333;width:55px}
 .td-qty sub{font-size:7px;font-weight:400;color:#AAA;letter-spacing:.5px;display:block;margin-top:1px}
-.td-img{width:100px}
+.td-img{width:120px}
 .td-name{text-align:left}
 .td-name-val{font-family:'Cormorant',serif;font-size:14px;font-weight:600;color:#1A2535;line-height:1.4}
 
@@ -462,7 +462,10 @@ textarea.c-inp{resize:none;height:72px}
   html,body{height:auto!important;overflow:auto!important;background:#fff!important}
   .p-grand-section,.p-sign-section,.p-footer-strip,.p-gold-bottom{page-break-inside:avoid;break-inside:avoid}
   .p-grand-section{page-break-before:avoid;break-before:avoid}
-  .p-table tfoot{display:table-row-group}
+  .p-table tbody tr{page-break-inside:avoid;break-inside:avoid}
+  .p-table{orphans:2;widows:2}
+  .p-table tbody tr:last-child{page-break-after:avoid;break-after:avoid}
+  #p-tfoot-wrap{page-break-before:avoid;break-before:avoid}
   /* Page numbers */
   @page{margin:12mm 8mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);font-family:'Jost',sans-serif;font-size:8px;color:#888}}
   @page{counter-increment:page}
@@ -687,7 +690,7 @@ textarea.c-inp{resize:none;height:72px}
             <th style="width:40px">Sr</th>
             <th style="width:110px">Code</th>
             <th style="width:60px">Qty</th>
-            <th style="width:100px">Image</th>
+            <th style="width:120px">Image</th>
             <th>Description</th>
             <th class="td-mrp">MRP</th>
             <th class="td-bp">Best Price</th>
@@ -697,40 +700,24 @@ textarea.c-inp{resize:none;height:72px}
         <tbody id="p-tbody"></tbody>
       </table>
     </div>
+    <div id="p-tfoot-wrap" style="page-break-inside:avoid;break-inside:avoid"></div>
 
     <!-- Grand total -->
-    <!-- Page subtotal row — only shows on last page because it follows the table naturally -->
-    <div id="p-tfoot-wrap" style="page-break-inside:avoid;break-inside:avoid"></div>
     <div class="p-grand-section">
-      <!-- Bank Details on left -->
-      <div style="flex:1;padding-right:32px">
-        <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#A09060;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #E8DCC0">Payment Details</div>
-        <table style="border-collapse:collapse;font-size:11px">
-          <tr>
-            <td style="padding:3px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">A/C Name</td>
-            <td style="padding:3px 0;font-family:'Jost',sans-serif;font-weight:600;color:#1A2535;font-size:11px">Grace Bath World</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">Bank</td>
-            <td style="padding:3px 0;font-family:'Jost',sans-serif;font-weight:600;color:#1A2535;font-size:11px">Kotak Mahindra Bank</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">A/C No.</td>
-            <td style="padding:3px 0;font-family:'Jost',sans-serif;font-weight:700;color:#1A2535;font-size:12px;letter-spacing:.5px">8711749089</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">IFSC</td>
-            <td style="padding:3px 0;font-family:'Jost',sans-serif;font-weight:700;color:#1A2535;font-size:12px;letter-spacing:.5px">KKBK0005886</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">GPay / PhonePe</td>
-            <td style="padding:6px 0 3px;font-family:'Jost',sans-serif;font-weight:700;color:#1A2535;font-size:12px">9826050648</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 10px 3px 0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;color:#A09060;text-transform:uppercase;white-space:nowrap;vertical-align:top">UPI ID</td>
-            <td style="padding:3px 0;font-family:'Jost',sans-serif;font-weight:700;color:#C9A84C;font-size:12px;letter-spacing:.3px">9826050648@ybl</td>
-          </tr>
-        </table>
+      <!-- Bank Details on left — compact 2-line -->
+      <div style="flex:1;padding-right:24px">
+        <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:2px;color:#A09060;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #E8DCC0">Payment Details</div>
+        <!-- Line 1: Bank account -->
+        <div style="font-family:'Jost',sans-serif;font-size:10px;color:#1A2535;font-weight:600;line-height:1.6">
+          Grace Bath World &nbsp;·&nbsp; Kotak Mahindra Bank &nbsp;·&nbsp;
+          <span style="font-weight:700;letter-spacing:.4px">8711749089</span>
+          &nbsp;·&nbsp; IFSC: <span style="font-weight:700;letter-spacing:.4px">KKBK0005886</span>
+        </div>
+        <!-- Line 2: UPI -->
+        <div style="font-family:'Jost',sans-serif;font-size:10px;color:#1A2535;font-weight:600;line-height:1.6;margin-top:2px">
+          GPay / PhonePe: <span style="font-weight:700">9826050648</span>
+          &nbsp;·&nbsp; UPI: <span style="font-weight:700;color:#C9A84C;letter-spacing:.3px">9826050648@ybl</span>
+        </div>
       </div>
       <div class="p-grand-box">
         <div class="p-grand-row">
@@ -1140,8 +1127,8 @@ function renderPreview(){
         const price=bp(item);
         const url=IMAGE_MAP[item.code]||'';
         const img=url
-          ?`<div style="width:80px;height:80px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:80px;height:80px;object-fit:contain;display:block"/></div>`
-          :`<div style="width:80px;height:80px;background:#FFFFFF;margin:auto"></div>`;
+          ?`<div style="width:110px;height:110px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:110px;height:110px;object-fit:contain;display:block"/></div>`
+          :`<div style="width:110px;height:110px;background:#FFFFFF;margin:auto"></div>`;
         return `<tr>
           <td class="td-sr">${i+1}</td>
           <td class="td-code"><div class="td-code-val">${esc(item.code)}</div></td>
@@ -1160,8 +1147,7 @@ function renderPreview(){
         </tr>`;
       }).join('');
 
-  // Tfoot
-  // Subtotal row sits after table body — only prints on last page
+  // Tfoot — div after table, shows totals only once after last item
   const totQty = S.items.reduce((a,i)=>a+i.qty, 0);
   $('p-tfoot-wrap').innerHTML=`
     <table style="width:100%;border-collapse:collapse;border-top:2px solid #D8C898">
@@ -1287,6 +1273,10 @@ body{background:#fff;font-family:'Jost',sans-serif}
   body{margin:0}
   .p-grand-section,.p-sign-section,.p-footer-strip,.p-gold-bottom{page-break-inside:avoid;break-inside:avoid}
   .p-grand-section{page-break-before:avoid;break-before:avoid}
+  .p-table tbody tr{page-break-inside:avoid;break-inside:avoid}
+  .p-table{orphans:2;widows:2}
+  .p-table tbody tr:last-child{page-break-after:avoid;break-after:avoid}
+  #p-tfoot-wrap{page-break-before:avoid;break-before:avoid}
   @page{
     margin:12mm 8mm;
     size:A4;
