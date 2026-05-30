@@ -1272,28 +1272,36 @@ function normImgUrl(u){
 }
 function blobToDataURL(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }
 function dimsOf(dataUrl){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res({w:im.naturalWidth||1,h:im.naturalHeight||1}); im.onerror=()=>res({w:1,h:1}); im.src=dataUrl; }); }
+// load an image via a CORS-enabled <img> → canvas → JPEG dataURL (this is how the on-screen
+// thumbnails succeed; the proxy sends CORS headers so the canvas isn't tainted).
+function loadViaImage(src, timeoutMs){
+  return new Promise(resolve=>{
+    const im=new Image(); im.crossOrigin="anonymous"; im.referrerPolicy="no-referrer";
+    let done=false; const to=setTimeout(()=>{ if(!done){ done=true; resolve(null); } }, timeoutMs||14000);
+    im.onload=()=>{ if(done)return; done=true; clearTimeout(to);
+      try{ const w=im.naturalWidth||1, h=im.naturalHeight||1; const c=document.createElement("canvas"); c.width=w; c.height=h;
+        c.getContext("2d").drawImage(im,0,0); resolve({data:c.toDataURL("image/jpeg",0.85), w, h, fmt:"JPEG"}); }
+      catch(e){ resolve(null); } };
+    im.onerror=()=>{ if(done)return; done=true; clearTimeout(to); resolve(null); };
+    im.src=src;
+  });
+}
 async function loadImage(url){
   if(!url) return null;
   if(imgCache.has(url)) return imgCache.get(url);
-  const candidates=[
-    imgProxy(url,400),
-    "https://images.weserv.nl/?url="+encodeURIComponent(url)+"&w=400&output=jpg&q=82",
-    url
-  ];
   let out=null;
-  for(const c of candidates){
-    try{
-      const res=await fetch(c,{mode:"cors",cache:"force-cache"});
-      if(res.ok){ const blob=await res.blob(); if(blob.size>0){ const data=await blobToDataURL(blob); const d=await dimsOf(data);
-        const fmt=/png/i.test(blob.type)?"PNG":/webp/i.test(blob.type)?"WEBP":"JPEG"; out={data,w:d.w,h:d.h,fmt}; break; } }
-    }catch(e){}
-  }
-  if(!out){ out=await new Promise(resolve=>{ const im=new Image(); im.crossOrigin="anonymous"; im.referrerPolicy="no-referrer";
-      im.onload=()=>{ try{ const c=document.createElement("canvas"); c.width=im.naturalWidth; c.height=im.naturalHeight;
-        c.getContext("2d").drawImage(im,0,0); resolve({data:c.toDataURL("image/jpeg",0.85),w:im.naturalWidth,h:im.naturalHeight,fmt:"JPEG"}); }
-        catch(e){ resolve(null); } };
-      im.onerror=()=>resolve(null); im.src=candidates[0]; }); }
+  out = await loadViaImage(imgProxy(url,420), 14000);          // primary: proxy + canvas
+  if(!out) out = await loadViaImage(imgProxy(url,360), 14000); // retry (different size = fresh request)
+  if(!out){ try{ const res=await fetch(imgProxy(url,420),{mode:"cors"}); if(res.ok){ const blob=await res.blob(); if(blob.size>0){ const data=await blobToDataURL(blob); const d=await dimsOf(data); out={data,w:d.w,h:d.h,fmt:/png/i.test(blob.type)?"PNG":"JPEG"}; } } }catch(e){} }
+  if(!out) out = await loadViaImage(url, 14000);               // last resort: direct (if host allows CORS)
   imgCache.set(url,out); return out;
+}
+async function preloadImages(){
+  const urls=[...new Set(results.map(r=>imgUrlOf(r)).filter(Boolean))];
+  let okCount=0, idx=0; const CONC=5;
+  async function worker(){ while(idx<urls.length){ const u=urls[idx++]; const r=await loadImage(u); if(r&&r.data) okCount++; } }
+  await Promise.all(Array.from({length:Math.min(CONC,urls.length||1)},()=>worker()));
+  return {okCount, total:urls.length};
 }
 async function preloadImages(){
   const urls=[...new Set(results.map(r=>imgUrlOf(r)).filter(Boolean))];
