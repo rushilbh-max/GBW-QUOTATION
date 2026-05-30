@@ -998,6 +998,13 @@ async function fetchTab(key){
       const find=(re,def)=>{ const idx=hdr.findIndex(h=>re.test(h)); return idx>=0?idx:def; };
       cIdx={ desc:find(/^DESC|DESCRIPTION|ITEM ?NAME|^NAME$/,1), mrp:find(/^MRP$/, hdr.length>=6?5:2), brand:find(/^BRAND$/,2) };
     }
+    let imgCol=2; // IMAGE sheet: URL is in column C by default
+    if(key==="img" && rows.length){
+      const hdr=(rows[0]||[]).map(h=>String(h||"").trim().toUpperCase());
+      let idx=hdr.findIndex(h=>/IMAGE|URL|LINK|PHOTO|PIC/.test(h));
+      if(idx<0){ const sample=rows[1]||rows[0]||[]; idx=sample.findIndex(v=>/^https?:\/\//i.test(String(v||"").trim())); }
+      if(idx>=0) imgCol=idx;
+    }
     for(let i=0;i<rows.length;i++){
       const r=rows[i]; if(!r||!r.length)continue;
       const code=String(r[0]||"").trim();
@@ -1006,7 +1013,7 @@ async function fetchTab(key){
       if(code in map) continue; // VLOOKUP: first wins
       if(key==="msl") map[code]={q:num(r[1],0), s:String(r[2]==null?"":r[2]).trim()||"OK"};
       else if(key==="code") map[code]=[String(r[cIdx.desc]==null?"":r[cIdx.desc]).trim(), num(r[cIdx.mrp],0), String(r[cIdx.brand]==null?"":r[cIdx.brand]).trim()];
-      else if(key==="img") map[code]=String(r[1]==null?"":r[1]).trim();
+      else if(key==="img"){ const u=String(r[imgCol]==null?"":r[imgCol]).trim() || (r.slice(1).map(x=>String(x==null?"":x).trim()).find(x=>/^https?:\/\//i.test(x))||""); if(!u)continue; map[code]=u; }
       else map[code]=num(r[1],0);
       n++;
     }
@@ -1528,7 +1535,7 @@ function buildFromRows(key,rows,skipHeader){
     if(kind==="pairs"){ data.push([c, String(r[1]==null?"":r[1]).trim()]); n++; }
     else if(kind==="msl"){ if(c in data)continue; data[c]={q:num(r[1],0), s:String(r[2]==null?"":r[2]).trim()||"OK"}; n++; }
     else if(key==="code"){ if(c in data)continue; data[c]=[String(r[1]==null?"":r[1]).trim(), num(r[2],0), String(r[3]==null?"":r[3]).trim()]; n++; }
-    else if(key==="img"){ if(c in data)continue; data[c]=String(r[1]==null?"":r[1]).trim(); n++; }
+    else if(key==="img"){ if(c in data)continue; const u=(r.slice(1).map(x=>String(x==null?"":x).trim()).find(x=>/^https?:\/\//i.test(x))) || String(r[1]==null?"":r[1]).trim(); if(!u)continue; data[c]=u; n++; }
     else { if(c in data)continue; data[c]=num(r[1],0); n++; }
   }
   return {data,n};
