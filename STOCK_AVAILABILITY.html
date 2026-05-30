@@ -306,6 +306,7 @@ td.name .na{color:var(--muted);font-style:italic}
         <button class="btn sm" id="btnExportCsv">CSV</button>
         <button class="btn sm" id="btnDispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16h6M19 13v6"/><path d="M14 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="M7 7h7M7 11h7M7 15h3"/></svg>Dispatch List</button>
         <button class="btn sm" id="btnPrint">Print</button>
+        <button class="btn sm" id="btnPrintImg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L6 21"/></svg>Print / PDF · Images</button>
       </div>
       <div class="tablewrap">
         <table id="resTable">
@@ -1304,12 +1305,76 @@ async function preloadImages(){
   await Promise.all(Array.from({length:Math.min(CONC,urls.length||1)},()=>worker()));
   return {okCount, total:urls.length};
 }
-async function preloadImages(){
-  const urls=[...new Set(results.map(r=>imgUrlOf(r)).filter(Boolean))];
-  let okCount=0;
-  await Promise.all(urls.map(async u=>{ const r=await loadImage(u); if(r&&r.data) okCount++; }));
-  return {okCount, total:urls.length};
+
+// Browser-print export: builds a branded HTML report with native <img> tags (loaded by the
+// browser through the image proxy) and opens the print dialog — same proven approach as the
+// quotation app, so images always render. Save as PDF from the print dialog.
+function printWithImages(mode){
+  if(!results.length){ toast("Run a stock check first","warn"); return; }
+  const short = mode==="short";
+  const withImg = results.some(r=>imgUrlOf(r));
+  const brand = (DB.brandcfg&&DB.brandcfg.name)||"GRACE BATH WORLD";
+  const lg = effLogo();
+  const logo = lg && lg.url; const lw = (lg&&lg.w)||820, lh = (lg&&lg.h)||133;
+  const now=new Date();
+  const dt=now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+", "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:true});
+  const soMode=salesOrder; const stMode=statusDisplay;
+  const avail=results.filter(r=>effStatus(r)==="AVAILABLE").length;
+  const rows=results.map((r,i)=>{
+    const st=effStatus(r); const ok=st==="AVAILABLE";
+    const iu=imgUrlOf(r);
+    // RAW url straight into <img> — exactly like the quotation app; the browser renders it (no CORS/proxy needed)
+    const imgCell = withImg ? `<td class="imgc">${iu?`<img src="${esc(iu)}" referrerpolicy="no-referrer" loading="eager" onerror="this.style.display='none'">`:""}</td>` : "";
+    const tail = short ? "" : `<td class="num">${r.gbw}</td><td class="num">${r.disp}</td><td class="num">${r.pend}</td><td class="num">${r.net}</td><td class="num">${r.mvp}</td><td class="msl">${esc(r.msl||"")}</td>`;
+    return `<tr class="${ok?"":"na"}"><td class="sr">${i+1}</td><td class="code">${esc(r.code)}</td><td class="qty">${r.qty}</td><td class="st ${ok?"ok":"no"}">${st}</td>${imgCell}<td class="name">${esc(r.name||"—")}</td>${tail}</tr>`;
+  }).join("");
+  const thead = `<tr><th>SR#</th><th>Code</th><th>Order Qty</th><th>Status</th>${withImg?"<th>Image</th>":""}<th>Item Name</th>${short?"":"<th>GBW Stock</th><th>Display</th><th>Pending Orders</th><th>Net Stock</th><th>MVP Pending</th><th>MSL</th>"}</tr>`;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Stock Availability${short?" · Short":""}</title>
+  <style>
+    @page{size:A4 ${short?"portrait":"landscape"};margin:10mm 8mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;color:#16201e;margin:0;padding:6px 4px 0}
+    .head{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #0f5c4d;padding-bottom:8px;margin-bottom:10px}
+    .head .l{display:flex;align-items:center;gap:14px}
+    .head img.logo{height:${Math.min(42, 42*lw/lh>240?240*lh/lw:42)}px;width:auto;max-width:260px;object-fit:contain}
+    .head .ttl{font-size:15px;color:#5b6b67;font-weight:600}
+    .head .party{font-size:12px;color:#16201e;font-weight:700;margin-top:2px}
+    .head .r{text-align:right;font-size:11px;color:#5b6b67;line-height:1.5}
+    .head .r b{color:#0f5c4d}
+    .head .r .sum{font-weight:700;color:#0f5c4d;font-size:12px}
+    table{width:100%;border-collapse:collapse;font-size:${short?"12px":"10px"}}
+    th{background:#0f5c4d;color:#fff;padding:6px 5px;text-align:center;font-size:${short?"11px":"9.5px"};text-transform:uppercase;letter-spacing:.3px}
+    td{padding:${short?"7px 6px":"5px"};text-align:center;border-bottom:1px solid #e7ece9;vertical-align:middle}
+    tr{page-break-inside:avoid;break-inside:avoid}
+    tr.na td{background:#fbeae8}
+    td.code,td.qty{font-weight:700;color:#12211a;font-size:${short?"13px":"11px"}}
+    td.code{font-family:'Courier New',monospace}
+    td.name{text-align:left;color:#3a4744}
+    td.num,td.msl{color:#5b6b67}
+    td.st{font-weight:700}td.st.ok{color:#1c7a4c}td.st.no{color:#b3261e}
+    td.imgc img{height:${short?"66px":"48px"};max-width:${short?"96px":"70px"};object-fit:contain}
+    .foot{margin-top:8px;font-size:8.5px;color:#9aa6a2;display:flex;justify-content:space-between;border-top:1px solid #e7ece9;padding-top:5px}
+    @media print{.noprint{display:none}}
+    .noprint{position:fixed;top:8px;right:8px;background:#0f5c4d;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer}
+  </style></head><body>
+    <button class="noprint" onclick="window.print()">Print / Save as PDF</button>
+    <div class="head">
+      <div class="l">${logo?`<img class="logo" src="${logo}" alt="">`:""}<div><div class="ttl">Stock Availability Report</div>${partyName?`<div class="party">Party: ${esc(partyName)}</div>`:""}</div></div>
+      <div class="r"><div>Generated: <b>${dt}</b></div><div>Sales Order: <b>${soMode}</b> &nbsp; Status Display: <b>${stMode}</b></div><div class="sum">${results.length} items &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${results.length-avail} not available</div></div>
+    </div>
+    <table>
+      <thead>${thead}</thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="foot"><span>${esc(brand)}</span><span>Availability judged on GBW Stock vs ordered quantity</span></div>
+    <script>window.onload=function(){var imgs=document.images,n=imgs.length,done=0;function go(){setTimeout(()=>{window.focus();window.print();},300);}if(!n)return go();for(var i=0;i<n;i++){if(imgs[i].complete){if(++done===n)go();}else{imgs[i].addEventListener('load',function(){if(++done===n)go();});imgs[i].addEventListener('error',function(){if(++done===n)go();});}}}<\/script>
+  </body></html>`;
+  const w=window.open("","_blank");
+  if(!w){ toast("Pop-up blocked — allow pop-ups, then retry","warn"); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  toast("Opening printable report — choose “Save as PDF”","ok");
 }
+
 
 async function exportPdf(mode){
   const detailed = mode!=="short";
@@ -1616,8 +1681,9 @@ function bind(){
   $("#btnClear").onclick=()=>{ $("#orderInput").value=""; results=[]; $("#resultsArea").style.display="none"; $("#emptyState").style.display="block"; };
   $("#btnSample").onclick=()=>{ $("#orderInput").value="ALD-CHR-079N\t60\nACN-CHR-1121N\t5\nAKP-CHR-35721P\t3\nACP-BCH-5032505M\t2\nNON-EXISTENT-CODE\t10"; };
   $("#btnExportXlsx").onclick=exportXlsx; $("#btnExportCsv").onclick=exportCsv; $("#btnPrint").onclick=()=>window.print();
+  $("#btnPrintImg").onclick=()=>printWithImages("detailed");
   $("#partyName").oninput=e=>{ partyName=e.target.value.trim(); if(results.length){ const pc=$("#partyCaption"); if(partyName){pc.style.display="block";pc.textContent="Party: "+partyName;}else{pc.style.display="none";} } };
-  $("#btnPdfDetailed").onclick=()=>exportPdf("detailed");
+  $("#btnPdfDetailed").onclick=()=>printWithImages("detailed");
   const _bti=$("#btnTestImg"); if(_bti) _bti.onclick=async ()=>{
     const box=$("#imgTestBox");
     const ents=Object.entries(DB.img||{}).slice(0,3);
@@ -1639,7 +1705,7 @@ function bind(){
     box.innerHTML = parts.join("") +
       `<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">✓ = this image will appear in the PDF. If you see ✗, open the URL above in a new tab — if it shows the image there, tell me and I’ll adjust the loader.</div>`;
   };
-  $("#btnPdfShort").onclick=()=>exportPdf("short");
+  $("#btnPdfShort").onclick=()=>printWithImages("short");
   $("#btnDispatch").onclick=exportDispatch;
   $("#brandName").oninput=e=>{ DB.brandcfg.name=e.target.value.trim()||"GRACE BATH WORLD"; clearTimeout(window.__bn); window.__bn=setTimeout(()=>persist("brandcfg"),400); };
   $("#brandLogoBtn").onclick=()=>$("#brandLogoFile").click();
