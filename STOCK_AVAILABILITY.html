@@ -1277,7 +1277,7 @@ function dimsOf(dataUrl){ return new Promise(res=>{ const im=new Image(); im.onl
 function loadViaImage(src, timeoutMs){
   return new Promise(resolve=>{
     const im=new Image(); im.crossOrigin="anonymous"; im.referrerPolicy="no-referrer";
-    let done=false; const to=setTimeout(()=>{ if(!done){ done=true; resolve(null); } }, timeoutMs||14000);
+    let done=false; const to=setTimeout(()=>{ if(!done){ done=true; resolve(null); } }, timeoutMs||13000);
     im.onload=()=>{ if(done)return; done=true; clearTimeout(to);
       try{ const w=im.naturalWidth||1, h=im.naturalHeight||1; const c=document.createElement("canvas"); c.width=w; c.height=h;
         c.getContext("2d").drawImage(im,0,0); resolve({data:c.toDataURL("image/jpeg",0.85), w, h, fmt:"JPEG"}); }
@@ -1286,19 +1286,20 @@ function loadViaImage(src, timeoutMs){
     im.src=src;
   });
 }
+function bust(u){ return u + (u.indexOf("?")>=0?"&":"?") + "gbwcors=1"; }
 async function loadImage(url){
   if(!url) return null;
   if(imgCache.has(url)) return imgCache.get(url);
   let out=null;
-  out = await loadViaImage(imgProxy(url,420), 14000);          // primary: proxy + canvas
-  if(!out) out = await loadViaImage(imgProxy(url,360), 14000); // retry (different size = fresh request)
-  if(!out){ try{ const res=await fetch(imgProxy(url,420),{mode:"cors"}); if(res.ok){ const blob=await res.blob(); if(blob.size>0){ const data=await blobToDataURL(blob); const d=await dimsOf(data); out={data,w:d.w,h:d.h,fmt:/png/i.test(blob.type)?"PNG":"JPEG"}; } } }catch(e){} }
-  if(!out) out = await loadViaImage(url, 14000);               // last resort: direct (if host allows CORS)
+  // try several CORS-enabled sources; cache-bust so a non-CORS cached copy isn't reused
+  const tries=[ bust(url), imgProxy(url,340), bust(imgProxy(url,340)) ];
+  for(const t of tries){ out=await loadViaImage(t,13000); if(out) break; }
+  if(!out){ try{ const res=await fetch(bust(imgProxy(url,340)),{mode:"cors"}); if(res.ok){ const b=await res.blob(); if(b.size>0){ const data=await blobToDataURL(b); const d=await dimsOf(data); out={data,w:d.w,h:d.h,fmt:/png/i.test(b.type)?"PNG":"JPEG"}; } } }catch(e){} }
   imgCache.set(url,out); return out;
 }
 async function preloadImages(){
   const urls=[...new Set(results.map(r=>imgUrlOf(r)).filter(Boolean))];
-  let okCount=0, idx=0; const CONC=5;
+  let okCount=0, idx=0; const CONC=4;
   async function worker(){ while(idx<urls.length){ const u=urls[idx++]; const r=await loadImage(u); if(r&&r.data) okCount++; } }
   await Promise.all(Array.from({length:Math.min(CONC,urls.length||1)},()=>worker()));
   return {okCount, total:urls.length};
@@ -1617,22 +1618,26 @@ function bind(){
   $("#btnExportXlsx").onclick=exportXlsx; $("#btnExportCsv").onclick=exportCsv; $("#btnPrint").onclick=()=>window.print();
   $("#partyName").oninput=e=>{ partyName=e.target.value.trim(); if(results.length){ const pc=$("#partyCaption"); if(partyName){pc.style.display="block";pc.textContent="Party: "+partyName;}else{pc.style.display="none";} } };
   $("#btnPdfDetailed").onclick=()=>exportPdf("detailed");
-  const _bti=$("#btnTestImg"); if(_bti) _bti.onclick=()=>{
+  const _bti=$("#btnTestImg"); if(_bti) _bti.onclick=async ()=>{
     const box=$("#imgTestBox");
     const ents=Object.entries(DB.img||{}).slice(0,3);
-    if(!ents.length){ box.innerHTML=`<div style="font-size:12px;color:var(--red)">No image URLs loaded. Check the IMAGE tab and hit “Refresh now”.</div>`; return; }
-    box.innerHTML = ents.map(([code,raw])=>{ const url=normImgUrl(raw); const changed = url!==String(raw).trim();
-      return `
-      <div style="border-top:1px solid var(--line);padding:8px 0">
-        <div style="font-size:10.5px;color:var(--muted);word-break:break-all;margin-bottom:5px"><b style="color:var(--ink)">${esc(code)}</b> → ${esc(url)}${changed?` <span style="color:var(--teal)">(auto-completed from “${esc(String(raw))}”)</span>`:""}</div>
-        <div style="display:flex;gap:14px;align-items:flex-start">
-          <div style="text-align:center;font-size:10px;color:var(--muted)">via proxy<br>
-            <img src="${esc(imgProxy(url,160))}" style="height:64px;max-width:96px;object-fit:contain;border:1px solid var(--line);border-radius:5px;background:#fff;margin-top:3px" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'✗ failed',style:'color:#b3261e;font-weight:700;padding:18px 6px'}))"></div>
-          <div style="text-align:center;font-size:10px;color:var(--muted)">direct<br>
-            <img src="${esc(url)}" referrerpolicy="no-referrer" style="height:64px;max-width:96px;object-fit:contain;border:1px solid var(--line);border-radius:5px;background:#fff;margin-top:3px" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'✗ failed',style:'color:#b3261e;font-weight:700;padding:18px 6px'}))"></div>
+    if(!ents.length){ box.innerHTML=`<div style="font-size:12px;color:var(--red)">No image URLs loaded. Check the IMAGE NEW tab and hit “Refresh now”.</div>`; return; }
+    box.innerHTML=`<div style="font-size:12px;color:var(--muted)">Testing ${ents.length} image(s)… checking the actual PDF embed path.</div>`;
+    const parts=[];
+    for(const [code,raw] of ents){
+      const url=normImgUrl(raw); const changed=url!==String(raw).trim();
+      const res=await loadImage(url);
+      const ok=!!(res&&res.data);
+      parts.push(`<div style="border-top:1px solid var(--line);padding:8px 0">
+        <div style="font-size:10.5px;color:var(--muted);word-break:break-all;margin-bottom:5px"><b style="color:var(--ink)">${esc(code)}</b> → ${esc(url)}${changed?` <span style="color:var(--teal)">(auto-completed)</span>`:""}</div>
+        <div style="display:flex;gap:12px;align-items:center">
+          ${ok?`<img src="${res.data}" style="height:60px;max-width:90px;object-fit:contain;border:1px solid var(--line);border-radius:5px;background:#fff">`:""}
+          <div style="font-size:12px;font-weight:700;color:${ok?"#1c7a4c":"#b3261e"}">${ok?("✓ PDF-ready · "+res.w+"×"+res.h):"✗ could not embed"}</div>
         </div>
-      </div>`; }).join("") +
-      `<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">If <b>“via proxy”</b> shows the image → PDFs will embed it. If both say <b style="color:#b3261e">✗ failed</b> → the link isn’t publicly loadable (try opening the resolved URL above in a new tab).</div>`;
+      </div>`);
+    }
+    box.innerHTML = parts.join("") +
+      `<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">✓ = this image will appear in the PDF. If you see ✗, open the URL above in a new tab — if it shows the image there, tell me and I’ll adjust the loader.</div>`;
   };
   $("#btnPdfShort").onclick=()=>exportPdf("short");
   $("#btnDispatch").onclick=exportDispatch;
