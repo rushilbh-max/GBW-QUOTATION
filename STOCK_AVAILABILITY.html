@@ -1125,8 +1125,10 @@ function runCheck(){
 }
 function renderSummary(){
   const tot=results.length, ok=results.filter(r=>effStatus(r)==="AVAILABLE").length;
+  const totQty=results.reduce((s,r)=>s+(+r.qty||0),0);
   $("#summary").innerHTML=`
     <div class="stat tot"><div class="n">${tot}</div><div class="l">Line items</div></div>
+    <div class="stat"><div class="n">${fmtN(totQty)}</div><div class="l">Total order qty</div></div>
     <div class="stat ok"><div class="n">${ok}</div><div class="l">Available</div></div>
     <div class="stat no"><div class="n">${tot-ok}</div><div class="l">Not available</div></div>
     <div class="stat"><div class="n">${results.filter(r=>!r.found).length}</div><div class="l">Not in master</div></div>`;
@@ -1323,6 +1325,7 @@ function printWithImages(mode){
   const dt=now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+", "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:true});
   const soMode=salesOrder; const stMode=statusDisplay;
   const avail=results.filter(r=>effStatus(r)==="AVAILABLE").length;
+  const totQty=results.reduce((s,r)=>s+(+r.qty||0),0);
   const rows=results.map((r,i)=>{
     const st=effStatus(r); const ok=st==="AVAILABLE";
     const iu=imgUrlOf(r);
@@ -1332,6 +1335,8 @@ function printWithImages(mode){
     return `<tr class="${ok?"":"na"}"><td class="sr">${i+1}</td><td class="code">${esc(r.code)}</td><td class="qty">${r.qty}</td><td class="st ${ok?"ok":"no"}">${st}</td>${imgCell}<td class="name">${esc(r.name||"—")}</td>${tail}</tr>`;
   }).join("");
   const thead = `<tr><th>SR#</th><th>Code</th><th>Order Qty</th><th>Status</th>${withImg?"<th>Image</th>":""}<th>Item Name</th>${short?"":"<th>GBW Stock</th><th>Display</th><th>Pending Orders</th><th>Net Stock</th><th>MVP Pending</th><th>MSL</th>"}</tr>`;
+  const totalCols = (short?5:11) + (withImg?1:0);
+  const tfoot = `<tr class="totrow"><td colspan="2" style="text-align:right">TOTAL ORDER QTY</td><td class="qty">${totQty}</td><td colspan="${totalCols-3}"></td></tr>`;
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Stock Availability${short?" · Short":""}</title>
   <style>
     @page{size:A4 ${short?"portrait":"landscape"};margin:10mm 8mm}
@@ -1355,6 +1360,8 @@ function printWithImages(mode){
     td.name{text-align:left;color:#3a4744}
     td.num,td.msl{color:#5b6b67}
     td.st{font-weight:700}td.st.ok{color:#1c7a4c}td.st.no{color:#b3261e}
+    tfoot td{background:#eef4f2;font-weight:800;color:#0f5c4d;border-top:2px solid #0f5c4d;font-size:${short?"13px":"11px"};padding:8px 6px}
+    tfoot td.qty{color:#12211a}
     td.imgc img{height:${short?"66px":"48px"};max-width:${short?"96px":"70px"};object-fit:contain}
     .foot{margin-top:8px;font-size:8.5px;color:#9aa6a2;display:flex;justify-content:space-between;border-top:1px solid #e7ece9;padding-top:5px}
     @media print{.noprint{display:none}}
@@ -1363,11 +1370,12 @@ function printWithImages(mode){
     <button class="noprint" onclick="window.print()">Print / Save as PDF</button>
     <div class="head">
       <div class="l">${logo?`<img class="logo" src="${logo}" alt="">`:""}<div><div class="ttl">Stock Availability Report</div>${partyName?`<div class="party">Party: ${esc(partyName)}</div>`:""}</div></div>
-      <div class="r"><div>Generated: <b>${dt}</b></div><div>Sales Order: <b>${soMode}</b> &nbsp; Status Display: <b>${stMode}</b></div><div class="sum">${results.length} items &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${results.length-avail} not available</div></div>
+      <div class="r"><div>Generated: <b>${dt}</b></div><div>Sales Order: <b>${soMode}</b> &nbsp; Status Display: <b>${stMode}</b></div><div class="sum">${results.length} items &nbsp;·&nbsp; total qty ${totQty} &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${results.length-avail} not available</div></div>
     </div>
     <table>
       <thead>${thead}</thead>
       <tbody>${rows}</tbody>
+      <tfoot>${tfoot}</tfoot>
     </table>
     <div class="foot"><span>${esc(brand)}</span><span>Availability judged on GBW Stock vs ordered quantity</span></div>
     <script>window.onload=function(){var imgs=document.images,n=imgs.length,done=0;function go(){setTimeout(()=>{window.focus();window.print();},300);}if(!n)return go();for(var i=0;i<n;i++){if(imgs[i].complete){if(++done===n)go();}else{imgs[i].addEventListener('load',function(){if(++done===n)go();});imgs[i].addEventListener('error',function(){if(++done===n)go();});}}}<\/script>
