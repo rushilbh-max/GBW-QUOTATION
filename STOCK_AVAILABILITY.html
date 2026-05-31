@@ -1360,8 +1360,8 @@ function printWithImages(mode){
     td.name{text-align:left;color:#3a4744}
     td.num,td.msl{color:#5b6b67}
     td.st{font-weight:700}td.st.ok{color:#1c7a4c}td.st.no{color:#b3261e}
-    tfoot td{background:#eef4f2;font-weight:800;color:#0f5c4d;border-top:2px solid #0f5c4d;font-size:${short?"13px":"11px"};padding:8px 6px}
-    tfoot td.qty{color:#12211a}
+    tr.totrow td{background:#eef4f2;font-weight:800;color:#0f5c4d;border-top:2px solid #0f5c4d;font-size:${short?"13px":"11px"};padding:8px 6px}
+    tr.totrow td.qty{color:#12211a}
     td.imgc img{height:${short?"66px":"48px"};max-width:${short?"96px":"70px"};object-fit:contain}
     .foot{margin-top:8px;font-size:8.5px;color:#9aa6a2;display:flex;justify-content:space-between;border-top:1px solid #e7ece9;padding-top:5px}
     @media print{.noprint{display:none}}
@@ -1374,8 +1374,7 @@ function printWithImages(mode){
     </div>
     <table>
       <thead>${thead}</thead>
-      <tbody>${rows}</tbody>
-      <tfoot>${tfoot}</tfoot>
+      <tbody>${rows}${tfoot}</tbody>
     </table>
     <div class="foot"><span>${esc(brand)}</span><span>Availability judged on GBW Stock vs ordered quantity</span></div>
     <script>window.onload=function(){var imgs=document.images,n=imgs.length,done=0;function go(){setTimeout(()=>{window.focus();window.print();},300);}if(!n)return go();for(var i=0;i<n;i++){if(imgs[i].complete){if(++done===n)go();}else{imgs[i].addEventListener('load',function(){if(++done===n)go();});imgs[i].addEventListener('error',function(){if(++done===n)go();});}}}<\/script>
