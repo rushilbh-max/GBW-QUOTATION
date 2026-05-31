@@ -1094,7 +1094,7 @@ function compute(code,qty){
 
 /* ---------- parse the order input ---------- */
 function parseOrders(text){
-  const out=[];
+  const out=[]; const idxByCode=Object.create(null);
   text.split(/\r?\n/).forEach(line=>{
     const ln=line.trim(); if(!ln)return;
     let code,qty;
@@ -1102,7 +1102,10 @@ function parseOrders(text){
     else if(ln.includes(",")){ const p=ln.split(","); code=p[0].trim(); qty=num(p[p.length-1],1); }
     else { const m=ln.match(/^(.*?)\s+(\d+(?:\.\d+)?)$/); if(m){ code=m[1].trim(); qty=num(m[2],1); } else { code=ln; qty=1; } }
     if(!qty) qty=1;
-    if(code) out.push([code,qty]);
+    if(!code) return;
+    const key=code.trim().toUpperCase();              // merge same product (case/space-insensitive)
+    if(key in idxByCode){ out[idxByCode[key]][1]+=qty; } // repeat → add quantity to the existing row
+    else { idxByCode[key]=out.length; out.push([code,qty]); }
   });
   return out;
 }
