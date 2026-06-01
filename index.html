@@ -789,8 +789,8 @@ html, body{
       </button>
     </div>
     <!-- Bathroom mode indicator -->
-    <div id="bathroom-mode-bar" style="background: rgba(201, 168, 76, 0.1); border: 1px solid rgba(201, 168, 76, 0.3); border-radius: 6px; padding: 8px 12px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
-      <span style="font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold)">🛁 3 bathroom(s) · 59 products</span>
+    <div id="bathroom-mode-bar" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:8px 12px;margin-top:6px;display:none;align-items:center;justify-content:space-between">
+      <span style="font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold)">🛁 Bathroom Mode Active</span>
       <button onclick="clearBathrooms()" style="background:transparent;border:none;color:#E06060;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
     </div>
   </div>
@@ -838,7 +838,7 @@ COP-CHR-083NKPM, 3"></textarea>
   </div>
 
   <!-- BATHROOM MODAL -->
-  <div id="bathroom-modal" style="display: none; position: fixed; inset: 0px; background: rgba(0, 0, 0, 0.85); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+  <div id="bathroom-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--ink2);border:1px solid rgba(201,168,76,0.25);border-radius:10px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
       <div style="padding:14px 18px;background:rgba(201,168,76,0.06);border-bottom:1px solid rgba(201,168,76,0.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1">
         <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">🛁 Bathroom Wise Upload</span>
@@ -874,7 +874,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
         </div>
 
         <!-- Message -->
-        <div id="bathroom-msg" style="display: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; background: rgba(42, 157, 96, 0.15); border: 1px solid rgba(42, 157, 96, 0.4); color: rgb(42, 157, 96);">✓ Imported 59 item(s) across 3 bathroom(s)</div>
+        <div id="bathroom-msg" style="display:none;padding:8px 12px;border-radius:5px;font-size:12px"></div>
 
         <!-- Actions -->
         <div style="display:flex;gap:8px">
@@ -888,11 +888,11 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   <div id="total-bar" class="">
     <div class="tot-line">
       <span class="tot-label">MRP Total</span>
-      <span class="tot-mrp-val" id="t-mrp">₹3,82,625</span>
+      <span class="tot-mrp-val" id="t-mrp">₹3,52,000</span>
     </div>
     <div class="tot-line" style="align-items:flex-end">
       <span class="tot-best-label">Best Price Total</span>
-      <span class="tot-best-val" id="t-best">₹3,33,340</span>
+      <span class="tot-best-val" id="t-best">₹3,07,440</span>
     </div>
     <div class="tot-actions">
       <button class="btn-clear" onclick="clearAll()">Clear</button>
@@ -922,12 +922,12 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <div style="width:100%;max-width:360px">
       <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Price Level Summary</div>
 
-      <div id="summary-empty" style="text-align: center; padding: 40px 20px; color: var(--muted); display: none;">
+      <div id="summary-empty" style="text-align:center;padding:40px 20px;color:var(--muted)">
         <div style="font-size:28px;opacity:.2;margin-bottom:10px">◈</div>
         <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--muted)">Add products to see summary</div>
       </div>
 
-      <div id="summary-table-wrap" style="display: block;">
+      <div id="summary-table-wrap" style="display:none">
         <div style="border-radius:8px;overflow:hidden;border:2px solid rgba(0,0,0,0.3)">
           <table id="summary-table" style="width:100%;border-collapse:collapse">
             <thead>
@@ -937,40 +937,10 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
                 <th style="padding:8px 12px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;color:#fff;text-align:right">% on MRP</th>
               </tr>
             </thead>
-            <tbody id="summary-tbody">
-    <tr style="background:#C9A84C;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">MRP</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">3,82,625</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">0.00%</td>
-    </tr>
-    <tr style="background:#FFFF44;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">NRP</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">3,33,340</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">12.88%</td>
-    </tr>
-    <tr style="background:#FFFF44;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">NRP−3%</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">3,23,340</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">15.49%</td>
-    </tr>
-    <tr style="background:#FFFF44;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">NRP−5%</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">3,16,673</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">17.24%</td>
-    </tr>
-    <tr style="background:#FFA500;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">SDP+3%</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">2,98,247</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">22.05%</td>
-    </tr>
-    <tr style="background:#FFA500;border-bottom:2px solid rgba(0,0,0,0.15)">
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;border-right:2px solid rgba(0,0,0,0.15)">SDP Net</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right;border-right:2px solid rgba(0,0,0,0.15)">2,89,560</td>
-      <td style="padding:9px 12px;font-family:'Jost',sans-serif;font-weight:700;font-size:13px;color:#000;text-align:right">24.32%</td>
-    </tr></tbody>
+            <tbody id="summary-tbody"></tbody>
           </table>
         </div>
-        <div style="text-align:center;margin-top:10px;font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2)" id="summary-item-info">52 products · 62 pieces</div>
+        <div style="text-align:center;margin-top:10px;font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2)" id="summary-item-info"></div>
       </div>
     </div>
 
@@ -994,7 +964,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
           <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px">Product Data ← tab <b>CODE NEW</b> · Image URLs ← tab <b>IMAGE NEW</b> · auto-refreshes on every load</div>
         </div>
       </div>
-      <div id="ed-sync-status" style="display: block; font-family: Jost, sans-serif; font-size: 11px; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: rgba(220, 60, 50, 0.12); border: 1px solid rgba(220, 60, 50, 0.3); color: rgb(224, 96, 96);">⚠ Could not sync — showing built-in data. CODE NEW: Failed to fetch; IMAGE NEW: Failed to fetch. Ensure the sheet is shared as "Anyone with the link → Viewer".</div>
+      <div id="ed-sync-status" style="display:block;font-family:'Jost',sans-serif;font-size:11px;padding:8px 12px;border-radius:6px;font-weight:600;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:var(--gold-l)">Initialising live sync…</div>
       <button onclick="syncFromGoogleSheet(true)" style="display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(42,157,96,0.5);color:#2A9D60;border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">↻ Sync Now</button>
     </div>
     <!-- ── END LIVE SYNC ── -->
@@ -1007,7 +977,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
           <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px">Excel / CSV — columns: CODE, DESCRIPTION, MRP, NRP, SDP NET</div>
         </div>
       </div>
-      <div id="ed-prod-status" style="display: none; font-family: Jost, sans-serif; font-size: 11px; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: rgba(42, 157, 96, 0.15); border: 1px solid rgba(42, 157, 96, 0.4); color: rgb(42, 157, 96);">⏳ Generating new HTML file... (104,430 products)</div>
+      <div id="ed-prod-status" style="display: block; font-family: Jost, sans-serif; font-size: 11px; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: rgba(42, 157, 96, 0.15); border: 1px solid rgba(42, 157, 96, 0.4); color: rgb(42, 157, 96);">⏳ Generating new HTML file... (104,430 products)</div>
       <label style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:7px;padding:13px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">
         ⬆ Upload &amp; Download New HTML
         <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleProductUpload(this)">
@@ -1021,7 +991,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
           <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px">Excel / CSV — columns: CODE, IMAGE URL</div>
         </div>
       </div>
-      <div id="ed-img-status" style="display: block; font-family: Jost, sans-serif; font-size: 11px; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: rgba(42, 157, 96, 0.15); border: 1px solid rgba(42, 157, 96, 0.4); color: rgb(42, 157, 96);">⏳ Generating new HTML file... (3,657 images)</div>
+      <div id="ed-img-status" style="display: block; font-family: Jost, sans-serif; font-size: 11px; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: rgba(42, 157, 96, 0.15); border: 1px solid rgba(42, 157, 96, 0.4); color: rgb(42, 157, 96);">⏳ Generating new HTML file... (3,669 images)</div>
       <label style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:7px;padding:13px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">
         ⬆ Upload &amp; Download New HTML
         <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImageUpload(this)">
@@ -1030,7 +1000,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <div style="background:var(--ink3);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px">
       <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:2px">Current Built-In Data</div>
       <div id="ed-prod-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Products: 104,430 (built-in)</div>
-      <div id="ed-img-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Image URLs: 3,707 (built-in)</div>
+      <div id="ed-img-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Image URLs: 3,692 (built-in)</div>
     </div>
   </div>
 </div>
@@ -1078,11 +1048,11 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <div class="p-quote-details">
         <div class="p-quote-item">
           <div class="p-quote-key">Time</div>
-          <div class="p-quote-val" id="p-qno">09:41 PM</div>
+          <div class="p-quote-val" id="p-qno"></div>
         </div>
         <div class="p-quote-item">
           <div class="p-quote-key">Date</div>
-          <div class="p-quote-val" id="p-date">01 June 2026</div>
+          <div class="p-quote-val" id="p-date"></div>
         </div>
 
       </div>
@@ -1106,651 +1076,15 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
             <th class="td-total">Total</th>
           </tr>
         </thead>
-        <tbody id="p-tbody"><tr style="background:linear-gradient(135deg,#0A1020,#0D1520,#1A2535);page-break-inside:avoid;break-inside:avoid;border-top:4px solid #C9A84C;border-bottom:1px solid rgba(201,168,76,0.4)">
-        <td colspan="8" style="padding:14px 20px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-family:'Cinzel',serif;font-size:18px;color:#C9A84C;line-height:1">✦</span>
-              <span style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#F0E0A0">BATH-1 BCH</span>
-              <span style="font-family:'Cinzel',serif;font-size:16px;color:#C9A84C;line-height:1">✦</span>
-            </div>
-            <span style="font-family:'Jost',sans-serif;font-size:10px;font-weight:600;color:#9BAABD;letter-spacing:.5px">20 product(s) &nbsp;·&nbsp; 21 pcs</span>
-          </div>
-        </td>
-      </tr><tr>
-      <td class="td-sr">1</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-681N</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054426_aquamax-concealed-body-of-thermostatic-shower-mixer_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX CONCEALED BODY OF THERMOSTATIC S</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">11,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">10,300</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">10,300</div></td>
-    </tr><tr>
-      <td class="td-sr">2</td>
-      <td class="td-code"><div class="td-code-val">FUP-BCH-29681NKPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057277_aquamax-exposed-part-kit-of-thermostatic-shower-mixer-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX EXPOSED PART KIT OF THERMOSTATIC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">7,900</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">6,930</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">6,930</div></td>
-    </tr><tr>
-      <td class="td-sr">3</td>
-      <td class="td-code"><div class="td-code-val">SPJ-BCH-29463PM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057232_bathtub-spout-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">BATH TUB SPOUT WITH BUTTON ATTACHMENT FO</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,100</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,570</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,570</div></td>
-    </tr><tr>
-      <td class="td-sr">4</td>
-      <td class="td-code"><div class="td-code-val">SHA-BCH-549D8</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0034400_flexible-tube-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">FLEXIBLE TUBE 8mm DIA. &amp; 1.5M LONG WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,575</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,350</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,350</div></td>
-    </tr><tr>
-      <td class="td-sr">5</td>
-      <td class="td-code"><div class="td-code-val">HSH-BCH-1795</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0060802_octane-slider-hand-shower-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">OCTANE SLIDER HAND SHOWER 130MM SQUARE S</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">5,750</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,060</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,060</div></td>
-    </tr><tr>
-      <td class="td-sr">6</td>
-      <td class="td-code"><div class="td-code-val">SHA-BCH-555M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055117_premium-wall-bracket-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">PREMIUM WALL BRACKET FOR HAND SHOWER, 35</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,575</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,330</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,330</div></td>
-    </tr><tr>
-      <td class="td-sr">7</td>
-      <td class="td-code"><div class="td-code-val">OHS-BCH-1745</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0060796_octane-slider-overhead-shower-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">OCTANE SLIDER OVERHEAD SHOWER 300X 210MM</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">10,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">8,800</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">8,800</div></td>
-    </tr><tr>
-      <td class="td-sr">8</td>
-      <td class="td-code"><div class="td-code-val">SHA-BCH-455L400</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0037364_shower-arm-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SHOWER ARM 400X25X25mm SQUARE SHAPE FOR</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,400</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,020</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,020</div></td>
-    </tr><tr>
-      <td class="td-sr">9</td>
-      <td class="td-code"><div class="td-code-val">FUP-BCH-29005BPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057105_single-lever-tall-boy-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE LEVER TALL BOY WITH 190MM EXTENSI</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">9,200</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">8,100</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">8,100</div></td>
-    </tr><tr>
-      <td class="td-sr">10</td>
-      <td class="td-code"><div class="td-code-val">JDS-BLM-25909</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://5.imimg.com/data5/SELLER/Default/2024/11/465654768/RM/BR/WH/7710712/somany-vellasio-art-matt-black-wash-basins-1000x1000.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">TABLE TOP BASIN, SIZE:480X380X140 mm</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">5,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,000</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,000</div></td>
-    </tr><tr>
-      <td class="td-sr">11</td>
-      <td class="td-code"><div class="td-code-val">ALD-BCH-705L130</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0032981_waste-coupling-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">WASTE COUPLING 32mm F. THREAD 130mm HT</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,075</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">950</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">950</div></td>
-    </tr><tr>
-      <td class="td-sr">12</td>
-      <td class="td-code"><div class="td-code-val">ALD-BCH-769L300X190</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0040401_bottle-trap-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">BOTTLE TRAP (WITH INTERNAL PARTITION) 32</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,250</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">2,870</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">2,870</div></td>
-    </tr><tr>
-      <td class="td-sr">13</td>
-      <td class="td-code"><div class="td-code-val">FUP-BCH-29053PM</div></td>
-      <td class="td-qty">2<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057136_angular-stop-cock-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ANGULAR STOP COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,900</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,680</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,360</div></td>
-    </tr><tr>
-      <td class="td-sr">14</td>
-      <td class="td-code"><div class="td-code-val">JCS-WHT-2400WS</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0016079_single-piece-slim-concealed-cistern-with-wall-mounting-frame_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE PIECE SLIM CONCEALED CISTERN WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">8,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">7,080</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">7,080</div></td>
-    </tr><tr>
-      <td class="td-sr">15</td>
-      <td class="td-code"><div class="td-code-val">JCP-BCH-912415M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0053528_control-plate-laguna-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">CONTROL PLATE LAGUNA</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">6,650</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,830</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,830</div></td>
-    </tr><tr>
-      <td class="td-sr">16</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-083R</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054055_regular-body-of-concealed-stop_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">REGULAR BODY OF CONCEALED STOP COCK COLD</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,210</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,210</div></td>
-    </tr><tr>
-      <td class="td-sr">17</td>
-      <td class="td-code"><div class="td-code-val">FUP-BCH-29083KPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0059106_exposed-part-kit-of-concealed-stop-cock-flush-cock-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">EXPOSED PART KIT OF CONCEALED STOP COCK</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,050</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">920</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">920</div></td>
-    </tr><tr>
-      <td class="td-sr">18</td>
-      <td class="td-code"><div class="td-code-val">LAS-BLM-91953BIUF</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055596_rimless-blind-installation-wall-hung-wc-black-matt_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">RIMLESS BLIND INSTALLATION WALL HUNG WC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">22,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">19,600</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">19,600</div></td>
-    </tr><tr>
-      <td class="td-sr">19</td>
-      <td class="td-code"><div class="td-code-val">FUP-BCH-29041PM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057123_2-way-bib-cock-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">2 WAY BIB COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,000</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,000</div></td>
-    </tr><tr>
-      <td class="td-sr">20</td>
-      <td class="td-code"><div class="td-code-val">ALD-BCH-577M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0064901_hand-shower-health-faucet-black-chrome_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">HAND SHOWER (HEALTH FAUCET) WITH 8MM DIA</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,200</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,680</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,680</div></td>
-    </tr><tr style="background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;page-break-inside:avoid;break-inside:avoid">
-        <td colspan="5" style="padding:10px 14px;text-align:right;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#7A6830">
-          BATH-1 BCH — Subtotal
-        </td>
-        <td style="padding:10px 8px;text-align:center">
-          <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:500;color:#888">MRP</div>
-          <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:600;color:#555">₹1,16,625</div>
-        </td>
-        <td style="padding:10px 8px;text-align:center"></td>
-        <td style="padding:10px 10px;text-align:center">
-          <div style="background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:80px">
-            <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:2px">Best Price</div>
-            <div style="font-family:'Jost',sans-serif;font-size:15px;font-weight:700;color:#E8D08A;letter-spacing:.3px">₹1,01,960</div>
-          </div>
-        </td>
-      </tr><tr style="background:linear-gradient(135deg,#0A1020,#0D1520,#1A2535);page-break-inside:avoid;break-inside:avoid;border-top:4px solid #C9A84C;border-bottom:1px solid rgba(201,168,76,0.4)">
-        <td colspan="8" style="padding:14px 20px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-family:'Cinzel',serif;font-size:18px;color:#C9A84C;line-height:1">✦</span>
-              <span style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#F0E0A0">BATH- 2 GRF</span>
-              <span style="font-family:'Cinzel',serif;font-size:16px;color:#C9A84C;line-height:1">✦</span>
-            </div>
-            <span style="font-family:'Jost',sans-serif;font-size:10px;font-weight:600;color:#9BAABD;letter-spacing:.5px">20 product(s) &nbsp;·&nbsp; 21 pcs</span>
-          </div>
-        </td>
-      </tr><tr>
-      <td class="td-sr">21</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-681N</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054426_aquamax-concealed-body-of-thermostatic-shower-mixer_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX CONCEALED BODY OF THERMOSTATIC S</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">11,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">10,300</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">10,300</div></td>
-    </tr><tr>
-      <td class="td-sr">22</td>
-      <td class="td-code"><div class="td-code-val">ALI-GRF-85681NK</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0067357_aquamax-thermostatic-shower-mixer-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX EXPOSED PART KIT OF THERMOSTATIC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">11,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">9,950</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">9,950</div></td>
-    </tr><tr>
-      <td class="td-sr">23</td>
-      <td class="td-code"><div class="td-code-val">SPJ-GRF-85463</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_3adef8e489f347499754fd00b5c2e0f3~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ALIVE RANGE BATH TUB SPOUT WITH BUTTON A</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">6,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,150</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,150</div></td>
-    </tr><tr>
-      <td class="td-sr">24</td>
-      <td class="td-code"><div class="td-code-val">SHA-GRF-549D8</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_bf82cc9d50bc40bd9563715cf6b8823b~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">FLEXIBLE TUBE 8mm DIA. &amp; 1.5M LONG WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,530</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,530</div></td>
-    </tr><tr>
-      <td class="td-sr">25</td>
-      <td class="td-code"><div class="td-code-val">HSH-GRF-85537M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0051338_alive-maze-metal-hand-shower-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ALIVE MAZE METAL HAND SHOWER 63X95MM ROU</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,850</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,370</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,370</div></td>
-    </tr><tr>
-      <td class="td-sr">26</td>
-      <td class="td-code"><div class="td-code-val">SHA-GRF-555M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055584_premium-wall-bracket-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">PREMIUM WALL BRACKET FOR HAND SHOWER, 35</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,775</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,510</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,510</div></td>
-    </tr><tr>
-      <td class="td-sr">27</td>
-      <td class="td-code"><div class="td-code-val">OHS-GRF-85859M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055433_alive-maze-overhead-shower-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ALIVE MAZE OVERHEAD SHOWER 200X300mm ROU</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">15,700</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">13,520</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">13,520</div></td>
-    </tr><tr>
-      <td class="td-sr">28</td>
-      <td class="td-code"><div class="td-code-val">SHA-GRF-455L400</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_ea7d0ae5df9a4e199054b440087aa590~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SHOWER ARM 400X25X25mm SQUARE SHAPE FOR</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,850</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,460</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,460</div></td>
-    </tr><tr>
-      <td class="td-sr">29</td>
-      <td class="td-code"><div class="td-code-val">ALI-GRF-85005B</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_153ddb8d5da0489887f042e831b7becb~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE LEVER TALL BOY WITH 125mm EXTENSI</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">15,900</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">13,700</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">13,700</div></td>
-    </tr><tr>
-      <td class="td-sr">30</td>
-      <td class="td-code"><div class="td-code-val">JDS-GRM-25907N</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055219_thin-rim-table-top-basin-grey-matt_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">THIN RIM TABLE TOP BASIN, SIZE:530x420x1</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">8,900</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">7,650</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">7,650</div></td>
-    </tr><tr>
-      <td class="td-sr">31</td>
-      <td class="td-code"><div class="td-code-val">ALD-GRF-705L130</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_1b2616a082c24efbbddeb631acb79018~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">WASTE COUPLING 32mm F. THREAD 130mm HT</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,200</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,070</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,070</div></td>
-    </tr><tr>
-      <td class="td-sr">32</td>
-      <td class="td-code"><div class="td-code-val">ALD-GRF-769L300X190</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0040405_bottle-trap-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">BOTTLE TRAP (WITH INTERNAL PARTITION) 32</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,700</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,270</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,270</div></td>
-    </tr><tr>
-      <td class="td-sr">33</td>
-      <td class="td-code"><div class="td-code-val">ALI-GRF-85053</div></td>
-      <td class="td-qty">2<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_d74697f5fffb4126820fcc93b80fa476~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ANGULAR STOP COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,100</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">2,700</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,400</div></td>
-    </tr><tr>
-      <td class="td-sr">34</td>
-      <td class="td-code"><div class="td-code-val">JCS-WHT-2400WS</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0016079_single-piece-slim-concealed-cistern-with-wall-mounting-frame_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE PIECE SLIM CONCEALED CISTERN WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">8,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">7,080</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">7,080</div></td>
-    </tr><tr>
-      <td class="td-sr">35</td>
-      <td class="td-code"><div class="td-code-val">JCP-GRF-852415M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0035988_control-plate-alive-graphite_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">CONTROL PLATE ALIVE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">5,850</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,220</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,220</div></td>
-    </tr><tr>
-      <td class="td-sr">36</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-083R</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054055_regular-body-of-concealed-stop_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">REGULAR BODY OF CONCEALED STOP COCK COLD</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,210</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,210</div></td>
-    </tr><tr>
-      <td class="td-sr">37</td>
-      <td class="td-code"><div class="td-code-val">ALI-GRF-85083K</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_61f41c9bf41d4f1aafa30306fb65c257~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">EXPOSED PART KIT OF CONCEALED STOP COCK</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,950</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,670</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,670</div></td>
-    </tr><tr>
-      <td class="td-sr">38</td>
-      <td class="td-code"><div class="td-code-val">KUS-GRM-35953BIUFPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0057082_rimless-blind-installation-wall-hung-wc-grey-matt_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">RIMLESS BLIND INSTALLATION WALL HUNG WC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">18,700</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">16,100</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">16,100</div></td>
-    </tr><tr>
-      <td class="td-sr">39</td>
-      <td class="td-code"><div class="td-code-val">ALI-GRF-85041</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_f0d374e3f29e4ac1b537af6df3eb7bbd~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">2 WAY BIB COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">5,150</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">4,550</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">4,550</div></td>
-    </tr><tr>
-      <td class="td-sr">40</td>
-      <td class="td-code"><div class="td-code-val">ALD-GRF-577M</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"></div></td>
-      <td class="td-name"><div class="td-name-val">HAND SHOWER (HEALTH FAUCET) WITH 8MM DIA</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">4,200</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">4,200</div></td>
-    </tr><tr style="background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;page-break-inside:avoid;break-inside:avoid">
-        <td colspan="5" style="padding:10px 14px;text-align:right;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#7A6830">
-          BATH- 2 GRF — Subtotal
-        </td>
-        <td style="padding:10px 8px;text-align:center">
-          <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:500;color:#888">MRP</div>
-          <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:600;color:#555">₹1,37,825</div>
-        </td>
-        <td style="padding:10px 8px;text-align:center"></td>
-        <td style="padding:10px 10px;text-align:center">
-          <div style="background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:80px">
-            <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:2px">Best Price</div>
-            <div style="font-family:'Jost',sans-serif;font-size:15px;font-weight:700;color:#E8D08A;letter-spacing:.3px">₹1,19,910</div>
-          </div>
-        </td>
-      </tr><tr style="background:linear-gradient(135deg,#0A1020,#0D1520,#1A2535);page-break-inside:avoid;break-inside:avoid;border-top:4px solid #C9A84C;border-bottom:1px solid rgba(201,168,76,0.4)">
-        <td colspan="8" style="padding:14px 20px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-family:'Cinzel',serif;font-size:18px;color:#C9A84C;line-height:1">✦</span>
-              <span style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#F0E0A0">BATH- 3 BGP</span>
-              <span style="font-family:'Cinzel',serif;font-size:16px;color:#C9A84C;line-height:1">✦</span>
-            </div>
-            <span style="font-family:'Jost',sans-serif;font-size:10px;font-weight:600;color:#9BAABD;letter-spacing:.5px">19 product(s) &nbsp;·&nbsp; 20 pcs</span>
-          </div>
-        </td>
-      </tr><tr>
-      <td class="td-sr">41</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-681N</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054426_aquamax-concealed-body-of-thermostatic-shower-mixer_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX CONCEALED BODY OF THERMOSTATIC S</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">11,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">10,300</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">10,300</div></td>
-    </tr><tr>
-      <td class="td-sr">42</td>
-      <td class="td-code"><div class="td-code-val">KUP-BGP-35681NKPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0056000_aquamax-thermostatic-shower-mixer-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">AQUAMAX EXPOSED PART KIT OF THERMOSTATIC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">9,900</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">8,690</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">8,690</div></td>
-    </tr><tr>
-      <td class="td-sr">43</td>
-      <td class="td-code"><div class="td-code-val">SPJ-BGP-35463PM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0059403_kubix-prime-bath-tub-spout-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">KUBIX PRIME BATH TUB SPOUT WITH BUTTON A</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,920</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,920</div></td>
-    </tr><tr>
-      <td class="td-sr">44</td>
-      <td class="td-code"><div class="td-code-val">SHA-BGP-549D8</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0056007_flexible-tube-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">FLEXIBLE TUBE 8mm DIA. &amp; 1.5M LONG WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,625</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,390</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,390</div></td>
-    </tr><tr>
-      <td class="td-sr">45</td>
-      <td class="td-code"><div class="td-code-val">HSH-BGP-1795</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0060804_octane-slider-hand-shower-blush-gold-bright-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">OCTANE SLIDER HAND SHOWER 130MM SQUARE S</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">6,100</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">5,370</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,370</div></td>
-    </tr><tr>
-      <td class="td-sr">46</td>
-      <td class="td-code"><div class="td-code-val">SHA-BGP-555PD</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0048573_premium-wall-bracket_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">PREMIUM WALL BRACKET FOR HAND SHOWER, ?3</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,150</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">2,670</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">2,670</div></td>
-    </tr><tr>
-      <td class="td-sr">47</td>
-      <td class="td-code"><div class="td-code-val">OHS-BGP-1745</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0060798_octane-slider-overhead-shower-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">OCTANE SLIDER OVERHEAD SHOWER 300X 210MM</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">10,500</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">9,150</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">9,150</div></td>
-    </tr><tr>
-      <td class="td-sr">48</td>
-      <td class="td-code"><div class="td-code-val">SHA-BGP-455L400</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_ae36b3c1c3c148f8819836767284dae4~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SHOWER ARM 400X25X25mm SQUARE SHAPE FOR</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,500</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,130</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,130</div></td>
-    </tr><tr>
-      <td class="td-sr">49</td>
-      <td class="td-code"><div class="td-code-val">KUP-BGP-35005BPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://static.wixstatic.com/media/4ec6a8_b673aa42e34d423590d73f3b3d30d50d~mv2.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE LEVER TALL BOY WITH 155mm EXTENSI</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">14,400</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">12,420</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">12,420</div></td>
-    </tr><tr>
-      <td class="td-sr">50</td>
-      <td class="td-code"><div class="td-code-val">ALD-BGP-705L130</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0047642_waste-coupling_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">WASTE COUPLING 32mm F. THREAD 130mm HT</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,100</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">980</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">980</div></td>
-    </tr><tr>
-      <td class="td-sr">51</td>
-      <td class="td-code"><div class="td-code-val">ALD-BGP-769L300X190</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055637_bottle-trap-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">BOTTLE TRAP (WITH INTERNAL PARTITION) 32</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">3,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">2,960</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">2,960</div></td>
-    </tr><tr>
-      <td class="td-sr">52</td>
-      <td class="td-code"><div class="td-code-val">KUP-BGP-35053PM</div></td>
-      <td class="td-qty">2<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055642_angular-stop-cock-blush-gold-pvd_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">ANGULAR STOP COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">2,975</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">2,610</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">5,220</div></td>
-    </tr><tr>
-      <td class="td-sr">53</td>
-      <td class="td-code"><div class="td-code-val">JCS-WHT-2400WS</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0016079_single-piece-slim-concealed-cistern-with-wall-mounting-frame_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">SINGLE PIECE SLIM CONCEALED CISTERN WITH</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">8,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">7,080</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">7,080</div></td>
-    </tr><tr>
-      <td class="td-sr">54</td>
-      <td class="td-code"><div class="td-code-val">JCP-GBP-912415PD</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0037719_control-plate-laguna_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">CONTROL PLATE LAGUNA</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">9,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">8,230</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">8,230</div></td>
-    </tr><tr>
-      <td class="td-sr">55</td>
-      <td class="td-code"><div class="td-code-val">ALD-CHR-083R</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0054055_regular-body-of-concealed-stop_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">REGULAR BODY OF CONCEALED STOP COCK COLD</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,350</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,210</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,210</div></td>
-    </tr><tr>
-      <td class="td-sr">56</td>
-      <td class="td-code"><div class="td-code-val">KUP-BGP-35083KPM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0047663_exposed-part-kit-of-concealed-stop-cock-flush-cock_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">EXPOSED PART KIT OF CONCEALED STOP COCK</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">1,650</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">1,440</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">1,440</div></td>
-    </tr><tr>
-      <td class="td-sr">57</td>
-      <td class="td-code"><div class="td-code-val">LAS-BLM-91953BIUF</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0055596_rimless-blind-installation-wall-hung-wc-black-matt_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">RIMLESS BLIND INSTALLATION WALL HUNG WC</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">22,800</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">19,600</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">19,600</div></td>
-    </tr><tr>
-      <td class="td-sr">58</td>
-      <td class="td-code"><div class="td-code-val">KUP-BGP-35041PM</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0047659_2-way-bib-cock_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">2 WAY BIB COCK WITH WALL FLANGE</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,850</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">4,230</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">4,230</div></td>
-    </tr><tr>
-      <td class="td-sr">59</td>
-      <td class="td-code"><div class="td-code-val">ALD-BGP-573PD</div></td>
-      <td class="td-qty">1<sub>pcs</sub></td>
-      <td class="td-img"><div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="https://www.jaquar.com/images/thumbs/0048567_hand-shower-health-faucet_960.jpeg" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"></div></td>
-      <td class="td-name"><div class="td-name-val">HAND SHOWER (HEALTH FAUCET) WITH 8MM DIA</div></td>
-      <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">4,000</div></td>
-      <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">3,480</div></td>
-      <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">3,480</div></td>
-    </tr><tr style="background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;page-break-inside:avoid;break-inside:avoid">
-        <td colspan="5" style="padding:10px 14px;text-align:right;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#7A6830">
-          BATH- 3 BGP — Subtotal
-        </td>
-        <td style="padding:10px 8px;text-align:center">
-          <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:500;color:#888">MRP</div>
-          <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:600;color:#555">₹1,28,175</div>
-        </td>
-        <td style="padding:10px 8px;text-align:center"></td>
-        <td style="padding:10px 10px;text-align:center">
-          <div style="background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:80px">
-            <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:2px">Best Price</div>
-            <div style="font-family:'Jost',sans-serif;font-size:15px;font-weight:700;color:#E8D08A;letter-spacing:.3px">₹1,11,470</div>
-          </div>
-        </td>
-      </tr></tbody>
+        <tbody id="p-tbody"></tbody>
       </table>
     </div>
-    <div id="p-tfoot-wrap" style="page-break-inside:avoid;break-inside:avoid">
-    <table style="width:100%;border-collapse:collapse;border-top:2px solid #D8C898">
-      <tbody><tr style="background:#FEFCF7">
-        <td colspan="2" style="padding:8px 10px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#7A6830;text-transform:uppercase;text-align:center">Total</td>
-        <td style="padding:12px 10px;width:60px;text-align:center">
-          <div style="display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 10px;width:100%">
-            <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#7A6830;text-transform:uppercase;margin-bottom:3px">Qty</span>
-            <span style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:#1A2535">62</span>
-            <span style="font-family:'Jost',sans-serif;font-size:8px;color:#7A6830;margin-top:1px">pcs</span>
-          </div>
-        </td>
-        <td colspan="2" style="padding:12px 10px"></td>
-        <td style="padding:12px 10px;width:78px;text-align:center">
-          <div style="display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 10px;width:100%">
-            <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#7A6830;text-transform:uppercase;margin-bottom:3px">Total MRP</span>
-            <span style="font-family:'Jost',sans-serif;font-size:15px;font-weight:500;color:#333;letter-spacing:.3px">₹3,82,625</span>
-          </div>
-        </td>
-        <td style="padding:12px 10px;width:92px;text-align:center"></td>
-        <td style="padding:12px 10px;width:98px;text-align:center">
-          <div style="display:inline-flex;flex-direction:column;align-items:center;background:#1A2535;border-radius:5px;padding:6px 10px;width:100%;position:relative;overflow:hidden">
-            <span style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,transparent)"></span>
-            <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:3px">Best Price</span>
-            <span style="font-family:'Jost',sans-serif;font-size:16px;font-weight:700;color:#1A2535;letter-spacing:.5px">₹3,33,340</span>
-          </div>
-        </td>
-      </tr>
-    </tbody></table></div>
+    <div id="p-tfoot-wrap" style="page-break-inside:avoid;break-inside:avoid"></div>
 
     <!-- Bathroom Summary (shown only in bathroom mode) -->
-    <div id="p-bathroom-summary" style="display: block; break-inside: avoid; margin-top: 16px;">
+    <div id="p-bathroom-summary" style="display:none;page-break-inside:avoid;break-inside:avoid;margin-top:16px">
       <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:#7A6830;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #E8DCC0;background:#FEFCF7">Bathroom Summary</div>
-      <table class="p-bath-summary" id="p-bath-summary-table"><tbody><tr><th>Bathroom</th><th>Items</th><th>Total MRP</th><th>Best Price</th></tr><tr><td><b>BATH-1 BCH</b></td><td>21 pcs</td><td>₹1,16,625</td><td style="font-weight:700;color:#1A2535">₹1,01,960</td></tr><tr><td><b>BATH- 2 GRF</b></td><td>21 pcs</td><td>₹1,37,825</td><td style="font-weight:700;color:#1A2535">₹1,19,910</td></tr><tr><td><b>BATH- 3 BGP</b></td><td>20 pcs</td><td>₹1,28,175</td><td style="font-weight:700;color:#1A2535">₹1,11,470</td></tr><tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">62 pcs</td><td style="color:#C9A84C">₹3,82,625</td><td style="color:#E8D08A">₹3,33,340</td></tr></tbody></table>
+      <table class="p-bath-summary" id="p-bath-summary-table"></table>
     </div>
 
     <!-- Grand total -->
@@ -1773,15 +1107,15 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <div class="p-grand-box">
         <div class="p-grand-row">
           <span class="p-grand-lbl">Total MRP</span>
-          <span class="p-grand-val" id="pg-mrp">₹3,82,625</span>
+          <span class="p-grand-val" id="pg-mrp"></span>
         </div>
         <div class="p-savings-row">
           <span class="p-savings-lbl">Total Discount</span>
-          <span class="p-savings-val" id="pg-save">₹49,285</span>
+          <span class="p-savings-val" id="pg-save"></span>
         </div>
         <div class="p-grand-total-row">
           <span class="p-grand-total-label">Best Price Total</span>
-          <span class="p-grand-total-val" id="pg-best">₹3,33,340</span>
+          <span class="p-grand-total-val" id="pg-best"></span>
         </div>
       </div>
     </div>
