@@ -597,11 +597,16 @@ function showCodeDrop(input,i){
   $('codeDrop').style.display='block';
 }
 function hideCodeDrop(){ const dd=$('codeDrop'); if(dd)dd.style.display='none'; activeCode={input:null,i:-1}; }
+let _picking=false;
 function pickCode(code){
-  const i=activeCode.i;
+  const i=activeCode.i, inp=activeCode.input;
   if(i<0||!EDIT||!EDIT.rows[i])return;
-  EDIT.rows[i].code=normCode(code); delete EDIT.rows[i]._mrp;
+  const full=normCode(code);
+  _picking=true;                       // suppress the trailing 'change' from the typed-partial value
+  if(inp)inp.value=full;               // and sync the field so any change that does fire uses the full code
+  EDIT.rows[i].code=full; delete EDIT.rows[i]._mrp;
   hideCodeDrop(); renderEditor();
+  setTimeout(()=>{ _picking=false; },0);
 }
 function onCodeKey(e){
   const dd=$('codeDrop'); if(dd.style.display!=='block')return;
@@ -964,6 +969,7 @@ function overrideMrp(i,fallback){ return (EDIT&&EDIT.rows[i]&&EDIT.rows[i]._mrp!
 function onEditInput(e){
   const i=+e.target.dataset.i, f=e.target.dataset.f, v=e.target.value;
   if(!EDIT||!EDIT.rows[i])return;
+  if(f==='code'&&_picking)return;      // a dropdown pick already set the full code; ignore the trailing change
   if(f==='qty')EDIT.rows[i].qty=Math.max(0,Number(v)||0);
   else if(f==='mrp')EDIT.rows[i]._mrp=Number(v)||0;
   else if(f==='code'){EDIT.rows[i].code=normCode(v);delete EDIT.rows[i]._mrp;}
@@ -1048,7 +1054,7 @@ function buildPrintDoc(name,rows){
   P.push('td.sr{text-align:center;width:30px;}');
   P.push('.srb{display:inline-block;min-width:19px;height:19px;line-height:19px;border-radius:50%;background:#0B1530;color:#E7D49E;font-size:8px;font-weight:500;padding:0 4px;}');
   P.push('td.area{width:84px;font-weight:500;font-size:8.4px;letter-spacing:.5px;color:#0B1530;text-transform:uppercase;}');
-  P.push('td.code{width:98px;font-weight:600;font-size:9px;letter-spacing:.4px;color:#1b2236;}');
+  P.push('td.code{width:110px;font-weight:600;font-size:10.5px;letter-spacing:.4px;color:#1b2236;}');
   P.push('td.qty{text-align:center;width:46px;white-space:nowrap;}');
   P.push('.qn{font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;font-weight:600;color:#0B1530;line-height:1;}');
   P.push('.qp{display:block;font-size:6px;letter-spacing:1.5px;color:#B8912F;text-transform:uppercase;margin-top:1px;}');
@@ -1056,9 +1062,12 @@ function buildPrintDoc(name,rows){
   P.push('td.img .fr{display:inline-block;background:#fff;padding:3px;box-shadow:0 5px 14px rgba(11,21,48,.18);}');
   P.push('td.img img{max-height:150px;max-width:158px;object-fit:contain;display:block;}');
   P.push('td.name{font-size:8px;font-weight:400;text-align:center;text-transform:uppercase;letter-spacing:.5px;line-height:1.35;color:#3a4258;}');
-  P.push('td.mrp,td.tot{width:58px;white-space:nowrap;font-size:9px;}');
-  P.push('td.mrp{color:#6a7390;}');
-  P.push('td.tot{font-weight:600;color:#0B1530;}');
+  P.push('td.mrp,td.tot{width:64px;white-space:nowrap;}');
+  P.push('.mtag{display:block;font-size:5.6px;letter-spacing:1px;color:#B8912F;text-transform:uppercase;margin-bottom:3px;line-height:1.1;}');
+  P.push('.mval{font-size:12px;color:#5f6884;}');
+  P.push('.tval{font-size:13px;font-weight:700;color:#0B1530;}');
+  
+  
   /* ---- grand total band ---- */
   P.push('tr.grand td{background:#0B1530;border-top:2px solid #C9A24B;padding:10px 11px;}');
   P.push('tr.grand td.gl{color:#E7D49E;font-weight:500;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;}');
@@ -1087,11 +1096,11 @@ function buildPrintDoc(name,rows){
   P.push('<table class="main"><thead>');
   P.push('<tr class="brandrow"><td colspan="8"><div class="bwrap">'+banner+'<div class="brule"></div></div></td></tr>');
   P.push('<tr class="titlerow"><td colspan="8"><div class="tstrip">'+
-         '<div class="tleft"><div class="qtt">Quotation</div></div>'+
+         '<div class="tleft"><div class="qtt">MRP Quotation</div></div>'+
          '<div class="tright"><div class="tl">Date</div><div class="tv">'+esc(dateStr)+'</div></div>'+
          '</div></td></tr>');
   P.push('<tr class="colrow"><th>Sr</th><th>Area</th><th>Code</th><th>Qty</th>'+
-         '<th>Product Image</th><th>Item Name</th><th class="mrp">MRP</th><th class="tot">Total</th></tr>');
+         '<th>Product Image</th><th>Item Name</th><th class="mrp">MRP</th><th class="tot">MRP Total</th></tr>');
   P.push('</thead><tbody>');
 
   rows.forEach(r=>{
@@ -1103,18 +1112,18 @@ function buildPrintDoc(name,rows){
       '<td class="qty"><span class="qn">'+r.qty+'</span><span class="qp">Pcs</span></td>'+
       '<td class="img">'+img+'</td>'+
       '<td class="name">'+esc(r.desc)+'</td>'+
-      '<td class="mrp">'+nf(r.mrp)+'</td>'+
-      '<td class="tot">'+nf(r.total)+'</td></tr>');
+      '<td class="mrp"><span class="mtag">MRP</span><span class="mval">'+nf(r.mrp)+'</span></td>'+
+      '<td class="tot"><span class="mtag">MRP Total</span><span class="tval">'+nf(r.total)+'</span></td></tr>');
   });
 
-  P.push('<tr class="grand"><td class="gl" colspan="6">Grand Total \u00b7 '+totalPcs+' Pieces</td>'+
+  P.push('<tr class="grand"><td class="gl" colspan="6">MRP Total \u00b7 '+totalPcs+' Pieces</td>'+
          '<td class="gm" colspan="2">\u20b9&nbsp;<b>'+nf(grand)+'</b></td></tr>');
   P.push('</tbody></table>');
 
   let asRows='';
   as.forEach(a=>{asRows+='<tr><td class="a">'+esc(a.area)+'</td><td class="r">\u20b9 '+nf(a.total)+'</td></tr>';});
   P.push('<div class="foot"><div class="asum"><div class="ahd">Area-wise Value</div><table>'+
-         asRows+'<tr class="gt"><td class="a">Total MRP</td><td class="r">\u20b9 '+nf(grand)+'</td></tr></table></div></div>');
+         asRows+'<tr class="gt"><td class="a">MRP Total</td><td class="r">\u20b9 '+nf(grand)+'</td></tr></table></div></div>');
 
   P.push('<div class="docfoot"><div class="fbrand">'+esc(QUOTE_BRAND_LINE)+'</div>'+
          '<div class="fterms">'+esc(QUOTE_TERMS_LINE)+'<br>Ref '+esc(nrpRef)+'</div></div>');
