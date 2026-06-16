@@ -195,6 +195,11 @@ input,select{font-family:'Jost'}
 .etbl .tot{font-family:'Cormorant Garamond';font-size:16px;color:var(--gold);text-align:right;white-space:nowrap}
 .etbl img{height:40px;width:auto;max-width:60px;object-fit:contain;background:#fff;border-radius:5px;padding:2px}
 .etbl .del{background:transparent;border:1px solid #2c3d6b;color:var(--bad);border-radius:7px;width:30px;height:30px;cursor:pointer}
+.etbl .ins{background:transparent;border:1px solid #2c3d6b;color:var(--gold);border-radius:7px;width:28px;height:30px;cursor:pointer;font-size:14px;line-height:1}
+.etbl .ins:hover{background:#221a0a;border-color:var(--gold)}
+.etbl .del:hover{background:#2a1216;border-color:var(--bad)}
+.etbl .rowact{white-space:nowrap}
+.etbl .rowact button{margin-left:4px}
 .etbl .del:hover{border-color:var(--bad)}
 .warn-cell{outline:1.5px solid var(--bad) !important}
 
@@ -805,13 +810,23 @@ async function syncQuotations(manual){
   const tabs=GQUOTE_TABS.filter(Boolean);
   if(!tabs.length){ toast('Add at least one tab name'); return; }
   setQSync('busy', manual?'Re-syncing…':'Loading…');
-  const all=[], seen={}, report=[];
+  const all=[], seen={}, report=[], sigSeen={};
   for(const tab of tabs){
     const d=await fetchTab(tab, GQUOTE_ID);
     if(d.ok){
       const qs=parseMatrixCSV(d.text);
-      qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; all.push(q); } });
-      report.push({tab,ok:true,n:qs.length});
+      const sig=qs.map(q=>q.name).sort().join('|');
+      if(qs.length && sigSeen[sig]){
+        // identical set to an already-loaded tab → the tab doesn't exist and Google
+        // returned the default (first) sheet. Report honestly instead of "loaded".
+        report.push({tab,ok:false,note:'no such tab yet — sheet returned the default tab'});
+      }else{
+        if(qs.length)sigSeen[sig]=tab;
+        let added=0;
+        qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; all.push(q); added++; } });
+        if(added>0) report.push({tab,ok:true,n:added});
+        else report.push({tab,ok:false,note:'no new quotations'});
+      }
     }else{
       report.push({tab,ok:false,note:d.note});
     }
@@ -948,7 +963,7 @@ function renderEditor(){
       '<td style="color:#cdd7f0;font-size:12px">'+esc(c.desc||(row.code||''))+'</td>'+
       '<td><input class="mrp" type="number" data-f="mrp" data-i="'+i+'" value="'+(c.mrp||0)+'" title="Override MRP for this row"></td>'+
       '<td class="tot">₹'+nf((overrideMrp(i,c.mrp))*row.qty)+'</td>'+
-      '<td><button class="del" data-del="'+i+'">✕</button></td>';
+      '<td class="rowact"><button class="ins" data-insup="'+i+'" title="Insert a row above">↑</button><button class="ins" data-insdn="'+i+'" title="Insert a row below">↓</button><button class="del" data-del="'+i+'" title="Delete this row">✕</button></td>';
     tb.appendChild(tr);
   });
   tb.querySelectorAll('input').forEach(inp=>{
@@ -962,6 +977,8 @@ function renderEditor(){
     }
   });
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{EDIT.rows.splice(+b.dataset.del,1);renderEditor();});
+  tb.querySelectorAll('[data-insup]').forEach(b=>b.onclick=()=>{ const at=+b.dataset.insup; const area=(EDIT.rows[at]&&EDIT.rows[at].area)||''; EDIT.rows.splice(at,0,{area:area,code:'',qty:1}); renderEditor(); });
+  tb.querySelectorAll('[data-insdn]').forEach(b=>b.onclick=()=>{ const at=+b.dataset.insdn; const area=(EDIT.rows[at]&&EDIT.rows[at].area)||''; EDIT.rows.splice(at+1,0,{area:area,code:'',qty:1}); renderEditor(); });
   renderEditSummary();
 }
 const _mrpOverride={};
