@@ -73,6 +73,17 @@ nav.tabs button.active{color:var(--ink);background:linear-gradient(180deg,var(--
   border-radius:8px;padding:9px;font-size:11.5px;cursor:pointer;font-family:inherit;letter-spacing:.3px}
 .filebtn:hover{background:#221a0a}
 .mmsg{font-size:11px;color:var(--good);margin-top:8px;min-height:0}
+.codedrop{position:fixed;z-index:200;max-height:330px;overflow-y:auto;background:#0e1730;border:1px solid var(--gold);
+  border-radius:10px;box-shadow:0 18px 50px #000a;display:none;padding:5px}
+.cd-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px;cursor:pointer}
+.cd-row:hover,.cd-row.on{background:#1b2a52}
+.cd-row img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;flex:0 0 42px}
+.cd-noimg{width:42px;height:42px;flex:0 0 42px;border:1px dashed #2c3d6b;border-radius:5px;display:grid;place-items:center;color:#3f4f7d;font-size:8px}
+.cd-noimg:after{content:"—"}
+.cd-txt{display:flex;flex-direction:column;min-width:0}
+.cd-txt b{font-size:12.5px;color:#eaf0ff;letter-spacing:.3px}
+.cd-txt i{font-size:10.5px;color:#8c99bd;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:330px}
+.cd-empty{padding:10px 12px;color:#8c99bd;font-size:12px}
 @keyframes pulse{0%{box-shadow:0 0 0 0 #C9A84Caa}70%{box-shadow:0 0 0 7px #C9A84C00}100%{box-shadow:0 0 0 0 #C9A84C00}}
 
 main{padding:34px 0 80px}
@@ -105,6 +116,23 @@ input,select{font-family:'Jost'}
 .dropzone:hover,.dropzone.drag{border-color:var(--gold);background:#0c1838}
 .dropzone .big{font-size:18px;color:#fff;font-family:'Cormorant Garamond';font-weight:600}
 .dropzone small{color:var(--muted)}
+.qsync{padding:20px 22px}
+.qsync-h{font-family:'Cormorant Garamond';font-size:21px;font-weight:600;color:#fff}
+.qsync-sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.qsync-lbl{display:block;color:var(--muted);font-size:11px;letter-spacing:.04em;margin:16px 0 6px}
+.qsync textarea{width:100%;box-sizing:border-box;background:#0a1124;border:1px solid var(--line);color:var(--txt);
+  border-radius:8px;padding:9px 11px;font-size:13px;font-family:'Jost',monospace;letter-spacing:.5px;resize:vertical}
+.qsync textarea:focus{outline:none;border-color:var(--gold)}
+.tag.q-ok{color:#0e1730;background:var(--good);border-color:var(--good)}
+.tag.q-err{color:#fff;background:var(--bad);border-color:var(--bad)}
+.tag.q-busy{color:#1a1205;background:var(--gold);border-color:var(--gold)}
+.qdiag{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.qdiag .qd{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.qdiag .qd b{color:#eaf0ff;font-weight:600}
+.qdiag .qd .qdt{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.qdiag .qd.ok .qdt{background:var(--good)} .qdiag .qd.err .qdt{background:var(--orange)}
+.orline{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin:4px 0}
+.orline:before,.orline:after{content:"";flex:1;height:1px;background:var(--line)}
 
 .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;margin-top:18px}
 .qcard{background:linear-gradient(180deg,#0e1937,#0b1530);border:1px solid var(--line);border-radius:14px;padding:16px;transition:.15s;cursor:pointer}
@@ -233,13 +261,32 @@ input,select{font-family:'Jost'}
 <section class="page show" id="page-generate">
   <div class="eyebrow">Step 1 · Build the set</div>
   <h1 class="h-lead">Generate all quotations</h1>
-  <p class="sub">Upload your master code-and-quantity sheet (the <b>QUOTATION CODES QTY-SHORT</b> tab). Each column becomes a full quotation. Prices, descriptions and images are pulled live from your Google Sheet.</p>
+  <p class="sub">Quotations load live from your <b>DISPLAY QUOTATION</b> Google Sheet — every colour tab becomes a full set of quotations. Add a new tab (e.g. <b>GBP</b>) in the sheet, list its name below, and it appears here, in <b>Search</b> and in <b>Edit</b> automatically.</p>
 
   <div class="grid" style="margin-top:22px">
+    <div class="qsync card">
+      <div class="flex-between">
+        <div>
+          <div class="qsync-h">Live quotation sheet</div>
+          <div class="qsync-sub">Pulls every quotation column from each listed colour tab.</div>
+        </div>
+        <button class="btn gold" id="qSyncBtn">Sync quotations</button>
+      </div>
+      <label class="qsync-lbl">Colour tabs to load — one per line (tabs that don't exist yet are skipped)</label>
+      <textarea id="qTabs" rows="3" spellcheck="false" placeholder="CHR&#10;GBP&#10;BGP"></textarea>
+      <div class="row" style="margin-top:10px;align-items:center;gap:10px">
+        <span class="tag" id="qSyncTag">—</span>
+        <button class="btn ghost sm" id="qTabsSave">Save tabs &amp; sync</button>
+      </div>
+      <div class="qdiag" id="qdiag"></div>
+    </div>
+
+    <div class="orline"><span>or upload a master Excel (fallback)</span></div>
+
     <div class="dropzone" id="dropzone">
       <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
       <div class="big">Drop your master Excel here, or click to choose</div>
-      <small>Works for CHR today and GBP / BGP / BCH later — the layout is read by structure, not colour.</small>
+      <small>The live sheet above is the easier path — this is just a backup.</small>
     </div>
 
     <div id="genResult" style="display:none">
@@ -274,7 +321,7 @@ input,select{font-family:'Jost'}
   </div>
 
   <div id="searchResults" class="qgrid"></div>
-  <div id="searchEmpty" class="empty"><div class="big">No set generated yet</div><div>Go to Generate and upload your master sheet first.</div></div>
+  <div id="searchEmpty" class="empty"><div class="big">No set generated yet</div><div>Go to Generate and sync quotations from your sheet first.</div></div>
 
   <div id="previewWrap" style="display:none;margin-top:10px">
     <div class="divider"></div>
@@ -340,6 +387,7 @@ input,select{font-family:'Jost'}
 </main>
 
 <datalist id="allCodes"></datalist>
+<div id="codeDrop" class="codedrop"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -367,9 +415,15 @@ const LS_CAT      = 'gbw_cat_v1';
 const LS_IMG      = 'gbw_img_v1';
 const LS_QUOTES   = 'gbw_quotes_v1';
 const LS_SRC      = 'gbw_src_v1';   // {id,code,image} override
+const LS_QSRC     = 'gbw_qsrc_v1';  // {id,tabs:[...]} override
+/* ---- Live quotation sheet (DISPLAY QUOTATION) — one matrix tab per colour ---- */
+let GQUOTE_ID     = '1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
+let GQUOTE_TABS   = ['CHR','GBP','BGP','BCH'];   // add a colour tab in the sheet, list its name here
 /* load any saved Source override */
 (function(){try{const s=JSON.parse(localStorage.getItem(LS_SRC)||'null');
   if(s&&s.id){GSHEET_ID=s.id;TAB_CODE=s.code||TAB_CODE;TAB_IMAGE=s.image||TAB_IMAGE;}}catch(e){}})();
+(function(){try{const s=JSON.parse(localStorage.getItem(LS_QSRC)||'null');
+  if(s&&s.id){GQUOTE_ID=s.id;} if(s&&Array.isArray(s.tabs)&&s.tabs.length){GQUOTE_TABS=s.tabs;}}catch(e){}})();
 let SYNCDIAG = [];   // last sync per-tab diagnostics
 const IS_FILE = (location.protocol==='file:');   // opened as a local file → Google blocks fetch (CORS)
 
@@ -384,7 +438,7 @@ let EDIT    = null;      // temporary working copy {name, rows:[{area,code,qty}]
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
 function nf(n){return (Math.round(n)||0).toLocaleString('en-IN');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function gviz(tab){return 'https://docs.google.com/spreadsheets/d/'+GSHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(tab)+'&_cb='+Date.now();}
+function gviz(tab,id){return 'https://docs.google.com/spreadsheets/d/'+(id||GSHEET_ID)+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(tab)+'&_cb='+Date.now();}
 
 // RFC-4180 CSV parser (handles quotes, embedded commas/newlines, "" escapes)
 function parseCSV(text){
@@ -505,28 +559,60 @@ function applyImageCSV(text){
   }
   IMAGES=img; return Object.keys(img).length;
 }
-function rebuildDatalist(){
-  // A datalist with 100k+ <option>s overwhelms the browser and shows nothing,
-  // so the code dropdown is populated on-the-fly from what the user types
-  // (see fillCodeSuggestions). Here we just clear it.
-  const dl=$('allCodes'); if(dl)dl.innerHTML='';
-}
-function fillCodeSuggestions(qstr){
-  const dl=$('allCodes'); if(!dl)return;
-  const q=normCode(qstr);
-  const pref=[],sub=[];
-  if(q){
-    for(let k=0;k<ALLCODES.length;k++){
-      const c=ALLCODES[k], p=c.indexOf(q);
-      if(p===0){ if(pref.length<40)pref.push(c); }
-      else if(p>0){ if(sub.length<25)sub.push(c); }
-      if(pref.length>=40)break;
-    }
+function rebuildDatalist(){ const dl=$('allCodes'); if(dl)dl.innerHTML=''; } // legacy datalist now unused
+
+/* ---- custom code dropdown: image-having codes first, with thumbnails ---- */
+let activeCode={input:null,i:-1};
+function codeMatches(qstr){
+  const q=normCode(qstr); if(!q)return [];
+  const pImg=[],pNo=[],sImg=[],sNo=[];
+  for(let k=0;k<ALLCODES.length;k++){
+    const c=ALLCODES[k], p=c.indexOf(q);
+    if(p<0)continue;
+    const hasImg=!!IMAGES[c];
+    if(p===0){ (hasImg?pImg:pNo).push(c); } else { (hasImg?sImg:sNo).push(c); }
+    if(pImg.length>=40 || (pImg.length+pNo.length+sImg.length+sNo.length)>=600)break;
   }
-  const out=pref.concat(sub).slice(0,40);
-  const frag=document.createDocumentFragment();
-  out.forEach(c=>{const o=document.createElement('option');o.value=c;frag.appendChild(o);});
-  dl.innerHTML=''; dl.appendChild(frag);
+  return pImg.concat(pNo,sImg,sNo).slice(0,40);   // priority: prefix+image first
+}
+function renderCodeDrop(matches){
+  const dd=$('codeDrop');
+  if(!matches.length){ dd.innerHTML='<div class="cd-empty">No matching codes</div>'; return; }
+  dd.innerHTML=matches.map((c,idx)=>{
+    const img=resolveImg(c); const desc=(CATALOG[c]&&CATALOG[c].desc)||'';
+    const thumb=img?'<img src="'+esc(img)+'" loading="lazy" onerror="this.style.visibility=&#39;hidden&#39;">':'<span class="cd-noimg"></span>';
+    return '<div class="cd-row'+(idx===0?' on':'')+'" data-code="'+esc(c)+'">'+thumb+
+           '<span class="cd-txt"><b>'+esc(c)+'</b><i>'+esc(desc)+'</i></span></div>';
+  }).join('');
+}
+function positionCodeDrop(input){
+  const r=input.getBoundingClientRect(), dd=$('codeDrop');
+  dd.style.left=r.left+'px'; dd.style.top=(r.bottom+3)+'px'; dd.style.width=Math.max(r.width,260)+'px';
+}
+function showCodeDrop(input,i){
+  activeCode={input,i};
+  const matches=codeMatches(input.value);
+  if(!matches.length){ hideCodeDrop(); return; }
+  renderCodeDrop(matches); positionCodeDrop(input);
+  $('codeDrop').style.display='block';
+}
+function hideCodeDrop(){ const dd=$('codeDrop'); if(dd)dd.style.display='none'; activeCode={input:null,i:-1}; }
+function pickCode(code){
+  const i=activeCode.i;
+  if(i<0||!EDIT||!EDIT.rows[i])return;
+  EDIT.rows[i].code=normCode(code); delete EDIT.rows[i]._mrp;
+  hideCodeDrop(); renderEditor();
+}
+function onCodeKey(e){
+  const dd=$('codeDrop'); if(dd.style.display!=='block')return;
+  const rows=Array.prototype.slice.call(dd.querySelectorAll('.cd-row')); if(!rows.length)return;
+  let idx=rows.findIndex(r=>r.classList.contains('on'));
+  if(e.key==='ArrowDown'){e.preventDefault(); idx=Math.min(rows.length-1,(idx<0?-1:idx)+1);}
+  else if(e.key==='ArrowUp'){e.preventDefault(); idx=Math.max(0,(idx<0?0:idx)-1);}
+  else if(e.key==='Enter'){e.preventDefault(); const r=rows[idx<0?0:idx]; if(r)pickCode(r.dataset.code); return;}
+  else if(e.key==='Escape'){hideCodeDrop(); return;}
+  else return;
+  rows.forEach(r=>r.classList.remove('on')); rows[idx].classList.add('on'); rows[idx].scrollIntoView({block:'nearest'});
 }
 function hydrateFromCache(){
   try{
@@ -537,8 +623,8 @@ function hydrateFromCache(){
   return false;
 }
 /* Fetch one tab and classify exactly what came back (for honest diagnostics). */
-async function fetchTab(tab){
-  const url=gviz(tab);
+async function fetchTab(tab,id){
+  const url=gviz(tab,id);
   const out={tab,url,ok:false,status:0,bytes:0,note:'',text:''};
   try{
     const r=await fetch(url,{redirect:'follow'});
@@ -681,6 +767,69 @@ function areaSummaryHTML(rows){
 }
 
 /* ════════════════ GENERATE page ════════════════ */
+/* Parse one colour tab (CSV matrix) into quotations — same layout as the master Excel. */
+function parseMatrixCSV(text){
+  const grid=parseCSV(text); if(grid.length<2)return [];
+  const header=grid[0].map(h=>h==null?'':String(h).trim());
+  const up=header.map(h=>h.toUpperCase());
+  const idxArea=up.indexOf('AREA');
+  let idxCode=up.findIndex(h=>h==='CODE-1'||h==='CODE'); if(idxCode<0)idxCode=1;
+  let brandIdx=up.indexOf('BRAND-3'); if(brandIdx<0)brandIdx=up.indexOf('DESCRIPTION'); if(brandIdx<0)brandIdx=header.length;
+  let sumIdx=up.indexOf('SUM'); const firstQ=sumIdx>=0?sumIdx+1:8;
+  const cols=[]; for(let c=firstQ;c<brandIdx;c++){ if(header[c])cols.push(c); }
+  if(!cols.length)return [];
+  const quots=cols.map(c=>({name:header[c],items:[]}));
+  for(let r=1;r<grid.length;r++){
+    const row=grid[r]; const code=normCode(row[idxCode]); if(!code)continue;
+    const area=idxArea>=0?String(row[idxArea]==null?'':row[idxArea]).trim():'';
+    for(let k=0;k<cols.length;k++){ const v=row[cols[k]]; const qty=(v==null||v==='')?0:Number(v); if(qty>0)quots[k].items.push({area,code,qty}); }
+  }
+  return quots.filter(q=>q.items.length);
+}
+function setQSync(state,txt){ const t=$('qSyncTag'); if(t){ t.textContent=txt; t.className='tag q-'+state; } }
+function renderQDiag(report){
+  const el=$('qdiag'); if(!el)return;
+  if(!report||!report.length){ el.innerHTML=''; return; }
+  el.innerHTML=report.map(r=>{
+    const icon=r.ok?'ok':'err';
+    const msg=r.ok?('loaded '+r.n+' quotations'):(r.note||'not found yet');
+    return '<div class="qd '+icon+'"><span class="qdt"></span><b>'+esc(r.tab)+'</b> — '+esc(msg)+'</div>';
+  }).join('');
+}
+async function syncQuotations(manual){
+  const tabs=GQUOTE_TABS.filter(Boolean);
+  if(!tabs.length){ toast('Add at least one tab name'); return; }
+  setQSync('busy', manual?'Re-syncing…':'Loading…');
+  const all=[], seen={}, report=[];
+  for(const tab of tabs){
+    const d=await fetchTab(tab, GQUOTE_ID);
+    if(d.ok){
+      const qs=parseMatrixCSV(d.text);
+      qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; all.push(q); } });
+      report.push({tab,ok:true,n:qs.length});
+    }else{
+      report.push({tab,ok:false,note:d.note});
+    }
+  }
+  renderQDiag(report);
+  const okTabs=report.filter(r=>r.ok).length;
+  if(all.length){
+    QUOTES=all;
+    try{localStorage.setItem(LS_QUOTES,JSON.stringify(all));}catch(e){}
+    renderGenerate(); renderSearchList(); renderEditList();
+    setQSync('ok','Live · '+all.length+' quotations · '+okTabs+' tab'+(okTabs===1?'':'s'));
+    if(manual)toast(all.length+' quotations loaded from '+okTabs+' tab'+(okTabs===1?'':'s'));
+  }else{
+    setQSync('err','No quotations — check sharing & tab names');
+    if(manual)toast('No quotations loaded — check the sheet sharing and tab names.');
+  }
+}
+function saveQTabs(){
+  const raw=$('qTabs').value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
+  GQUOTE_TABS = raw.length?raw:GQUOTE_TABS;
+  try{localStorage.setItem(LS_QSRC,JSON.stringify({id:GQUOTE_ID,tabs:GQUOTE_TABS}));}catch(e){}
+  syncQuotations(true);
+}
 function handleWorkbook(wb){
   let quots;
   try{ quots=parseMaster(wb); }catch(e){ toast(e.message); return; }
@@ -759,7 +908,7 @@ function closePreview(){
 function renderEditList(){
   const term=$('editSearchBox').value.trim().toUpperCase();
   const g=$('editResults'); g.innerHTML='';
-  if(!QUOTES.length){g.innerHTML='<div class="empty"><div class="big">No set generated</div><div>Upload your master sheet on the Generate page.</div></div>';return;}
+  if(!QUOTES.length){g.innerHTML='<div class="empty"><div class="big">No set generated</div><div>Sync quotations on the Generate page first.</div></div>';return;}
   QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,200).forEach(o=>{
     const pl=priceLevels(lineRows(o.q.items));
     const c=document.createElement('div'); c.className='qcard';
@@ -788,7 +937,7 @@ function renderEditor(){
     tr.innerHTML=
       '<td style="color:#7e8db5">'+(i+1)+'</td>'+
       '<td><input data-f="area" data-i="'+i+'" value="'+esc(row.area)+'"></td>'+
-      '<td><input list="allCodes" data-f="code" data-i="'+i+'" value="'+esc(row.code)+'" class="'+(missing?'warn-cell':'')+'"></td>'+
+      '<td><input autocomplete="off" data-f="code" data-i="'+i+'" value="'+esc(row.code)+'" class="'+(missing?'warn-cell':'')+'"></td>'+
       '<td><input class="qty" type="number" min="0" data-f="qty" data-i="'+i+'" value="'+row.qty+'"></td>'+
       '<td>'+(img?'<img src="'+esc(img)+'" onerror="this.style.display=\'none\'">':'')+'</td>'+
       '<td style="color:#cdd7f0;font-size:12px">'+esc(c.desc||(row.code||''))+'</td>'+
@@ -801,8 +950,10 @@ function renderEditor(){
     inp.addEventListener('change',onEditInput);
     if(inp.dataset.f==='qty'||inp.dataset.f==='mrp')inp.addEventListener('input',onEditInput);
     if(inp.dataset.f==='code'){
-      inp.addEventListener('focus',e=>fillCodeSuggestions(e.target.value));
-      inp.addEventListener('input',e=>fillCodeSuggestions(e.target.value));
+      inp.addEventListener('focus',e=>showCodeDrop(e.target,+e.target.dataset.i));
+      inp.addEventListener('input',e=>showCodeDrop(e.target,+e.target.dataset.i));
+      inp.addEventListener('keydown',onCodeKey);
+      inp.addEventListener('blur',e=>setTimeout(()=>{ if(activeCode.input===e.target)hideCodeDrop(); },150));
     }
   });
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{EDIT.rows.splice(+b.dataset.del,1);renderEditor();});
@@ -886,26 +1037,26 @@ function buildPrintDoc(name,rows){
   P.push('.tl{font-size:7px;letter-spacing:3px;color:#B8912F;text-transform:uppercase;}');
   P.push('.tv{font-family:"Cormorant Garamond",Georgia,serif;font-size:13px;color:#0B1530;letter-spacing:1px;margin-top:3px;}');
   /* ---- column header ---- */
-  P.push('thead .colrow th{background:#0B1530;color:#E7D49E;font-family:"Jost";font-weight:500;font-size:7.8px;text-transform:uppercase;letter-spacing:1.4px;padding:8px 6px;border-right:1px solid #22315a;}');
-  P.push('thead .colrow th:last-child{border-right:0;}');
-  P.push('thead .colrow th.mrp,thead .colrow th.tot{text-align:right;}');
+  P.push('thead .colrow th{background:#0B1530;color:#E7D49E;font-family:"Jost";font-weight:500;font-size:7.8px;text-transform:uppercase;letter-spacing:1.4px;padding:9px 6px;text-align:center;}');
+  P.push('thead .colrow th:first-child{border-top-left-radius:3px;}');
+  P.push('thead .colrow th.mrp,thead .colrow th.tot{text-align:center;}');
   /* ---- body rows ---- */
-  P.push('tbody td{border-top:1px solid #EADFC4;border-right:1px solid #F3EDDD;padding:7px 7px;}');
-  P.push('tbody td:last-child{border-right:0;}');
-  P.push('tbody tr.itm:nth-child(even) td{background:#FAF7EF;}');
+  P.push('tbody td{padding:10px 8px;text-align:center;vertical-align:middle;}');
+  P.push('tbody tr.itm:first-child td{border-top:0;}');
+  P.push('tbody tr.itm:nth-child(even) td{background:#F6F1E6;}');
   P.push('tbody tr.itm td{height:166px;page-break-inside:avoid;}');
   P.push('td.sr{text-align:center;width:30px;}');
   P.push('.srb{display:inline-block;min-width:19px;height:19px;line-height:19px;border-radius:50%;background:#0B1530;color:#E7D49E;font-size:8px;font-weight:500;padding:0 4px;}');
-  P.push('td.area{width:82px;font-weight:500;font-size:8.4px;letter-spacing:.5px;color:#0B1530;text-transform:uppercase;}');
-  P.push('td.code{width:96px;font-weight:600;font-size:9px;letter-spacing:.4px;color:#1b2236;}');
+  P.push('td.area{width:84px;font-weight:500;font-size:8.4px;letter-spacing:.5px;color:#0B1530;text-transform:uppercase;}');
+  P.push('td.code{width:98px;font-weight:600;font-size:9px;letter-spacing:.4px;color:#1b2236;}');
   P.push('td.qty{text-align:center;width:46px;white-space:nowrap;}');
   P.push('.qn{font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;font-weight:600;color:#0B1530;line-height:1;}');
   P.push('.qp{display:block;font-size:6px;letter-spacing:1.5px;color:#B8912F;text-transform:uppercase;margin-top:1px;}');
   P.push('td.img{width:172px;text-align:center;}');
-  P.push('td.img .fr{display:inline-block;padding:4px;border:1px solid #E6DCC2;background:#fff;}');
+  P.push('td.img .fr{display:inline-block;background:#fff;padding:3px;box-shadow:0 5px 14px rgba(11,21,48,.18);}');
   P.push('td.img img{max-height:150px;max-width:158px;object-fit:contain;display:block;}');
   P.push('td.name{font-size:8px;font-weight:400;text-align:center;text-transform:uppercase;letter-spacing:.5px;line-height:1.35;color:#3a4258;}');
-  P.push('td.mrp,td.tot{text-align:right;width:58px;white-space:nowrap;font-size:9px;}');
+  P.push('td.mrp,td.tot{width:58px;white-space:nowrap;font-size:9px;}');
   P.push('td.mrp{color:#6a7390;}');
   P.push('td.tot{font-weight:600;color:#0B1530;}');
   /* ---- grand total band ---- */
@@ -920,8 +1071,8 @@ function buildPrintDoc(name,rows){
   P.push('.asum table{width:100%;border-collapse:collapse;}');
   P.push('.asum td{padding:6px 13px;font-size:9px;border-top:1px solid #ECE3CD;}');
   P.push('.asum tr:first-child td{border-top:0;}');
-  P.push('.asum td.a{letter-spacing:.5px;color:#26304a;text-transform:uppercase;font-size:8.2px;}');
-  P.push('.asum td.r{text-align:right;font-weight:500;color:#0B1530;white-space:nowrap;}');
+  P.push('.asum td.a{text-align:center;letter-spacing:.5px;color:#26304a;text-transform:uppercase;font-size:8.2px;}');
+  P.push('.asum td.r{text-align:center;font-weight:500;color:#0B1530;white-space:nowrap;}');
   P.push('.asum tr:nth-child(odd) td{background:#FAF7EF;}');
   P.push('.asum tr.gt td{background:#C9A24B;border-top:2px solid #0B1530;}');
   P.push('.asum tr.gt td.a{color:#0B1530;font-weight:700;letter-spacing:1px;}');
@@ -1044,6 +1195,10 @@ function initEvents(){
   $('srcReset').onclick=resetSource;
   $('codeCsvFile').onchange=e=>{ if(e.target.files[0])loadCsvFile(e.target.files[0],'code'); e.target.value=''; };
   $('imgCsvFile').onchange=e=>{ if(e.target.files[0])loadCsvFile(e.target.files[0],'image'); e.target.value=''; };
+  $('codeDrop').addEventListener('mousedown',e=>{ const row=e.target.closest('.cd-row'); if(!row)return; e.preventDefault(); pickCode(row.dataset.code); });
+  window.addEventListener('scroll',()=>{ if(activeCode.input)positionCodeDrop(activeCode.input); },true);
+  window.addEventListener('resize',()=>{ if(activeCode.input)positionCodeDrop(activeCode.input); });
+  document.addEventListener('mousedown',e=>{ const dd=$('codeDrop'); if(dd.style.display==='block'&&!dd.contains(e.target)&&e.target!==activeCode.input)hideCodeDrop(); });
   document.addEventListener('click',e=>{ const p=$('srcpop'); if(p.classList.contains('show')&&!p.contains(e.target)&&e.target.id!=='syncpill'&&!$('syncpill').contains(e.target))p.classList.remove('show'); });
 
   const dz=$('dropzone'),fi=$('fileInput');
@@ -1053,6 +1208,9 @@ function initEvents(){
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
   dz.addEventListener('drop',e=>{if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);});
   $('reuploadBtn').onclick=()=>fi.click();
+  if($('qTabs'))$('qTabs').value=GQUOTE_TABS.join('\n');
+  if($('qSyncBtn'))$('qSyncBtn').onclick=()=>syncQuotations(true);
+  if($('qTabsSave'))$('qTabsSave').onclick=saveQTabs;
 
   $('searchBox').addEventListener('input',()=>{ if($('previewWrap').style.display==='block')closePreview(); renderSearchList(); });
   $('pvBackBtn').onclick=closePreview;
@@ -1073,7 +1231,8 @@ function initEvents(){
   try{ const q=localStorage.getItem(LS_QUOTES); if(q){QUOTES=JSON.parse(q)||[];} }catch(e){}
   if(QUOTES.length){renderGenerate();}
   renderSearchList(); renderEditList();
-  syncSheet(false);                   // then refresh from the live sheet
+  syncSheet(false);                   // then refresh prices/images from the catalog sheet
+  syncQuotations(false);              // and pull all quotations from the live quotation sheet
 })();
 </script>
 </body>
