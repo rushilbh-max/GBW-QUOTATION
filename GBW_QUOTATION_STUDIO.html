@@ -215,6 +215,7 @@ input,select{font-family:'Jost'}
 .availbadge.mid{border-color:#7a5a1e;background:#1c1708}.availbadge.mid b{color:var(--orange)}
 .availbadge.lo{border-color:#7a2630;background:#1d0f12}.availbadge.lo b{color:var(--bad)}
 .availbadge.na{color:var(--muted);font-size:12px}
+.qmiss{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .qavail{margin-top:6px;display:inline-block;font-size:11px;font-weight:600;letter-spacing:.3px;padding:3px 9px;border-radius:999px}
 .qavail.hi{color:#0a1f12;background:#7fe0a6}
 .qavail.mid{color:#1c1708;background:#f0c879}
@@ -291,17 +292,18 @@ input,select{font-family:'Jost'}
       <div class="flex-between">
         <div>
           <div class="qsync-h">Live quotation sheet</div>
-          <div class="qsync-sub">Pulls every quotation column from each listed colour tab.</div>
+          <div class="qsync-sub">Pulls every quotation column from your colour tabs in the sheet.</div>
         </div>
         <button class="btn gold" id="qSyncBtn">Sync quotations</button>
       </div>
-      <label class="qsync-lbl">Colour tabs to load — one per line (tabs that don't exist yet are skipped)</label>
-      <textarea id="qTabs" rows="3" spellcheck="false" placeholder="CHR&#10;GBP&#10;BGP"></textarea>
-      <div class="row" style="margin-top:10px;align-items:center;gap:10px">
+      <div class="row" style="margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
         <span class="tag" id="qSyncTag">—</span>
-        <button class="btn ghost sm" id="qTabsSave">Save tabs &amp; sync</button>
       </div>
       <div class="qdiag" id="qdiag"></div>
+      <div class="qmiss">
+        <button class="btn ghost sm" id="qMissImgBtn">Export items with missing / broken images (xlsx)</button>
+        <span class="qsync-sub" id="qImgMsg" style="margin:0"></span>
+      </div>
     </div>
 
     <div class="orline"><span>or upload a master Excel (fallback)</span></div>
@@ -1241,7 +1243,7 @@ function buildPrintDoc(name,rows){
 
   /* auto-print once images AND fonts are ready */
   P.push('<script>(function(){'+
-    'function go(){window.focus();window.print();}'+
+    'var printed=false;function go(){if(printed)return;printed=true;window.focus();window.print();}'+
     'function ready(){var fp=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();fp.then(function(){setTimeout(go,180);},function(){setTimeout(go,180);});}'+
     'var imgs=Array.prototype.slice.call(document.images);var left=imgs.length;'+
     'if(!left){ready();return;}'+
@@ -1283,6 +1285,53 @@ function exportEditXLSX(){
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Quotation');
   const grand=rows.reduce((s,r)=>s+r.total,0);
   XLSX.writeFile(wb, EDIT.name+'__MRP-'+grand+'_.xlsx');
+}
+/* ---- Export quotation items that have no image or a broken image link ---- */
+async function exportMissingImages(){
+  if(!QUOTES.length){ toast('Sync quotations first'); return; }
+  const btn=$('qMissImgBtn'), msg=$('qImgMsg');
+  const map={};
+  QUOTES.forEach(q=>q.items.forEach(it=>{
+    const code=normCode(it.code); if(!code)return;
+    if(!map[code])map[code]={code, desc:(CATALOG[code]&&CATALOG[code].desc)||'', url:resolveImg(code), quotes:new Set()};
+    map[code].quotes.add(q.name);
+  }));
+  const all=Object.values(map);
+  const noImg=all.filter(x=>!x.url);
+  const withUrl=all.filter(x=>x.url);
+  if(btn)btn.disabled=true;
+  if(msg){ msg.style.color='var(--muted)'; msg.textContent='Checking '+nf(withUrl.length)+' image links\u2026'; }
+  const broken=[]; let done=0;
+  await testImages(withUrl,(x,ok)=>{ done++; if(!ok)broken.push(x); if(msg&&done%15===0)msg.textContent='Checking image links\u2026 '+done+'/'+withUrl.length; });
+  const aoa=[['CODE','DESCRIPTION','ISSUE','IMAGE URL','USED IN QUOTATIONS']];
+  noImg.sort((a,b)=>a.code.localeCompare(b.code)).forEach(x=>aoa.push([x.code,x.desc,'No image in sheet','',Array.from(x.quotes).join(', ')]));
+  broken.sort((a,b)=>a.code.localeCompare(b.code)).forEach(x=>aoa.push([x.code,x.desc,'Image link not loading',x.url,Array.from(x.quotes).join(', ')]));
+  const total=noImg.length+broken.length;
+  if(!total){ if(msg){msg.style.color='var(--good)';msg.textContent='All '+nf(all.length)+' quotation items have working images \u2713';} if(btn)btn.disabled=false; return; }
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:22},{wch:48},{wch:22},{wch:62},{wch:40}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Missing Images');
+  XLSX.writeFile(wb,'GBW_Missing_Images.xlsx');
+  if(msg){ msg.style.color='var(--good)'; msg.textContent='Exported '+total+' items \u00b7 '+noImg.length+' no image, '+broken.length+' broken links \u2713'; }
+  if(btn)btn.disabled=false;
+}
+function testImages(list,cb){
+  return new Promise(resolve=>{
+    const n=list.length; if(!n){resolve();return;}
+    let i=0,active=0,finished=0; const CONC=12,TMO=9000;
+    function pump(){
+      while(active<CONC && i<n){
+        const item=list[i++]; active++;
+        const im=new Image(); let s=false;
+        const t=setTimeout(()=>{ if(!s){s=true; settle(item,false);} },TMO);
+        im.onload=()=>{ if(!s){s=true; clearTimeout(t); settle(item,(im.naturalWidth||0)>1);} };
+        im.onerror=()=>{ if(!s){s=true; clearTimeout(t); settle(item,false);} };
+        im.src=item.url;
+      }
+    }
+    function settle(item,ok){ active--; finished++; try{cb(item,ok);}catch(e){} if(finished>=n)resolve(); else pump(); }
+    pump();
+  });
 }
 
 /* ════════════════ view refresh after sync ════════════════ */
@@ -1330,7 +1379,7 @@ function initEvents(){
   $('reuploadBtn').onclick=()=>fi.click();
   if($('qTabs'))$('qTabs').value=GQUOTE_TABS.join('\n');
   if($('qSyncBtn'))$('qSyncBtn').onclick=()=>syncQuotations(true);
-  if($('qTabsSave'))$('qTabsSave').onclick=saveQTabs;
+  if($('qMissImgBtn'))$('qMissImgBtn').onclick=exportMissingImages;
 
   $('searchBox').addEventListener('input',()=>{ if($('previewWrap').style.display==='block')closePreview(); renderSearchList(); });
   $('pvBackBtn').onclick=closePreview;
