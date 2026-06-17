@@ -221,6 +221,11 @@ input,select{font-family:'Jost'}
 .qavail.hi{color:#0a1f12;background:#7fe0a6}
 .qavail.mid{color:#1c1708;background:#f0c879}
 .qavail.lo{color:#fff;background:#a23b46}
+.cfilter{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}
+.cfilter .cflbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.cfilter .chip{background:#0f1b3c;border:1px solid #2c3d6b;color:var(--txt);border-radius:999px;padding:6px 15px;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer}
+.cfilter .chip:hover{border-color:var(--gold)}
+.cfilter .chip.on{background:linear-gradient(180deg,#caa24c,#b8923f);color:#1a1407;border-color:transparent}
 .warn-cell{outline:1.5px solid var(--bad) !important}
 
 .hint{font-size:12.5px;color:var(--muted)}
@@ -341,10 +346,11 @@ input,select{font-family:'Jost'}
   <h1 class="h-lead">Search quotations</h1>
   <p class="sub">Type any part of a quotation name — like <b>KUP-CHR-079</b> or just <b>079</b>. Open one to preview the full quote, the area summary and the price-level breakdown, then export a branded PDF.</p>
 
-  <div class="search" style="margin:20px 0">
+  <div class="search" style="margin:20px 0 14px">
     <span class="ic">⌕</span>
     <input id="searchBox" placeholder="Search by quotation name…">
   </div>
+  <div id="colourFilter" class="cfilter"></div>
 
   <div class="row" id="exportAllRow" style="margin:0 0 10px;gap:12px;flex-wrap:wrap;align-items:center">
     <button class="btn gold" id="exportEachBtn">Export each as a separate PDF</button>
@@ -898,7 +904,7 @@ async function syncQuotations(manual){
       }else{
         if(qs.length)sigSeen[sig]=tab;
         let added=0;
-        qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; all.push(q); added++; } });
+        qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; q.tab=tab; all.push(q); added++; } });
         if(added>0) report.push({tab,ok:true,n:added});
         else report.push({tab,ok:false,note:'no new quotations'});
       }
@@ -962,14 +968,51 @@ function renderGenerate(){
 }
 
 /* ════════════════ SEARCH page ════════════════ */
+let EXPORT_COLOURS=new Set();   // empty = all colours
+function quoteColour(name){
+  const parts=String(name).toUpperCase().split(/[^A-Z0-9]+/);
+  for(const t of GQUOTE_TABS){ if(parts.includes(t))return t; }
+  const up=String(name).toUpperCase();
+  for(const t of GQUOTE_TABS){ if(up.indexOf(t)>=0)return t; }
+  return 'OTHER';
+}
+function colourOf(q){ return q.tab||quoteColour(q.name); }
 function filterQuotes(term){
-  term=term.trim().toUpperCase();
-  return QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term));
+  term=(term||'').trim().toUpperCase();
+  const cols=EXPORT_COLOURS;
+  return QUOTES.map((q,i)=>({q,i})).filter(o=>{
+    if(cols.size && !cols.has(colourOf(o.q)))return false;
+    if(term && !o.q.name.toUpperCase().includes(term))return false;
+    return true;
+  });
+}
+function renderColourChips(){
+  const box=$('colourFilter'); if(!box)return;
+  if(!QUOTES.length){ box.innerHTML=''; return; }
+  const seen={}, present=[];
+  QUOTES.forEach(q=>{ const c=colourOf(q); if(!seen[c]){seen[c]=1;present.push(c);} });
+  present.sort((a,b)=>{ const ia=GQUOTE_TABS.indexOf(a),ib=GQUOTE_TABS.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b); });
+  Array.from(EXPORT_COLOURS).forEach(c=>{ if(present.indexOf(c)<0)EXPORT_COLOURS.delete(c); });
+  let h='<span class="cflbl">Colour tab</span>';
+  h+='<button class="chip'+(EXPORT_COLOURS.size===0?' on':'')+'" data-col="__all">All ('+QUOTES.length+')</button>';
+  present.forEach(c=>{
+    const n=QUOTES.filter(q=>colourOf(q)===c).length;
+    h+='<button class="chip'+(EXPORT_COLOURS.has(c)?' on':'')+'" data-col="'+esc(c)+'">'+esc(c)+' ('+n+')</button>';
+  });
+  box.innerHTML=h;
+  box.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{
+    const c=b.dataset.col;
+    if(c==='__all')EXPORT_COLOURS.clear();
+    else{ if(EXPORT_COLOURS.has(c))EXPORT_COLOURS.delete(c); else EXPORT_COLOURS.add(c); }
+    renderSearchList();
+  });
 }
 function renderSearchList(){
+  renderColourChips();
   const term=$('searchBox').value;
   const res=filterQuotes(term);
   $('searchEmpty').style.display = QUOTES.length? 'none' : 'block';
+  if($('exportAllNote')){ const n=res.length; $('exportAllNote').textContent = n+' quotation'+(n===1?'':'s')+' selected \u00b7 one file per quotation (named by its code), saved one after another. \u201cCombined\u201d puts them in a single file instead.'; }
   const g=$('searchResults'); g.innerHTML='';
   res.slice(0,200).forEach(o=>{
     const rows=lineRows(o.q.items); const pl=priceLevels(rows);
@@ -1285,9 +1328,10 @@ let _seq=null;
 function exportSeparatePDFs(){
   if(!QUOTES.length){ toast('No quotations loaded — sync on the Generate page first.'); return; }
   if(!ALLCODES.length){ toast('Sheet not loaded — wait for the green \u201cLive\u201d pill, then export.'); return; }
-  const list=QUOTES.map(q=>({name:q.name, rows:lineRows(q.items)}))
-                   .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
-  if(!list.length){ toast('Nothing exportable yet.'); return; }
+  const sel=filterQuotes($('searchBox')?$('searchBox').value:'');
+  const list=sel.map(o=>({name:o.q.name, rows:lineRows(o.q.items)}))
+               .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
+  if(!list.length){ toast('No quotations match the current colour/search filter.'); return; }
   const w=window.open('','_blank');
   if(!w){ toast('Allow pop-ups to export the PDFs'); return; }
   _seq={list, i:0, w};
@@ -1314,9 +1358,10 @@ function _seqAdvance(){ const s=_seq; if(!s)return; s.i++; setTimeout(_seqWrite,
 function exportAllPDF(){
   if(!QUOTES.length){ toast('No quotations loaded — sync on the Generate page first.'); return; }
   if(!ALLCODES.length){ toast('Sheet not loaded — wait for the green “Live” pill, then export.'); return; }
-  const quotes=QUOTES.map(q=>({name:q.name, rows:lineRows(q.items)}))
-                     .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
-  if(!quotes.length){ toast('Nothing exportable yet.'); return; }
+  const sel=filterQuotes($('searchBox')?$('searchBox').value:'');
+  const quotes=sel.map(o=>({name:o.q.name, rows:lineRows(o.q.items)}))
+                  .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
+  if(!quotes.length){ toast('No quotations match the current colour/search filter.'); return; }
   const {html,title}=buildPrintDoc(quotes);
   const w=window.open('','_blank');
   if(!w){ toast('Allow pop-ups to export the PDF'); return; }
