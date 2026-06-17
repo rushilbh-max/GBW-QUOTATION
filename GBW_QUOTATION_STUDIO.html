@@ -346,6 +346,12 @@ input,select{font-family:'Jost'}
     <input id="searchBox" placeholder="Search by quotation name…">
   </div>
 
+  <div class="row" id="exportAllRow" style="margin:0 0 10px;gap:12px;flex-wrap:wrap;align-items:center">
+    <button class="btn gold" id="exportEachBtn">Export each as a separate PDF</button>
+    <button class="btn ghost" id="exportAllBtn">Export all as one combined PDF</button>
+  </div>
+  <div class="sub" id="exportAllNote" style="margin:0 0 6px">One file per quotation (named by its code) — save each as it appears; the next opens automatically. The combined option puts everything in a single file instead.</div>
+  <div class="sub" id="exportEachNote" style="margin:0 0 18px;display:none;color:var(--gold-soft)"></div>
   <div id="searchResults" class="qgrid"></div>
   <div id="searchEmpty" class="empty"><div class="big">No set generated yet</div><div>Go to Generate and sync quotations from your sheet first.</div></div>
 
@@ -1099,18 +1105,17 @@ function logoBlock(url,fallbackHTML){
   if(url)return '<img class="lg" src="'+esc(url)+'">';
   return fallbackHTML;
 }
-function buildPrintDoc(name,rows){
-  const pl=priceLevels(rows);
-  const as=areaSummary(rows); const grand=as.reduce((s,x)=>s+x.total,0);
-  const totalPcs=pl.qty;
-  const yy=String(new Date().getFullYear()).slice(-2);
-  const nrpRef=String(pl.nrpT).padStart(7,'0')+'-'+yy;
-  const fileTitle=name+'__MRP-'+nf(grand).replace(/,/g,'')+'_';
+function buildPrintDoc(quotes){
+  /* quotes: array of {name, rows}. Produces ONE document; each quotation starts on a fresh page. */
   const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   const banner='<img class="lgbanner" src="'+LOGO_BANNER+'" alt="Jaquar x Grace Bath World">';
+  const yy=String(new Date().getFullYear()).slice(-2);
+  let docTitle;
+  if(quotes.length>1){ docTitle='GBW_All_Quotations_'+quotes.length; }
+  else{ const q0=quotes[0]; const g0=areaSummary(q0.rows).reduce((s,x)=>s+x.total,0); docTitle=q0.name+'__MRP-'+nf(g0).replace(/,/g,'')+'_'; }
 
   const P=[];
-  P.push('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(fileTitle)+'</title>');
+  P.push('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(docTitle)+'</title>');
   P.push('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
   P.push('<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">');
   P.push('<style>');
@@ -1146,6 +1151,7 @@ function buildPrintDoc(name,rows){
   P.push('tbody tr.itm td{height:160px;page-break-inside:avoid;}');
   P.push('.page{padding:9mm 8mm 11mm 8mm;}');
   P.push('.page.brk{page-break-after:always;break-after:page;}');
+  P.push('.page.newq{page-break-before:always;break-before:page;}');
   P.push('.endblock{page-break-inside:avoid;}');
   P.push('td.sr{text-align:center;width:30px;}');
   P.push('.srb{display:inline-block;min-width:19px;height:19px;line-height:19px;border-radius:50%;background:#0B1530;color:#E7D49E;font-size:8px;font-weight:500;padding:0 4px;}');
@@ -1216,51 +1222,58 @@ function buildPrintDoc(name,rows){
       '<td class="tot"><span class="mtag">MRP Total</span><span class="tval">'+nf(r.total)+'</span></td></tr>';
   }
 
-  const PER_PAGE=5, chunks=[];
-  for(let i=0;i<rows.length;i+=PER_PAGE)chunks.push(rows.slice(i,i+PER_PAGE));
-
-  let asRows='';
-  as.forEach(a=>{asRows+='<tr><td class="a">'+esc(a.area)+'</td><td class="r">\u20b9 '+nf(a.total)+'</td></tr>';});
-  const endHTML =
-    '<div class="endblock">'+
-      '<div class="grandbar"><span class="gl">'+totalPcs+' Pieces</span>'+
-        '<span class="gm"><span class="gtag">MRP Total</span>\u20b9&nbsp;<b>'+nf(grand)+'</b></span></div>'+
-      '<div class="foot"><div class="asum"><div class="ahd">Area-wise Value</div><table>'+
-        asRows+'<tr class="gt"><td class="a">MRP Total</td><td class="r">\u20b9 '+nf(grand)+'</td></tr></table></div></div>'+
-      '<div class="docfoot"><div class="fbrand">'+esc(QUOTE_BRAND_LINE)+'</div>'+
-        '<div class="fterms">'+esc(QUOTE_TERMS_LINE)+'<br>Ref '+esc(nrpRef)+'</div></div>'+
-      '<div class="fcall"><span>B L Bhatia <b>9826050648</b></span><span class="dot">\u00b7</span><span>Rushil Bhatia <b>8109683955</b></span></div>'+
-    '</div>';
-
-  chunks.forEach((chunk,ci)=>{
-    const last=ci===chunks.length-1;
-    P.push('<div class="page'+(last?'':' brk')+'">');
-    P.push('<table class="main"><thead>'+headHTML+'</thead><tbody>');
-    chunk.forEach(r=>P.push(rowTR(r)));
-    P.push('</tbody></table>');
-    if(last)P.push(endHTML);
-    P.push('</div>');
+  quotes.forEach((Q,qi)=>{
+    const rows=Q.rows;
+    const pl=priceLevels(rows);
+    const as=areaSummary(rows); const grand=as.reduce((s,x)=>s+x.total,0);
+    const totalPcs=pl.qty;
+    const nrpRef=String(pl.nrpT).padStart(7,'0')+'-'+yy;
+    const PER_PAGE=5, chunks=[];
+    for(let i=0;i<rows.length;i+=PER_PAGE)chunks.push(rows.slice(i,i+PER_PAGE));
+    let asRows='';
+    as.forEach(a=>{asRows+='<tr><td class="a">'+esc(a.area)+'</td><td class="r">\u20b9 '+nf(a.total)+'</td></tr>';});
+    const endHTML =
+      '<div class="endblock">'+
+        '<div class="grandbar"><span class="gl">'+totalPcs+' Pieces</span>'+
+          '<span class="gm"><span class="gtag">MRP Total</span>\u20b9&nbsp;<b>'+nf(grand)+'</b></span></div>'+
+        '<div class="foot"><div class="asum"><div class="ahd">Area-wise Value</div><table>'+
+          asRows+'<tr class="gt"><td class="a">MRP Total</td><td class="r">\u20b9 '+nf(grand)+'</td></tr></table></div></div>'+
+        '<div class="docfoot"><div class="fbrand">'+esc(QUOTE_BRAND_LINE)+'</div>'+
+          '<div class="fterms">'+esc(QUOTE_TERMS_LINE)+'<br>Ref '+esc(nrpRef)+'</div></div>'+
+        '<div class="fcall"><span>B L Bhatia <b>9826050648</b></span><span class="dot">\u00b7</span><span>Rushil Bhatia <b>8109683955</b></span></div>'+
+      '</div>';
+    chunks.forEach((chunk,ci)=>{
+      const last=ci===chunks.length-1;
+      const newq=(qi>0&&ci===0)?' newq':'';
+      P.push('<div class="page'+(last?'':' brk')+newq+'">');
+      P.push('<table class="main"><thead>'+headHTML+'</thead><tbody>');
+      chunk.forEach(r=>P.push(rowTR(r)));
+      P.push('</tbody></table>');
+      if(last)P.push(endHTML);
+      P.push('</div>');
+    });
   });
 
   /* auto-print once images AND fonts are ready */
   P.push('<script>(function(){'+
     'var printed=false;function go(){if(printed)return;printed=true;window.focus();window.print();}'+
+    'window.addEventListener("afterprint",function(){try{if(window.opener&&window.opener.__gbwNext)window.opener.__gbwNext();}catch(e){}});'+
     'function ready(){var fp=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();fp.then(function(){setTimeout(go,180);},function(){setTimeout(go,180);});}'+
     'var imgs=Array.prototype.slice.call(document.images);var left=imgs.length;'+
     'if(!left){ready();return;}'+
     'imgs.forEach(function(im){if(im.complete){if(!--left)ready();}'+
     'else{im.addEventListener("load",function(){if(!--left)ready();});'+
     'im.addEventListener("error",function(){if(!--left)ready();});}});'+
-    'setTimeout(go,7000);})();<\/script>');
+    'setTimeout(go,'+Math.min(60000,7000+quotes.length*500)+');})();<\/script>');
   P.push('</body></html>');
-  return {html:P.join(''),title:fileTitle};
+  return {html:P.join(''),title:docTitle};
 }
 function printRows(name,rows){
   if(!rows.length){toast('Nothing to export');return;}
   if(!ALLCODES.length){toast('Sheet not loaded — names & prices would be blank. Wait for the green “Live” pill, then export.');return;}
   const miss=rows.filter(r=>r.missing).length;
   if(miss===rows.length){toast('None of these codes matched the sheet — check the CODE NEW tab, then re-sync.');return;}
-  const {html,title}=buildPrintDoc(name,rows);
+  const {html,title}=buildPrintDoc([{name:name,rows:rows}]);
   const w=window.open('','_blank');
   if(!w){toast('Allow pop-ups to export the PDF');return;}
   w.document.open(); w.document.write(html); w.document.close();
@@ -1268,6 +1281,49 @@ function printRows(name,rows){
 }
 function exportQuotePDF(q){ printRows(q.name, lineRows(q.items)); }
 function exportEditPDF(){ if(!EDIT)return; printRows(EDIT.name, editResolvedRows().map((r,i)=>({...r,sr:i+1}))); }
+let _seq=null;
+function exportSeparatePDFs(){
+  if(!QUOTES.length){ toast('No quotations loaded — sync on the Generate page first.'); return; }
+  if(!ALLCODES.length){ toast('Sheet not loaded — wait for the green \u201cLive\u201d pill, then export.'); return; }
+  const list=QUOTES.map(q=>({name:q.name, rows:lineRows(q.items)}))
+                   .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
+  if(!list.length){ toast('Nothing exportable yet.'); return; }
+  const w=window.open('','_blank');
+  if(!w){ toast('Allow pop-ups to export the PDFs'); return; }
+  _seq={list, i:0, w};
+  window.__gbwNext=_seqAdvance;
+  _seqWrite();
+}
+function _seqWrite(){
+  const s=_seq; if(!s)return;
+  const note=$('exportEachNote');
+  if(s.i>=s.list.length){
+    try{s.w.close();}catch(e){}
+    window.__gbwNext=null; _seq=null;
+    if(note){ note.style.display='block'; note.textContent='All '+s.list.length+' PDFs exported \u2713'; }
+    toast('All '+s.list.length+' separate PDFs exported \u2713'); return;
+  }
+  if(s.w.closed){ window.__gbwNext=null; _seq=null; if(note)note.textContent='Export stopped ('+s.i+' of '+s.list.length+' saved).'; return; }
+  const Q=s.list[s.i];
+  const {html,title}=buildPrintDoc([Q]);
+  try{ s.w.document.open(); s.w.document.write(html); s.w.document.close(); s.w.document.title=title; }
+  catch(e){ window.__gbwNext=null; _seq=null; toast('Export interrupted'); return; }
+  if(note){ note.style.display='block'; note.textContent='Saving \u201c'+Q.name+'\u201d \u2014 quotation '+(s.i+1)+' of '+s.list.length+'. Save it and the next opens automatically.'; }
+}
+function _seqAdvance(){ const s=_seq; if(!s)return; s.i++; setTimeout(_seqWrite,300); }
+function exportAllPDF(){
+  if(!QUOTES.length){ toast('No quotations loaded — sync on the Generate page first.'); return; }
+  if(!ALLCODES.length){ toast('Sheet not loaded — wait for the green “Live” pill, then export.'); return; }
+  const quotes=QUOTES.map(q=>({name:q.name, rows:lineRows(q.items)}))
+                     .filter(Q=>Q.rows.length && Q.rows.some(r=>!r.missing));
+  if(!quotes.length){ toast('Nothing exportable yet.'); return; }
+  const {html,title}=buildPrintDoc(quotes);
+  const w=window.open('','_blank');
+  if(!w){ toast('Allow pop-ups to export the PDF'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  try{w.document.title=title;}catch(e){}
+  toast('Building one PDF with '+quotes.length+' quotations\u2026 it may take a few seconds.');
+}
 
 /* ════════════════ Excel export (edit page) ════════════════ */
 function exportEditXLSX(){
@@ -1384,6 +1440,8 @@ function initEvents(){
 
   $('searchBox').addEventListener('input',()=>{ if($('previewWrap').style.display==='block')closePreview(); renderSearchList(); });
   $('pvBackBtn').onclick=closePreview;
+  if($('exportAllBtn'))$('exportAllBtn').onclick=exportAllPDF;
+  if($('exportEachBtn'))$('exportEachBtn').onclick=exportSeparatePDFs;
 
   $('editSearchBox').addEventListener('input',()=>{ if(EDIT){EDIT=null;$('editWrap').style.display='none';$('editResults').style.display='grid';} renderEditList(); });
   $('edAddBtn').onclick=addEditRow;
