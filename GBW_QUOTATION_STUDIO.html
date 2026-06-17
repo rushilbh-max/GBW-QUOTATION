@@ -201,6 +201,24 @@ input,select{font-family:'Jost'}
 .etbl .rowact{white-space:nowrap}
 .etbl .rowact button{margin-left:4px}
 .etbl .del:hover{border-color:var(--bad)}
+.etbl td.stk{text-align:center;font-weight:700;font-size:12.5px}
+.etbl td.stk.ok{color:var(--good)}
+.etbl td.stk.low{color:var(--orange)}
+.etbl td.stk.no{color:var(--bad)}
+.cd-stk{margin-left:auto;flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.3px;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.cd-stk.on{color:#0a1f12;background:#7fe0a6}
+.cd-stk.off{color:#9aa3bf;background:#1b2647;border:1px solid #2c3d6b}
+.availbadge{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;margin-bottom:12px;font-size:14px;border:1px solid #22335f;background:#0c1632}
+.availbadge b{font-size:20px;font-family:'Cormorant Garamond',Georgia,serif}
+.availbadge span{color:var(--muted);font-size:11.5px;letter-spacing:.3px}
+.availbadge.hi{border-color:#2f6b46;background:#0e2018}.availbadge.hi b{color:var(--good)}
+.availbadge.mid{border-color:#7a5a1e;background:#1c1708}.availbadge.mid b{color:var(--orange)}
+.availbadge.lo{border-color:#7a2630;background:#1d0f12}.availbadge.lo b{color:var(--bad)}
+.availbadge.na{color:var(--muted);font-size:12px}
+.qavail{margin-top:6px;display:inline-block;font-size:11px;font-weight:600;letter-spacing:.3px;padding:3px 9px;border-radius:999px}
+.qavail.hi{color:#0a1f12;background:#7fe0a6}
+.qavail.mid{color:#1c1708;background:#f0c879}
+.qavail.lo{color:#fff;background:#a23b46}
 .warn-cell{outline:1.5px solid var(--bad) !important}
 
 .hint{font-size:12.5px;color:var(--muted)}
@@ -378,7 +396,8 @@ input,select{font-family:'Jost'}
           <th style="width:210px">Code</th><th style="width:74px">Qty</th>
           <th style="width:60px">Image</th><th>Item name</th>
           <th style="width:96px;text-align:right">MRP</th>
-          <th style="width:96px;text-align:right">Total</th><th style="width:40px"></th>
+          <th style="width:96px;text-align:right">Total</th>
+          <th style="width:62px;text-align:center">Stock</th><th style="width:40px"></th>
         </tr></thead>
         <tbody id="editBody"></tbody>
       </table>
@@ -415,9 +434,11 @@ const QUOTE_TERMS_LINE = 'All values in INR at MRP · Subject to stock · E. & O
 let GSHEET_ID     = '1-VxayIYdSLMBpcIsjMY3LkbY7eCQYx12K6B5TH3rKUY';
 let TAB_CODE      = 'CODE NEW';
 let TAB_IMAGE     = 'IMAGE NEW';
+let TAB_STOCK     = 'GBW STOCK';
 const WIX_PREFIX  = 'https://static.wixstatic.com/media/';
 const LS_CAT      = 'gbw_cat_v1';
 const LS_IMG      = 'gbw_img_v1';
+const LS_STK      = 'gbw_stk_v1';
 const LS_QUOTES   = 'gbw_quotes_v1';
 const LS_SRC      = 'gbw_src_v1';   // {id,code,image} override
 const LS_QSRC     = 'gbw_qsrc_v1';  // {id,tabs:[...]} override
@@ -426,7 +447,7 @@ let GQUOTE_ID     = '1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
 let GQUOTE_TABS   = ['CHR','GBP','BGP','BCH'];   // add a colour tab in the sheet, list its name here
 /* load any saved Source override */
 (function(){try{const s=JSON.parse(localStorage.getItem(LS_SRC)||'null');
-  if(s&&s.id){GSHEET_ID=s.id;TAB_CODE=s.code||TAB_CODE;TAB_IMAGE=s.image||TAB_IMAGE;}}catch(e){}})();
+  if(s&&s.id){GSHEET_ID=s.id;TAB_CODE=s.code||TAB_CODE;TAB_IMAGE=s.image||TAB_IMAGE;}if(s&&s.stock)TAB_STOCK=s.stock;}catch(e){}})();
 (function(){try{const s=JSON.parse(localStorage.getItem(LS_QSRC)||'null');
   if(s&&s.id){GQUOTE_ID=s.id;} if(s&&Array.isArray(s.tabs)&&s.tabs.length){GQUOTE_TABS=s.tabs;}}catch(e){}})();
 let SYNCDIAG = [];   // last sync per-tab diagnostics
@@ -435,6 +456,7 @@ const IS_FILE = (location.protocol==='file:');   // opened as a local file → G
 /* ---- In-memory state ---- */
 let CATALOG = {};        // code -> {desc, mrp, nrp, sdp}
 let IMAGES  = {};        // code -> url
+let STOCK   = {};        // code -> stock qty (from GBW STOCK tab)
 let ALLCODES = [];       // sorted code list for datalist
 let QUOTES  = [];        // [{name, items:[{area,code,qty}]}]
 let EDIT    = null;      // temporary working copy {name, rows:[{area,code,qty}]}
@@ -564,30 +586,72 @@ function applyImageCSV(text){
   }
   IMAGES=img; return Object.keys(img).length;
 }
+function applyStockCSV(text){
+  const rows=parseCSV(text); if(rows.length<2)return 0;
+  const h=rows[0].map(x=>String(x).trim().toUpperCase());
+  let ci=h.findIndex(x=>x.includes('CODE'));
+  let si=h.findIndex(x=>x.includes('STOCK')||x.includes('QTY')||x.includes('QUANTITY')||x.includes('AVAIL'));
+  if(ci<0)ci=0; if(si<0)si=1;
+  const st={};
+  for(let r=1;r<rows.length;r++){
+    const p=rows[r]; const code=normCode(p[ci]); if(!code)continue;
+    st[code]=num(p[si]);
+  }
+  STOCK=st; return Object.keys(st).length;
+}
+function stockLoaded(){ return STOCK && Object.keys(STOCK).length>0; }
+function resolveStock(code){ const s=STOCK[normCode(code)]; return (s==null)?0:s; }
+function stockCellInfo(code,qty){
+  if(!code)return {cls:'',txt:''};
+  if(!stockLoaded())return {cls:'',txt:'\u2014'};
+  const st=resolveStock(code);
+  if(st>0 && st>=qty)return {cls:'ok',txt:String(st)};
+  if(st>0)return {cls:'low',txt:String(st)};
+  return {cls:'no',txt:'0'};
+}
+function quoteAvail(rows){
+  let avail=0,total=0;
+  rows.forEach(r=>{ if(!r.code)return; total++; const q=r.qty||0; if(q>0 && resolveStock(r.code)>=q)avail++; });
+  return {avail,total,pct: total?Math.round(avail/total*100):0, loaded:stockLoaded()};
+}
+function availBadgeHTML(rows){
+  const a=quoteAvail(rows);
+  if(!a.loaded) return '<div class="availbadge na">Stock not synced &middot; availability unavailable</div>';
+  const cls=a.pct>=90?'hi':(a.pct>=60?'mid':'lo');
+  return '<div class="availbadge '+cls+'"><b>'+a.pct+'%</b> of products available '+
+         '<span>'+a.avail+' of '+a.total+' line items in stock</span></div>';
+}
 function rebuildDatalist(){ const dl=$('allCodes'); if(dl)dl.innerHTML=''; } // legacy datalist now unused
 
 /* ---- custom code dropdown: image-having codes first, with thumbnails ---- */
 let activeCode={input:null,i:-1};
 function codeMatches(qstr){
   const q=normCode(qstr); if(!q)return [];
-  const pImg=[],pNo=[],sImg=[],sNo=[];
+  // buckets: stock(prefix,sub) > image(prefix,sub) > rest(prefix,sub)
+  const sp=[],ss=[],ip=[],is=[],rp=[],rs=[];
+  let n=0;
   for(let k=0;k<ALLCODES.length;k++){
     const c=ALLCODES[k], p=c.indexOf(q);
     if(p<0)continue;
-    const hasImg=!!IMAGES[c];
-    if(p===0){ (hasImg?pImg:pNo).push(c); } else { (hasImg?sImg:sNo).push(c); }
-    if(pImg.length>=40 || (pImg.length+pNo.length+sImg.length+sNo.length)>=600)break;
+    const pre=(p===0);
+    if(resolveStock(c)>0){ (pre?sp:ss).push(c); }
+    else if(IMAGES[c]){ (pre?ip:is).push(c); }
+    else { (pre?rp:rs).push(c); }
+    if(++n>=900)break;
   }
-  return pImg.concat(pNo,sImg,sNo).slice(0,40);   // priority: prefix+image first
+  return sp.concat(ss,ip,is,rp,rs).slice(0,40);   // in stock first, then images, then rest
 }
 function renderCodeDrop(matches){
   const dd=$('codeDrop');
   if(!matches.length){ dd.innerHTML='<div class="cd-empty">No matching codes</div>'; return; }
+  const showStk=stockLoaded();
   dd.innerHTML=matches.map((c,idx)=>{
     const img=resolveImg(c); const desc=(CATALOG[c]&&CATALOG[c].desc)||'';
     const thumb=img?'<img src="'+esc(img)+'" loading="lazy" onerror="this.style.visibility=&#39;hidden&#39;">':'<span class="cd-noimg"></span>';
+    const st=resolveStock(c);
+    const stk=showStk?('<span class="cd-stk '+(st>0?'on':'off')+'">'+(st>0?('Stock '+st):'No stock')+'</span>'):'';
     return '<div class="cd-row'+(idx===0?' on':'')+'" data-code="'+esc(c)+'">'+thumb+
-           '<span class="cd-txt"><b>'+esc(c)+'</b><i>'+esc(desc)+'</i></span></div>';
+           '<span class="cd-txt"><b>'+esc(c)+'</b><i>'+esc(desc)+'</i></span>'+stk+'</div>';
   }).join('');
 }
 function positionCodeDrop(input){
@@ -626,8 +690,8 @@ function onCodeKey(e){
 }
 function hydrateFromCache(){
   try{
-    const c=localStorage.getItem(LS_CAT), i=localStorage.getItem(LS_IMG);
-    if(c)applyCatalogCSV(c); if(i)applyImageCSV(i);
+    const c=localStorage.getItem(LS_CAT), i=localStorage.getItem(LS_IMG), st=localStorage.getItem(LS_STK);
+    if(c)applyCatalogCSV(c); if(i)applyImageCSV(i); if(st)applyStockCSV(st);
     if(ALLCODES.length){rebuildDatalist();return true;}
   }catch(e){}
   return false;
@@ -666,14 +730,16 @@ async function syncSheet(manual){
   setSync('busy', manual?'Re-syncing…':'Syncing…');
   const dc=await fetchTab(TAB_CODE);
   const di=await fetchTab(TAB_IMAGE);
-  let nc=0,ni=0;
+  const ds=await fetchTab(TAB_STOCK);
+  let nc=0,ni=0,ns=0;
   if(dc.ok){ nc=applyCatalogCSV(dc.text); if(nc>0){try{localStorage.setItem(LS_CAT,dc.text);}catch(e){}} }
   if(di.ok){ ni=applyImageCSV(di.text); if(ni>0){try{localStorage.setItem(LS_IMG,di.text);}catch(e){}} }
-  SYNCDIAG=[diagLine(dc,nc,'codes'),diagLine(di,ni,'images')];
+  if(ds.ok){ ns=applyStockCSV(ds.text); if(ns>0){try{localStorage.setItem(LS_STK,ds.text);}catch(e){}} }
+  SYNCDIAG=[diagLine(dc,nc,'codes'),diagLine(di,ni,'images'),diagLine(ds,ns,'stock items')];
   renderDiag();
-  if(nc>0||ni>0){
+  if(nc>0||ni>0||ns>0){
     rebuildDatalist();
-    setSync('ok','Live · '+nf(nc)+' codes · '+nf(ni)+' images');
+    setSync('ok','Live · '+nf(nc)+' codes · '+nf(ni)+' images · '+nf(ns)+' stock');
     refreshAllViews();
   }else if(ALLCODES.length){
     setSync('warn','Offline cache · '+nf(ALLCODES.length)+' codes — click for details');
@@ -899,8 +965,10 @@ function renderSearchList(){
   res.slice(0,200).forEach(o=>{
     const rows=lineRows(o.q.items); const pl=priceLevels(rows);
     const c=document.createElement('div'); c.className='qcard';
+    const av=quoteAvail(rows);
+    const avHTML=av.loaded?'<div class="qavail '+(av.pct>=90?'hi':(av.pct>=60?'mid':'lo'))+'">'+av.pct+'% in stock</div>':'';
     c.innerHTML='<div class="qn">'+esc(o.q.name)+'</div><div class="qmeta">'+rows.length+
-      ' items · '+pl.qty+' pcs</div><div class="qmrp">₹'+nf(pl.mrpT)+'<small>MRP TOTAL</small></div>';
+      ' items · '+pl.qty+' pcs</div><div class="qmrp">₹'+nf(pl.mrpT)+'<small>MRP TOTAL</small></div>'+avHTML;
     c.onclick=()=>openPreview(o.i);
     g.appendChild(c);
   });
@@ -910,7 +978,7 @@ function openPreview(idx){
   const rows=lineRows(q.items); const pl=priceLevels(rows);
   $('searchResults').style.display='none'; $('searchEmpty').style.display='none';
   $('previewWrap').style.display='block';
-  $('pvName').textContent=q.name; $('pvTitle').textContent='₹'+nf(pl.mrpT)+' · '+rows.length+' items';
+  $('pvName').textContent=q.name; $('pvTitle').textContent='₹'+nf(pl.mrpT)+' · '+rows.length+' items'+(stockLoaded()?(' · '+quoteAvail(rows).pct+'% in stock'):'');
   $('pvBody').innerHTML =
     '<div class="pvbrand"><img src="'+LOGO_BANNER+'" alt="Jaquar x Grace Bath World"></div>'+
     quoteTableHTML(rows) +
@@ -930,10 +998,12 @@ function renderEditList(){
   const g=$('editResults'); g.innerHTML='';
   if(!QUOTES.length){g.innerHTML='<div class="empty"><div class="big">No set generated</div><div>Sync quotations on the Generate page first.</div></div>';return;}
   QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,200).forEach(o=>{
-    const pl=priceLevels(lineRows(o.q.items));
+    const _r=lineRows(o.q.items); const pl=priceLevels(_r);
+    const av=quoteAvail(_r);
+    const avHTML=av.loaded?'<div class="qavail '+(av.pct>=90?'hi':(av.pct>=60?'mid':'lo'))+'">'+av.pct+'% in stock</div>':'';
     const c=document.createElement('div'); c.className='qcard';
     c.innerHTML='<div class="qn">'+esc(o.q.name)+'</div><div class="qmeta">'+o.q.items.length+
-      ' items · ₹'+nf(pl.mrpT)+'</div><div class="acts"><button class="btn gold sm">Load into editor</button></div>';
+      ' items · ₹'+nf(pl.mrpT)+'</div>'+avHTML+'<div class="acts"><button class="btn gold sm">Load into editor</button></div>';
     c.onclick=()=>loadEditor(o.i);
     g.appendChild(c);
   });
@@ -954,6 +1024,7 @@ function renderEditor(){
     const c=lookup(row.code); const missing=row.code&&!CATALOG[row.code];
     const tr=document.createElement('tr');
     const img=resolveImg(row.code);
+    const stkInfo=stockCellInfo(row.code,row.qty);
     tr.innerHTML=
       '<td style="color:#7e8db5">'+(i+1)+'</td>'+
       '<td><input data-f="area" data-i="'+i+'" value="'+esc(row.area)+'"></td>'+
@@ -963,6 +1034,7 @@ function renderEditor(){
       '<td style="color:#cdd7f0;font-size:12px">'+esc(c.desc||(row.code||''))+'</td>'+
       '<td><input class="mrp" type="number" data-f="mrp" data-i="'+i+'" value="'+(c.mrp||0)+'" title="Override MRP for this row"></td>'+
       '<td class="tot">₹'+nf((overrideMrp(i,c.mrp))*row.qty)+'</td>'+
+      '<td class="stk '+stkInfo.cls+'">'+stkInfo.txt+'</td>'+
       '<td class="rowact"><button class="ins" data-insup="'+i+'" title="Insert a row above">↑</button><button class="ins" data-insdn="'+i+'" title="Insert a row below">↓</button><button class="del" data-del="'+i+'" title="Delete this row">✕</button></td>';
     tb.appendChild(tr);
   });
@@ -1001,6 +1073,7 @@ function updateRowTotals(){
     const c=lookup(EDIT.rows[i].code);
     const mrp=overrideMrp(i,c.mrp);
     const cell=tr.querySelector('.tot'); if(cell)cell.textContent='₹'+nf(mrp*EDIT.rows[i].qty);
+    const sc=tr.querySelector('.stk'); if(sc){ const si=stockCellInfo(EDIT.rows[i].code,EDIT.rows[i].qty); sc.className='stk '+si.cls; sc.textContent=si.txt; }
   });
 }
 function editResolvedRows(){
@@ -1014,7 +1087,7 @@ function editResolvedRows(){
 function renderEditSummary(){
   const rows=editResolvedRows().map((r,i)=>({...r,sr:i+1}));
   const pl=priceLevels(rows);
-  $('edSummary').innerHTML=areaSummaryHTML(rows)+priceLevelHTML(pl);
+  $('edSummary').innerHTML=availBadgeHTML(rows)+areaSummaryHTML(rows)+priceLevelHTML(pl);
 }
 function addEditRow(){ if(!EDIT)return; EDIT.rows.push({area:'',code:'',qty:1}); renderEditor(); }
 
