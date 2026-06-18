@@ -970,7 +970,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
 <!-- STOCK AVAILABILITY SCREEN -->
 <div id="screen-stock" class="screen">
-  <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
+  <div style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
 
     <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Stock Availability</div>
 
@@ -1387,7 +1387,9 @@ function renderStock(){
     </tr>`;
   }).join('');
 
-  sum.innerHTML=`${S.items.length} item${S.items.length!==1?'s':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
+  const pct = S.items.length ? Math.round((avail/S.items.length)*100) : 0;
+  const pctColor = pct>=80 ? '#4ADF90' : (pct>=50 ? '#E8D08A' : '#FF9B8F');
+  sum.innerHTML=`<span style="color:${pctColor};font-weight:800;font-size:13px">${pct}% of products are ready</span><br>${S.items.length} item${S.items.length!==1?'s':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
 }
 
 // Export the availability report as a clean PDF — mirrors the attached layout (no GBW-stock column shown).
@@ -1472,7 +1474,6 @@ function exportStockPDF(){
     </div>
     <div class="meta">
       <div>Generated: <b>${gen}</b></div>
-      <div>Sales Order: <b>OFF</b> &nbsp; Status Display: <b>URGENT</b></div>
       <div class="counts">${S.items.length} items &nbsp;·&nbsp; total qty ${totQty} &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${notAvail} not available</div>
     </div>
   </div>
@@ -2546,7 +2547,7 @@ function doPlainPrint(){
   *{ box-sizing:border-box }
   body{ font-family:Arial,Helvetica,sans-serif; color:#000; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact }
   table{ width:100%; border-collapse:collapse; table-layout:fixed }
-  th,td{ border:1px solid #000; padding:6px 6px; font-size:11px; vertical-align:middle; word-wrap:break-word }
+  th,td{ border:1px solid #000; padding:6px 6px; font-size:11px; vertical-align:middle; word-wrap:break-word; text-align:center }
   thead th{ background:#fff; font-weight:700; font-size:11px; text-align:center; letter-spacing:.3px }
   tbody tr{ page-break-inside:avoid; break-inside:avoid }
   .c-sr{ width:34px; text-align:center; font-weight:700 }
@@ -2554,7 +2555,7 @@ function doPlainPrint(){
   .c-qty{ width:58px; text-align:center; font-weight:700 }
   .c-img{ width:96px; text-align:center; padding:4px }
   .c-name{ font-size:11px; font-weight:600 }
-  .c-num{ width:78px; text-align:right; font-variant-numeric:tabular-nums }
+  .c-num{ width:78px; text-align:center; font-weight:700; font-variant-numeric:tabular-nums }
   .imgbox{ width:90px; height:90px; background:#fff; margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden }
   .imgbox img{ width:90px; height:90px; object-fit:contain; display:block }
   /* column widths via colgroup */
