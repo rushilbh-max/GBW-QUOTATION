@@ -131,6 +131,9 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .sr-meta{display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap}
 .sr-mrp{font-size:11px;font-weight:600;color:#8AACBC}
 .sr-nrp{font-size:11px;color:#4ADF90;font-weight:600}
+.sr-stock-in{font-size:10px;font-weight:700;color:#0D1520;background:#4ADF90;border-radius:3px;padding:1px 6px;letter-spacing:.3px}
+.sr-stock-out{font-size:10px;font-weight:700;color:#FFCFC8;background:rgba(224,96,96,0.25);border:1px solid rgba(224,96,96,0.5);border-radius:3px;padding:1px 6px;letter-spacing:.3px}
+.sr-stock-unk{font-size:10px;font-weight:600;color:var(--muted2);border:1px solid rgba(255,255,255,0.12);border-radius:3px;padding:1px 6px;letter-spacing:.3px}
 .sr-add{
   background:transparent;border:1px solid rgba(201,168,76,0.4);
   border-radius:4px;padding:5px 12px;font-family:'Cinzel',serif;
@@ -243,6 +246,13 @@ textarea.c-inp{resize:none;height:72px}
   padding:9px 18px;font-family:'Jost',sans-serif;font-size:11px;
   font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
 }
+.btn-print-alt{
+  background:transparent;color:var(--gold-l);
+  border:1px solid rgba(201,168,76,0.45);border-radius:var(--r-sm);
+  padding:9px 16px;font-family:'Jost',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+}
+.btn-print-alt:active,.btn-print-alt:hover{background:rgba(201,168,76,0.12)}
 
 /* ══ PRINT PAGE — LUXURY DOCUMENT ══ */
 .ppage{
@@ -760,6 +770,7 @@ html, body{
   <button class="tab" onclick="showScreen('builder')">Products</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
+  <button class="tab" onclick="showScreen('stock')">Stock</button>
   <button class="tab on" onclick="showScreen('editor')">Editor</button>
   <button class="tab" onclick="goPreview()">Quotation</button>
 </div>
@@ -957,6 +968,57 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   </div>
 </div>
 
+<!-- STOCK AVAILABILITY SCREEN -->
+<div id="screen-stock" class="screen">
+  <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
+
+    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Stock Availability</div>
+
+    <!-- Actions + live summary -->
+    <div style="background:rgba(42,157,96,0.06);border:1px solid rgba(42,157,96,0.3);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-size:22px">📦</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:var(--gold-l)">Availability of items in this quotation</div>
+          <div id="stock-summary" style="font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);margin-top:3px">No items yet</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="exportStockPDF()" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">🖨 Export Availability PDF</button>
+        <button onclick="resetStockStatuses()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--muted2);border-radius:7px;padding:11px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">↻ Reset to Auto</button>
+      </div>
+      <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);line-height:1.6">Status is auto-judged on <b style="color:var(--gold-l)">GBW Stock</b> vs <b style="color:var(--gold-l)">Order Qty</b>. Tap any status to override it manually.</div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="stock-empty" style="text-align:center;padding:40px 20px;color:var(--muted)">
+      <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">No products in quotation</div>
+      <div style="font-family:'Cormorant',serif;font-style:italic;font-size:14px;color:var(--muted2)">Add products on the Products tab to check stock availability.</div>
+    </div>
+
+    <!-- Availability table -->
+    <div id="stock-table-wrap" style="display:none;background:var(--ink2);border:1px solid rgba(201,168,76,0.18);border-radius:10px;overflow:hidden">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table style="width:100%;border-collapse:collapse;min-width:640px">
+          <thead>
+            <tr style="background:rgba(201,168,76,0.1)">
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:center;border-bottom:1px solid rgba(201,168,76,0.2)">SR</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:left;border-bottom:1px solid rgba(201,168,76,0.2)">Code</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:center;border-bottom:1px solid rgba(201,168,76,0.2)">Order Qty</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:center;border-bottom:1px solid rgba(201,168,76,0.2)">Status</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:center;border-bottom:1px solid rgba(201,168,76,0.2)">Image</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:left;border-bottom:1px solid rgba(201,168,76,0.2)">Item Name</th>
+              <th style="padding:9px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-l);text-align:center;border-bottom:1px solid rgba(201,168,76,0.2)">GBW Stock</th>
+            </tr>
+          </thead>
+          <tbody id="stock-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- EDITOR SCREEN -->
 <div id="screen-editor" class="screen active">
   <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
@@ -971,7 +1033,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
         <div style="font-size:24px">🔄</div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:var(--text)">Live Google Sheet Sync</div>
-          <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px">Product Data ← tab <b>CODE NEW</b> · Image URLs ← tab <b>IMAGE NEW</b> · auto-refreshes every load · cached offline</div>
+          <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px">Product Data ← tab <b>CODE NEW</b> · Image URLs ← tab <b>IMAGE NEW</b> · Stock ← tab <b>GBW STOCK</b> · auto-refreshes every load · cached offline</div>
         </div>
       </div>
       <div id="ed-sync-status" style="display:block;font-family:'Jost',sans-serif;font-size:11px;padding:8px 12px;border-radius:6px;font-weight:600;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:var(--gold-l)">Initialising live sync…</div>
@@ -1011,6 +1073,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:2px">Currently Loaded Data</div>
       <div id="ed-prod-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Products: 104,430 (built-in)</div>
       <div id="ed-img-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Image URLs: 3,692 (built-in)</div>
+      <div id="ed-stock-count" style="font-family:'Jost',sans-serif;font-size:12px;color:var(--text)">Stock rows: 0 (not loaded)</div>
     </div>
   </div>
 </div>
@@ -1018,7 +1081,10 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 <div id="screen-preview" class="screen">
   <div class="prev-bar">
     <span class="prev-bar-title">Quotation Preview</span>
-    <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain PDF</button>
+      <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
+    </div>
   </div>
 
   <div class="ppage">
@@ -1175,10 +1241,12 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 <script>
 const PRODUCTS_RAW=[];
 const IMAGE_MAP={};
+const STOCK_MAP={};                          // code → available stock qty (from "GBW STOCK" tab)
+const getStock=code=>{ const v=STOCK_MAP[code]; return (v===undefined||v===null)?null:v; };  // null = unknown/not in stock sheet
 let ALL=PRODUCTS_RAW.map(r=>({code:r[0],desc:r[1],brand:r[2]||'',sdp:r[3]||0,nrp:r[4],mrp:r[5],hsn:r[6]||'',gst:r[7]||0,sdp_net:r[8]}));
 let PMAP={};ALL.forEach(p=>{PMAP[p.code]=p;});
 
-const S={items:[],disc:0,mode:'NRP'};
+const S={items:[],disc:0,mode:'NRP',stockOverrides:{}};   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fmtN=n=>new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Math.round(n||0));
@@ -1201,13 +1269,14 @@ function setMode(m){
 
 // ── SCREENS ──
 function showScreen(id){
-  ['builder','customer','summary','editor','preview'].forEach(s=>{
+  ['builder','customer','summary','stock','editor','preview'].forEach(s=>{
     $('screen-'+s).classList.toggle('active',s===id);
   });
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('on',['builder','customer','summary','editor','preview'][i]===id);
+    t.classList.toggle('on',['builder','customer','summary','stock','editor','preview'][i]===id);
   });
   if(id==='summary') renderSummary();
+  if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
 }
 
@@ -1261,6 +1330,179 @@ function renderSummary(){
 }
 function goPreview(){renderPreview();showScreen('preview');}
 
+// ── STOCK AVAILABILITY ──────────────────────────────────────────────
+// Auto status: AVAILABLE when GBW stock is known AND >= order qty; otherwise NOT AVAILABLE.
+function autoStockStatus(item){
+  const st=getStock(item.code);
+  return (st!==null && st>=item.qty) ? 'AVAILABLE' : 'NOT AVAILABLE';
+}
+function effectiveStockStatus(item){
+  return S.stockOverrides[item.code] || autoStockStatus(item);
+}
+function toggleStockStatus(code){
+  const item=S.items.find(i=>i.code===code); if(!item) return;
+  const cur=effectiveStockStatus(item);
+  S.stockOverrides[code] = (cur==='AVAILABLE') ? 'NOT AVAILABLE' : 'AVAILABLE';
+  renderStock();
+}
+function resetStockStatuses(){
+  S.stockOverrides={};
+  renderStock();
+}
+function renderStock(){
+  const wrap=$('stock-table-wrap'), empty=$('stock-empty'), tb=$('stock-tbody'), sum=$('stock-summary');
+  if(!wrap) return;
+  if(!S.items.length){
+    wrap.style.display='none'; empty.style.display='block';
+    sum.textContent='No items yet'; return;
+  }
+  empty.style.display='none'; wrap.style.display='block';
+
+  let avail=0, notAvail=0, totQty=0;
+  tb.innerHTML = S.items.map((item,idx)=>{
+    const status=effectiveStockStatus(item);
+    const isAvail=status==='AVAILABLE';
+    if(isAvail) avail++; else notAvail++;
+    totQty+=item.qty;
+    const st=getStock(item.code);
+    const stDisp=(st===null)?'—':fmtN(st);
+    const stColor=(st===null)?'var(--muted)':(st>0?'#4ADF90':'#FF9B8F');
+    const overridden=!!S.stockOverrides[item.code];
+    const url=IMAGE_MAP[item.code]||'';
+    const img=url
+      ? `<div style="width:40px;height:40px;background:#fff;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:40px;height:40px;object-fit:contain"/></div>`
+      : `<div style="width:40px;height:40px;background:var(--ink4);border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted)">IMG</div>`;
+    const rowBg=isAvail?'transparent':'rgba(224,96,96,0.08)';
+    const statusBtn=isAvail
+      ? `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(42,157,96,0.18);border:1px solid rgba(42,157,96,0.5);color:#4ADF90;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">AVAILABLE</button>`
+      : `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(224,96,96,0.2);border:1px solid rgba(224,96,96,0.5);color:#FF9B8F;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">NOT AVAILABLE</button>`;
+    return `<tr style="background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.05)">
+      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;color:var(--muted2)">${idx+1}</td>
+      <td style="padding:8px;font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-l);white-space:nowrap">${esc(item.code)}</td>
+      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:#D8E4EC">${item.qty}</td>
+      <td style="padding:8px;text-align:center">${statusBtn}${overridden?'<div style="font-size:8px;color:var(--muted);margin-top:2px;font-style:italic">manual</div>':''}</td>
+      <td style="padding:6px;text-align:center">${img}</td>
+      <td style="padding:8px;font-family:'Jost',sans-serif;font-size:11px;color:#C0D4E4">${esc(item.desc||item.code)}</td>
+      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:${stColor}">${stDisp}</td>
+    </tr>`;
+  }).join('');
+
+  sum.innerHTML=`${S.items.length} item${S.items.length!==1?'s':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
+}
+
+// Export the availability report as a clean PDF — mirrors the attached layout (no GBW-stock column shown).
+function exportStockPDF(){
+  if(!S.items.length){ alert('Add some products to the quotation first.'); return; }
+
+  let avail=0, notAvail=0, totQty=0;
+  S.items.forEach(item=>{ effectiveStockStatus(item)==='AVAILABLE'?avail++:notAvail++; totQty+=item.qty; });
+
+  const logos=document.querySelectorAll('.tb-logo');
+  const gbwLogo=logos[0]?logos[0].src:'';
+  const jaqLogo=logos[1]?logos[1].src:'';
+
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const h24=now.getHours();
+  const mer=h24>=12?'pm':'am';
+  const h12=(h24%12||12);
+  const gen=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear()+', '+
+            String(h12).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' '+mer;
+
+  const rows=S.items.map((item,idx)=>{
+    const isAvail=effectiveStockStatus(item)==='AVAILABLE';
+    const url=IMAGE_MAP[item.code]||'';
+    const img=url
+      ? `<div class="ib"><img src="${url}" onerror="this.parentNode.innerHTML=''"/></div>`
+      : `<div class="ib"></div>`;
+    return `<tr class="${isAvail?'':'na'}">
+      <td class="ctr">${idx+1}</td>
+      <td class="code">${esc(item.code)}</td>
+      <td class="ctr oq">${item.qty}</td>
+      <td class="ctr"><span class="${isAvail?'st-ok':'st-no'}">${isAvail?'AVAILABLE':'NOT AVAILABLE'}</span></td>
+      <td class="ctr">${img}</td>
+      <td class="name">${esc(item.desc||item.code)}</td>
+    </tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stock Availability</title>
+<style>
+  @page{ size:A4 portrait; margin:12mm 10mm; @bottom-right{ content:counter(page); font-family:Arial,sans-serif; font-size:9px; color:#888 } }
+  *{ box-sizing:border-box }
+  body{ font-family:Arial,Helvetica,sans-serif; color:#1b1b1b; margin:0; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  .head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px }
+  .brand{ display:flex; align-items:center; gap:10px }
+  .brand img{ height:34px; width:auto; object-fit:contain }
+  .brand .x{ font-size:15px; color:#888; font-weight:700 }
+  .title{ font-size:15px; font-weight:800; color:#0F5C43; margin-left:8px; line-height:1.2 }
+  .meta{ text-align:right; font-size:10px; color:#444; line-height:1.7 }
+  .meta b{ color:#111 }
+  .meta .counts{ color:#0F5C43; font-weight:700; font-size:11px }
+  .rule{ height:3px; background:#0F5C43; border-radius:2px; margin:8px 0 12px }
+  table{ width:100%; border-collapse:collapse; table-layout:fixed }
+  thead th{ background:#0F5C43; color:#EAF6F0; font-size:10px; letter-spacing:.5px; text-transform:uppercase; padding:9px 8px; text-align:left; font-weight:700 }
+  thead th.ctr{ text-align:center }
+  tbody td{ border-bottom:1px solid #e6e6e6; padding:9px 8px; font-size:11px; vertical-align:middle }
+  tbody tr{ page-break-inside:avoid; break-inside:avoid }
+  td.ctr{ text-align:center }
+  tr.na{ background:#FBEAEA }
+  .code{ font-weight:700; font-size:11px; word-break:break-all }
+  .oq{ font-weight:700 }
+  .name{ font-size:11px }
+  .st-ok{ color:#1A7F4B; font-weight:800; font-size:10px; letter-spacing:.3px }
+  .st-no{ color:#C0392B; font-weight:800; font-size:10px; letter-spacing:.3px }
+  .ib{ width:44px;height:44px;background:#fff;border:1px solid #eee;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden }
+  .ib img{ width:42px;height:42px;object-fit:contain;display:block }
+  .foot{ display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:8px;border-top:1px solid #ddd;font-size:9px;color:#999 }
+  col.w-sr{width:34px} col.w-code{width:118px} col.w-oq{width:64px} col.w-st{width:104px} col.w-img{width:62px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div style="display:flex;align-items:center">
+      <div class="brand">
+        ${jaqLogo?`<img src="${jaqLogo}" alt="Jaquar"/>`:''}
+        <span class="x">×</span>
+        ${gbwLogo?`<img src="${gbwLogo}" alt="GBW"/>`:''}
+      </div>
+      <div class="title">Stock Availability<br>Report</div>
+    </div>
+    <div class="meta">
+      <div>Generated: <b>${gen}</b></div>
+      <div>Sales Order: <b>OFF</b> &nbsp; Status Display: <b>URGENT</b></div>
+      <div class="counts">${S.items.length} items &nbsp;·&nbsp; total qty ${totQty} &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${notAvail} not available</div>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <table>
+    <colgroup>
+      <col class="w-sr"><col class="w-code"><col class="w-oq"><col class="w-st"><col class="w-img"><col>
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="ctr">SR#</th><th>CODE</th><th class="ctr">ORDER QTY</th>
+        <th class="ctr">STATUS</th><th class="ctr">IMAGE</th><th>ITEM NAME</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="foot">
+    <span>GRACE BATH WORLD</span>
+    <span>Availability judged on GBW Stock vs ordered quantity</span>
+  </div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  if(!win)setTimeout(()=>window.print(),300);
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 // ── SEARCH ──
 let sT=null;
 const sI=$('search-inp'),sD=$('search-dd');
@@ -1286,8 +1528,16 @@ function closeDD(){sD.classList.remove('open');}
 
 function runSearch(q){
   const ql=q.toLowerCase();
+  // Priority rank: 0 = has stock in hand, 1 = has image (no stock), 2 = neither.
+  // Array.sort is stable, so original catalogue order is preserved within each rank.
+  const rank=p=>{
+    const st=getStock(p.code);
+    if(st!==null && st>0) return 0;     // in stock → top
+    if(IMAGE_MAP[p.code])  return 1;     // has image → next
+    return 2;                            // everything else
+  };
   const res=ALL.filter(p=>p.code.toLowerCase().includes(ql)||p.desc.toLowerCase().includes(ql))
-    .sort((a,b)=>(IMAGE_MAP[b.code]?1:0)-(IMAGE_MAP[a.code]?1:0))
+    .sort((a,b)=>rank(a)-rank(b))
     .slice(0,20);
   buildDD(res,q);
 }
@@ -1302,6 +1552,11 @@ function buildDD(res,q){
     const d=document.createElement('div');
     d.className='sr';d.dataset.code=p.code;
     const url=(getCustomProducts()[p.code]||{}).img||IMAGE_MAP[p.code]||'';
+    const st=getStock(p.code);
+    let stockTag;
+    if(st!==null && st>0)      stockTag=`<span class="sr-stock-in">✓ Stock ${fmtN(st)}</span>`;
+    else if(st!==null && st<=0)stockTag=`<span class="sr-stock-out">✕ Out of stock</span>`;
+    else                       stockTag=`<span class="sr-stock-unk">Stock —</span>`;
     d.innerHTML=(url
       ?`<img class="sr-img" src="${url}" onerror="this.style.display='none'" alt=""/>`
       :`<div class="sr-img-ph">IMG</div>`)+
@@ -1311,6 +1566,7 @@ function buildDD(res,q){
         <div class="sr-meta">
           <span class="sr-mrp">MRP ${fmt(p.mrp)}</span>
           <span class="sr-nrp">NRP ${fmt(p.nrp)}</span>
+          ${stockTag}
         </div>
       </div>
       <button class="sr-add" data-code="${esc(p.code)}">Add</button>`;
@@ -1335,7 +1591,7 @@ function setQty(code,n){
   refreshAll();
 }
 function delItem(code){S.items=S.items.filter(i=>i.code!==code);refreshAll();}
-function clearAll(){S.items=[];S.bathrooms=[];showBathroomModeBar();refreshAll();}
+function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};showBathroomModeBar();refreshAll();}
 $('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0;refreshAll();});
 
 // ── BATHROOM MODE ──────────────────────────────────────────────────
@@ -1693,6 +1949,7 @@ function refreshAll(){
   refreshList();
   refreshTotalBar();
   if($('screen-summary').classList.contains('active')) renderSummary();
+  if($('screen-stock') && $('screen-stock').classList.contains('active')) renderStock();
 }
 
 function refreshTotalBar(){
@@ -2247,6 +2504,96 @@ html, body{
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
+// ── PLAIN PDF EXPORT (simple bordered table — matches the plain-quote layout) ──
+function doPlainPrint(){
+  if(!S.items.length){ alert('Add some products to the quotation first.'); return; }
+  const tot   = totals();
+  const totQty= S.items.reduce((a,i)=>a+i.qty,0);
+
+  const rows = S.items.map((item,idx)=>{
+    const price = bp(item);
+    const url   = IMAGE_MAP[item.code] || '';
+    const imgCell = url
+      ? `<div class="imgbox"><img src="${url}" onerror="this.parentNode.innerHTML=''" alt=""/></div>`
+      : `<div class="imgbox"></div>`;
+    return `<tr>
+      <td class="c-sr">${idx+1}</td>
+      <td class="c-code">${esc(item.code)}</td>
+      <td class="c-qty">${item.qty} PCS</td>
+      <td class="c-img">${imgCell}</td>
+      <td class="c-name">${esc(item.desc||item.code)}</td>
+      <td class="c-num">${fmtN(item.mrp)}</td>
+      <td class="c-num">${fmtN(price)}</td>
+      <td class="c-num">${fmtN(price*item.qty)}</td>
+    </tr>`;
+  }).join('');
+
+  const footRow = `<tr class="foot">
+      <td></td>
+      <td></td>
+      <td class="c-qty foot-strong">${totQty} PCS</td>
+      <td colspan="3" class="foot-mrp">TOTAL MRP= RS.${fmtN(tot.mrp)}/-</td>
+      <td class="foot-grand-lbl">GRAND TOTAL</td>
+      <td class="c-num foot-grand-val">${fmtN(tot.best)}</td>
+    </tr>`;
+
+  const html = `<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Quotation ${esc($('f-qno').value||'')}</title>
+<style>
+  @page{ size:A4 portrait; margin:14mm 10mm; @bottom-center{ content:"Page " counter(page); font-family:Arial,sans-serif; font-size:9px; color:#555 } }
+  *{ box-sizing:border-box }
+  body{ font-family:Arial,Helvetica,sans-serif; color:#000; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  table{ width:100%; border-collapse:collapse; table-layout:fixed }
+  th,td{ border:1px solid #000; padding:6px 6px; font-size:11px; vertical-align:middle; word-wrap:break-word }
+  thead th{ background:#fff; font-weight:700; font-size:11px; text-align:center; letter-spacing:.3px }
+  tbody tr{ page-break-inside:avoid; break-inside:avoid }
+  .c-sr{ width:34px; text-align:center; font-weight:700 }
+  .c-code{ width:120px; font-weight:700; font-size:11px }
+  .c-qty{ width:58px; text-align:center; font-weight:700 }
+  .c-img{ width:96px; text-align:center; padding:4px }
+  .c-name{ font-size:11px; font-weight:600 }
+  .c-num{ width:78px; text-align:right; font-variant-numeric:tabular-nums }
+  .imgbox{ width:90px; height:90px; background:#fff; margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden }
+  .imgbox img{ width:90px; height:90px; object-fit:contain; display:block }
+  /* column widths via colgroup */
+  col.w-sr{width:34px} col.w-code{width:120px} col.w-qty{width:58px} col.w-img{width:96px}
+  col.w-mrp{width:78px} col.w-bp{width:84px} col.w-tot{width:84px}
+  tr.foot td{ font-size:13px }
+  .foot-strong{ font-weight:700; text-align:center }
+  .foot-mrp{ text-align:center; font-style:italic; font-weight:700; font-size:13px }
+  .foot-grand-lbl{ text-align:right; font-weight:700; font-size:11px }
+  .foot-grand-val{ font-weight:700; font-size:14px }
+</style>
+</head>
+<body>
+  <table>
+    <colgroup>
+      <col class="w-sr"><col class="w-code"><col class="w-qty"><col class="w-img">
+      <col><col class="w-mrp"><col class="w-bp"><col class="w-tot">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>SR#</th><th>CODE</th><th>QTY</th><th>PRODUCT IMAGE</th>
+        <th>ITEM NAME</th><th>MRP</th><th>BEST PRICE</th><th>TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+      ${footRow}
+    </tbody>
+  </table>
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  if(!win)setTimeout(()=>window.print(),300);
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 // ── PRODUCT EDITOR (BAKE-IN APPROACH) ──
 function getCustomProducts(){ return {}; } // bake-in approach — no runtime overrides
 
@@ -2267,6 +2614,9 @@ function renderEditor(){
   else                           srcLabel = ' (not loaded)';
   $('ed-prod-count').textContent = 'Products: ' + prodCount.toLocaleString() + srcLabel;
   $('ed-img-count').textContent  = 'Image URLs: ' + imgCount.toLocaleString() + srcLabel;
+  const stockCount = Object.keys(STOCK_MAP).length;
+  const sEl=$('ed-stock-count');
+  if(sEl) sEl.textContent = 'Stock rows: ' + stockCount.toLocaleString() + (stockCount?srcLabel:' (not loaded)');
 }
 
 function edStatus(id,msg,ok){
@@ -2446,11 +2796,13 @@ renderEditor();
 const GSHEET_ID          = '1-VxayIYdSLMBpcIsjMY3LkbY7eCQYx12K6B5TH3rKUY';
 const GSHEET_PRODUCT_TAB = 'CODE NEW';
 const GSHEET_IMAGE_TAB   = 'IMAGE NEW';
+const GSHEET_STOCK_TAB   = 'GBW STOCK';
 let _syncing = false;
 
 // ── localStorage cache (stores raw CSV — the most compact form) ──
 const CACHE_PROD = 'gbw_csv_products_v1';
 const CACHE_IMG  = 'gbw_csv_images_v1';
+const CACHE_STOCK= 'gbw_csv_stock_v1';
 const CACHE_TIME = 'gbw_sync_time_v1';
 function cacheGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function cacheSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
@@ -2515,6 +2867,15 @@ function applyImagesCSV(text){
   Object.assign(IMAGE_MAP, m);
   return keys.length;
 }
+function applyStockCSV(text){
+  const rows = parseCSV(text).filter(r=>r.some(c=>String(c).trim()!==''));
+  const m    = buildStockFromRows(rows);
+  const keys = Object.keys(m);
+  if(!keys.length) throw new Error('0 valid stock rows');
+  Object.keys(STOCK_MAP).forEach(k=>delete STOCK_MAP[k]); // mutate const in place
+  Object.assign(STOCK_MAP, m);
+  return keys.length;
+}
 
 // Full-screen overlay shown only when there is genuinely no catalogue to use
 function updateOfflineOverlay(detail){
@@ -2552,6 +2913,23 @@ function buildProductsFromRows(rows){
   return out;
 }
 
+function buildStockFromRows(rows){
+  const headers = rows[0].map(_norm);
+  let ci=_col(headers,['code','itemcode','productcode']);
+  // stock/quantity column — try several common header names
+  let qi=_col(headers,['gbwstock','closingstock','closingbalance','stockinhand','instock','onhand','inhand','availableqty','available','stock','quantity','qty','balance','closing']);
+  let hasHeader=true;
+  if(ci<0||qi<0){ hasHeader=false; ci=0; qi=1; } // positional fallback: col A = code, col B = stock
+  const body = hasHeader ? rows.slice(1) : rows;
+  const map={};
+  for(const r of body){
+    const code=String(r[ci]||'').trim().toUpperCase();
+    if(!code) continue;
+    map[code]=_num(r[qi]);   // numeric stock; non-numeric/blank → 0
+  }
+  return map;
+}
+
 function buildImagesFromRows(rows){
   const headers = rows[0].map(_norm);
   let ci=_col(headers,['code']);
@@ -2583,12 +2961,13 @@ async function syncFromGoogleSheet(manual){
   _syncing=true;
   setSyncStatus('⏳ Syncing live data from Google Sheet…', null);
 
-  const [prodR,imgR] = await Promise.allSettled([
+  const [prodR,imgR,stockR] = await Promise.allSettled([
     fetchSheetText(GSHEET_PRODUCT_TAB),
-    fetchSheetText(GSHEET_IMAGE_TAB)
+    fetchSheetText(GSHEET_IMAGE_TAB),
+    fetchSheetText(GSHEET_STOCK_TAB)
   ]);
 
-  let prodOK=false, imgOK=false, prodN=0, imgN=0; const errs=[];
+  let prodOK=false, imgOK=false, stockOK=false, prodN=0, imgN=0, stockN=0; const errs=[];
 
   if(prodR.status==='fulfilled'){
     try{ prodN=applyProductsCSV(prodR.value); prodOK=true; cacheSet(CACHE_PROD, prodR.value); }
@@ -2600,17 +2979,24 @@ async function syncFromGoogleSheet(manual){
     catch(e){ errs.push('IMAGE NEW: '+e.message); }
   } else errs.push('IMAGE NEW: '+((imgR.reason&&imgR.reason.message)||imgR.reason));
 
+  if(stockR.status==='fulfilled'){
+    try{ stockN=applyStockCSV(stockR.value); stockOK=true; cacheSet(CACHE_STOCK, stockR.value); }
+    catch(e){ errs.push('GBW STOCK: '+e.message); }
+  } else errs.push('GBW STOCK: '+((stockR.reason&&stockR.reason.message)||stockR.reason));
+
   _syncing=false;
 
-  if(prodOK||imgOK){
+  if(prodOK||imgOK||stockOK){
     _dataSource='sheet'; _syncedOK=true;
     _lastSyncTime=new Date().toLocaleString();
     cacheSet(CACHE_TIME,_lastSyncTime);
     refreshAll(); renderEditor(); updateOfflineOverlay();
+    if(typeof renderStock==='function' && $('screen-stock') && $('screen-stock').classList.contains('active')) renderStock();
     if(typeof sI!=='undefined' && sI.value.trim()) runSearch(sI.value); // refresh open search
     const parts=[];
     if(prodOK) parts.push(prodN.toLocaleString()+' products');
     if(imgOK)  parts.push(imgN.toLocaleString()+' image URLs');
+    if(stockOK)parts.push(stockN.toLocaleString()+' stock rows');
     let msg='✔ Live-synced '+parts.join(' & ')+' · '+new Date().toLocaleTimeString();
     if(errs.length) msg+=' (partial — '+errs.join('; ')+')';
     setSyncStatus(msg, true);
@@ -2639,9 +3025,10 @@ async function syncFromGoogleSheet(manual){
 //    so the app is usable immediately and works offline after a first load.
 (function hydrateFromCache(){
   let any=false;
-  const pc=cacheGet(CACHE_PROD), ic=cacheGet(CACHE_IMG);
+  const pc=cacheGet(CACHE_PROD), ic=cacheGet(CACHE_IMG), sc=cacheGet(CACHE_STOCK);
   if(pc){ try{ applyProductsCSV(pc); any=true; }catch(e){} }
   if(ic){ try{ applyImagesCSV(ic);  any=true; }catch(e){} }
+  if(sc){ try{ applyStockCSV(sc);   any=true; }catch(e){} }
   if(any){
     _dataSource='cache';
     _lastSyncTime=cacheGet(CACHE_TIME)||'';
