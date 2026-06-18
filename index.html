@@ -970,7 +970,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
 <!-- STOCK AVAILABILITY SCREEN -->
 <div id="screen-stock" class="screen">
-  <div style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
+  <div id="stock-scroll" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+40px);display:flex;flex-direction:column;gap:14px">
 
     <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Stock Availability</div>
 
@@ -1349,7 +1349,24 @@ function resetStockStatuses(){
   S.stockOverrides={};
   renderStock();
 }
+function sizeStockScroll(){
+  const sc=$('stock-scroll');
+  if(!sc) return;
+  // Only size when the stock screen is actually visible
+  const screen=$('screen-stock');
+  if(!screen || !screen.classList.contains('active')) return;
+  const top=sc.getBoundingClientRect().top;
+  const vh=window.innerHeight || document.documentElement.clientHeight;
+  const h=Math.max(120, vh - top);   // visible space from container top to bottom of viewport
+  sc.style.height=h+'px';
+  sc.style.maxHeight=h+'px';
+}
+window.addEventListener('resize', sizeStockScroll);
+window.addEventListener('orientationchange', ()=>setTimeout(sizeStockScroll,200));
 function renderStock(){
+  sizeStockScroll();
+  requestAnimationFrame(sizeStockScroll);
+  setTimeout(sizeStockScroll, 60);
   const wrap=$('stock-table-wrap'), empty=$('stock-empty'), tb=$('stock-tbody'), sum=$('stock-summary');
   if(!wrap) return;
   if(!S.items.length){
