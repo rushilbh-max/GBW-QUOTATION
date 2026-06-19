@@ -230,7 +230,7 @@ textarea.c-inp{resize:none;height:72px}
 .c-row .c-field{flex:1}
 
 /* ══ PREVIEW SCREEN ══ */
-#screen-preview{overflow-y:auto;-webkit-overflow-scrolling:touch;background:#1A1A1A}
+#screen-preview{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#1A1A1A}
 .prev-bar{
   position:sticky;top:0;z-index:100;
   display:flex;justify-content:space-between;align-items:center;
@@ -261,6 +261,7 @@ textarea.c-inp{resize:none;height:72px}
   box-shadow:0 2px 40px rgba(0,0,0,.4);
   overflow:hidden;
   position:relative;
+  flex-shrink:0;
 }
 @media(min-width:600px){.ppage{margin:20px auto;max-width:960px}}
 
@@ -970,7 +971,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
 <!-- STOCK AVAILABILITY SCREEN -->
 <div id="screen-stock" class="screen">
-  <div id="stock-scroll" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+40px);display:flex;flex-direction:column;gap:14px">
+  <div id="stock-scroll" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+40px);display:flex;flex-direction:column;gap:14px">
 
     <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Stock Availability</div>
 
