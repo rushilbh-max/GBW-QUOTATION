@@ -998,7 +998,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     </div>
 
     <!-- Availability table -->
-    <div id="stock-table-wrap" style="display:none;background:var(--ink2);border:1px solid rgba(201,168,76,0.18);border-radius:10px;overflow:hidden">
+    <div id="stock-table-wrap" style="display:none;flex-shrink:0;background:var(--ink2);border:1px solid rgba(201,168,76,0.18);border-radius:10px;overflow:hidden">
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table style="width:100%;border-collapse:collapse;min-width:640px">
           <thead>
@@ -1350,24 +1350,10 @@ function resetStockStatuses(){
   S.stockOverrides={};
   renderStock();
 }
-function sizeStockScroll(){
-  const sc=$('stock-scroll');
-  if(!sc) return;
-  // Only size when the stock screen is actually visible
-  const screen=$('screen-stock');
-  if(!screen || !screen.classList.contains('active')) return;
-  const top=sc.getBoundingClientRect().top;
-  const vh=window.innerHeight || document.documentElement.clientHeight;
-  const h=Math.max(120, vh - top);   // visible space from container top to bottom of viewport
-  sc.style.height=h+'px';
-  sc.style.maxHeight=h+'px';
-}
-window.addEventListener('resize', sizeStockScroll);
-window.addEventListener('orientationchange', ()=>setTimeout(sizeStockScroll,200));
+// Stock scrolling is handled purely by CSS flex layout (#stock-scroll: flex:1; min-height:0; overflow-y:auto),
+// matching the Editor screen. No JS height sizing needed.
+
 function renderStock(){
-  sizeStockScroll();
-  requestAnimationFrame(sizeStockScroll);
-  setTimeout(sizeStockScroll, 60);
   const wrap=$('stock-table-wrap'), empty=$('stock-empty'), tb=$('stock-tbody'), sum=$('stock-summary');
   if(!wrap) return;
   if(!S.items.length){
