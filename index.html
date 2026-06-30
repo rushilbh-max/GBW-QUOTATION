@@ -180,38 +180,6 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .p-del-btn{width:34px;height:34px;background:rgba(180,40,30,0.1);border:1px solid rgba(180,40,30,0.2);border-radius:var(--r-sm);color:#C05050;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
 .p-del-btn:active{background:rgba(180,40,30,0.2)}
 
-/* Insert above/below (builder rows) */
-.p-card-insert{display:flex;gap:8px;padding:8px 12px;background:rgba(201,168,76,0.04);border-top:1px solid rgba(201,168,76,0.08)}
-.p-ins-btn{flex:1;background:transparent;border:1px dashed rgba(201,168,76,0.35);color:var(--gold-l);border-radius:var(--r-sm);padding:6px 8px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:background .12s,border-color .12s}
-.p-ins-btn:active,.p-ins-btn:hover{background:rgba(201,168,76,0.12);border-color:rgba(201,168,76,0.6)}
-
-/* Search & Edit · quote cards */
-.se-qcard{background:var(--ink2);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r);padding:13px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s}
-.se-qcard:active,.se-qcard:hover{border-color:rgba(201,168,76,0.3)}
-.se-qcard-name{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--gold-l);letter-spacing:.6px;line-height:1.3;word-break:break-word}
-.se-qcard-meta{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2)}
-.se-qcard-load{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:var(--r-sm);padding:8px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;cursor:pointer}
-.se-qcard-load:active{opacity:.85}
-
-/* Search & Edit · workspace bathroom cards */
-.se-bath{background:var(--ink2);border:1px solid rgba(201,168,76,0.18);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
-.se-bath-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.03));border-bottom:1px solid rgba(201,168,76,0.12)}
-.se-bath-name{flex:1;background:var(--ink3);border:1px solid rgba(201,168,76,0.25);border-radius:var(--r-sm);padding:8px 10px;color:var(--gold-l);font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:.5px;outline:none}
-.se-bath-del{width:32px;height:32px;background:rgba(180,40,30,0.1);border:1px solid rgba(180,40,30,0.25);border-radius:var(--r-sm);color:#C05050;font-size:14px;flex-shrink:0;cursor:pointer}
-.se-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.se-item:last-child{border-bottom:none}
-.se-item-img{width:42px;height:42px;object-fit:contain;border-radius:4px;background:#fff;flex-shrink:0}
-.se-item-img-ph{width:42px;height:42px;border-radius:4px;background:var(--ink3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--slate)}
-.se-item-code{font-family:'Cinzel',serif;font-size:10px;font-weight:600;color:var(--gold-l);letter-spacing:.5px}
-.se-item-desc{font-family:'Jost',sans-serif;font-size:11px;color:#C8D6E0;line-height:1.3;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.se-add-item{width:100%;background:transparent;border:1px dashed rgba(201,168,76,0.3);color:var(--gold-l);border-radius:var(--r-sm);padding:9px;margin:10px 12px;width:calc(100% - 24px);box-sizing:border-box;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer}
-.se-add-item:active{background:rgba(201,168,76,0.1)}
-/* picker rows */
-.pk-row{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:6px;cursor:pointer;transition:background .12s}
-.pk-row:active,.pk-row:hover{background:rgba(201,168,76,0.08)}
-.pk-img{width:44px;height:44px;object-fit:contain;border-radius:4px;background:#fff;flex-shrink:0}
-.pk-img-ph{width:44px;height:44px;border-radius:4px;background:var(--ink3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--slate)}
-
 /* ══ TOTAL BAR ══ */
 #total-bar{
   flex-shrink:0;background:var(--ink2);
@@ -800,13 +768,12 @@ html, body{
 
 <!-- TABS -->
 <div id="tabs">
-  <button class="tab" data-screen="builder" onclick="showScreen('builder')">Products</button>
-  <button class="tab" data-screen="search" onclick="showScreen('search')">Search</button>
-  <button class="tab" data-screen="customer" onclick="showScreen('customer')">Customer</button>
-  <button class="tab" data-screen="summary" onclick="showScreen('summary')">Summary</button>
-  <button class="tab" data-screen="stock" onclick="showScreen('stock')">Stock</button>
-  <button class="tab on" data-screen="editor" onclick="showScreen('editor')">Editor</button>
-  <button class="tab" data-screen="preview" onclick="goPreview()">Quotation</button>
+  <button class="tab" onclick="showScreen('builder')">Products</button>
+  <button class="tab" onclick="showScreen('customer')">Customer</button>
+  <button class="tab" onclick="showScreen('summary')">Summary</button>
+  <button class="tab" onclick="showScreen('stock')">Stock</button>
+  <button class="tab on" onclick="showScreen('editor')">Editor</button>
+  <button class="tab" onclick="goPreview()">Quotation</button>
 </div>
 
 <!-- PRICING BAR -->
@@ -1111,62 +1078,11 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     </div>
   </div>
 </div>
-<!-- SEARCH & EDIT SCREEN -->
-<div id="screen-search" class="screen">
-  <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
-
-    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Search &amp; Edit Quotations</div>
-
-    <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px;font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);line-height:1.7">
-      Load a saved quotation, then edit its codes, quantities and bathrooms. Whatever is in this workspace becomes the live <b style="color:var(--gold-l)">Quotation</b> and <b style="color:var(--gold-l)">Stock</b> source. <b style="color:var(--gold-l)">Everything here clears on refresh</b> — your saved sheet is never touched.
-    </div>
-
-    <!-- Quotes sync status -->
-    <div id="se-sync-status" style="display:block;font-family:'Jost',sans-serif;font-size:11px;padding:8px 12px;border-radius:6px;font-weight:600;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:var(--gold-l)">Loading saved quotations…</div>
-
-    <!-- Quote search -->
-    <div>
-      <div style="position:relative">
-        <input type="text" id="se-search-inp" placeholder="Search a quotation to load into the editor…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;background:var(--ink3);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:12px 14px;color:#D8E4EC;font-family:'Jost',sans-serif;font-size:13px;outline:none;box-sizing:border-box">
-      </div>
-      <button onclick="reloadQuotes(true)" style="margin-top:8px;display:flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(42,157,96,0.5);color:#2A9D60;border-radius:6px;padding:8px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">↻ Refresh Quotations</button>
-    </div>
-
-    <!-- Quote result cards -->
-    <div id="se-quote-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px"></div>
-
-    <!-- Workspace divider -->
-    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding:8px 0 6px;border-top:1px solid rgba(201,168,76,0.15);text-align:center;margin-top:4px">Editing Workspace</div>
-    <div id="se-workspace"></div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button onclick="seAddBathroom()" style="flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">🛁 Add Bathroom</button>
-      <button onclick="seClearWorkspace()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(224,96,96,0.4);color:#FF9B8F;border-radius:7px;padding:11px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">✕ Clear</button>
-      <button onclick="goPreview()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.5);color:var(--gold);border-radius:7px;padding:11px 16px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">View Quotation →</button>
-    </div>
-  </div>
-</div>
-
-<!-- REUSABLE CATALOGUE PICKER MODAL (insert-above/below, add item to bathroom) -->
-<div id="picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;align-items:flex-start;justify-content:center;padding:60px 16px 16px">
-  <div style="background:var(--ink2);border:1px solid rgba(201,168,76,0.25);border-radius:10px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:14px 18px;background:rgba(201,168,76,0.06);border-bottom:1px solid rgba(201,168,76,0.1);display:flex;justify-content:space-between;align-items:center">
-      <span id="picker-title" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Pick a product</span>
-      <button onclick="closePicker()" style="background:transparent;border:none;color:var(--muted2);font-size:20px;cursor:pointer;line-height:1">×</button>
-    </div>
-    <div style="padding:14px 16px 8px">
-      <input type="text" id="picker-inp" placeholder="Search by code or name…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;background:var(--ink3);border:1px solid rgba(201,168,76,0.25);border-radius:7px;padding:11px 13px;color:#D8E4EC;font-family:'Jost',sans-serif;font-size:13px;outline:none;box-sizing:border-box">
-    </div>
-    <div id="picker-dd" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 10px 12px;flex:1"></div>
-  </div>
-</div>
-
 <!-- PREVIEW -->
 <div id="screen-preview" class="screen">
   <div class="prev-bar">
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn-print-alt" onclick="exportQuoteExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain PDF</button>
       <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
     </div>
@@ -1354,16 +1270,15 @@ function setMode(m){
 
 // ── SCREENS ──
 function showScreen(id){
-  ['builder','search','customer','summary','stock','editor','preview'].forEach(s=>{
-    const el=$('screen-'+s); if(el) el.classList.toggle('active',s===id);
+  ['builder','customer','summary','stock','editor','preview'].forEach(s=>{
+    $('screen-'+s).classList.toggle('active',s===id);
   });
-  document.querySelectorAll('.tab').forEach(t=>{
-    t.classList.toggle('on',t.dataset.screen===id);
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('on',['builder','customer','summary','stock','editor','preview'][i]===id);
   });
   if(id==='summary') renderSummary();
   if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
-  if(id==='search') renderSearchEdit();
 }
 
 function renderSummary(){
@@ -2070,10 +1985,6 @@ function refreshList(){
           <div class="p-card-code">${esc(item.code)}</div>
           <div class="p-card-name">${esc(item.desc)}</div>
         </div>
-      </div>
-      <div class="p-card-insert">
-        <button class="p-ins-btn" onclick="builderInsert('${esc(item.code)}','above')" title="Add a product above this row">↑ Add above</button>
-        <button class="p-ins-btn" onclick="builderInsert('${esc(item.code)}','below')" title="Add a product below this row">↓ Add below</button>
       </div>
       <div class="p-card-bottom">
         <div class="p-price-block">
@@ -3108,422 +3019,6 @@ async function syncFromGoogleSheet(manual){
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-// SEARCH & EDIT QUOTATIONS · catalogue picker · insert-above/below · Excel
-// (added on top of the authoritative base — no original logic altered)
-// ════════════════════════════════════════════════════════════════════
-
-// Rebuild the flat S.items working set from S.bathrooms (merging dup codes).
-function syncItemsFromBathrooms(){
-  S.items=[];
-  (S.bathrooms||[]).forEach(function(b){
-    (b.items||[]).forEach(function(i){
-      var ex=S.items.find(function(x){return x.code===i.code;});
-      if(ex) ex.qty+=i.qty; else S.items.push(Object.assign({},i));
-    });
-  });
-}
-
-// A placeholder product for a code that is not in the live catalogue,
-// so a loaded quote keeps its structure even for unknown codes.
-function stubProduct(code){
-  return {code:code,desc:code,brand:'',sdp:0,nrp:0,mrp:0,hsn:'',gst:0,sdp_net:0};
-}
-function resolveProduct(code){
-  return PMAP[code] ? Object.assign({},PMAP[code]) : stubProduct(code);
-}
-
-// ── REUSABLE CATALOGUE PICKER ───────────────────────────────────────
-var _pickerCB=null;
-var _PICKER_HINT='<div style="padding:14px 8px;font-family:\'Cormorant\',serif;font-style:italic;font-size:13px;color:var(--muted)">Type a code or product name…</div>';
-function openPicker(cb,title){
-  _pickerCB=cb;
-  $('picker-title').textContent=title||'Pick a product';
-  $('picker-inp').value='';
-  $('picker-dd').innerHTML=_PICKER_HINT;
-  $('picker-modal').style.display='flex';
-  setTimeout(function(){ try{$('picker-inp').focus();}catch(e){} },60);
-}
-function closePicker(){ $('picker-modal').style.display='none'; _pickerCB=null; }
-
-function pickerSearch(q){
-  var dd=$('picker-dd');
-  var ql=String(q||'').toLowerCase().trim();
-  if(!ql){ dd.innerHTML=_PICKER_HINT; return; }
-  var rank=function(p){ var st=getStock(p.code); if(st!==null&&st>0)return 0; if(IMAGE_MAP[p.code])return 1; return 2; };
-  var res=ALL.filter(function(p){return p.code.toLowerCase().includes(ql)||p.desc.toLowerCase().includes(ql);})
-             .sort(function(a,b){return rank(a)-rank(b);}).slice(0,30);
-  if(!res.length){ dd.innerHTML='<div style="padding:14px 8px;font-family:\'Cormorant\',serif;font-style:italic;font-size:13px;color:var(--muted)">No products found.</div>'; return; }
-  dd.innerHTML=res.map(function(p){
-    var url=IMAGE_MAP[p.code]||'';
-    var st=getStock(p.code);
-    var tag;
-    if(st!==null&&st>0) tag='<span style="font-size:9px;color:#2A9D60;font-weight:700">✓ Stock '+fmtN(st)+'</span>';
-    else if(st!==null&&st<=0) tag='<span style="font-size:9px;color:#C05050;font-weight:700">✕ Out</span>';
-    else tag='<span style="font-size:9px;color:var(--muted)">Stock —</span>';
-    var img = url ? '<img class="pk-img" src="'+url+'" onerror="this.style.display=\'none\'" alt=""/>' : '<div class="pk-img-ph">IMG</div>';
-    return '<div class="pk-row" data-pick="'+esc(p.code)+'">'+img+
-      '<div style="flex:1;min-width:0">'+
-        '<div class="se-item-code">'+esc(p.code)+'</div>'+
-        '<div class="se-item-desc">'+esc(p.desc)+'</div>'+
-        '<div style="margin-top:3px;display:flex;gap:8px;align-items:center"><span style="font-size:10px;color:#B0C8D8">MRP '+fmt(p.mrp)+'</span>'+tag+'</div>'+
-      '</div>'+
-      '<button class="se-qcard-load" style="padding:6px 12px;flex-shrink:0" data-pick="'+esc(p.code)+'">Add</button>'+
-    '</div>';
-  }).join('');
-}
-// wire the picker once (elements already in DOM — this script runs at end of <body>)
-(function(){
-  var inp=$('picker-inp'), dd=$('picker-dd');
-  if(inp){ var t=null; inp.addEventListener('input',function(){ clearTimeout(t); var v=this.value; t=setTimeout(function(){pickerSearch(v);},140); }); }
-  function onPick(e){ var el=e.target.closest('[data-pick]'); if(!el)return; e.preventDefault(); var code=el.getAttribute('data-pick'); var cb=_pickerCB; closePicker(); if(cb)cb(code); }
-  if(dd){ dd.addEventListener('click',onPick); }
-})();
-
-// ── BUILDER · insert a product above/below a row ─────────────────────
-function builderInsert(refCode,where){
-  openPicker(function(pickCode){
-    if(S.bathrooms && S.bathrooms.length){
-      var placed=false;
-      for(var k=0;k<S.bathrooms.length;k++){
-        var b=S.bathrooms[k];
-        var idx=b.items.findIndex(function(i){return i.code===refCode;});
-        if(idx<0) continue;
-        var ex=b.items.find(function(i){return i.code===pickCode;});
-        if(ex){ ex.qty++; }
-        else { var np=resolveProduct(pickCode); np.qty=1; b.items.splice(where==='above'?idx:idx+1,0,np); }
-        placed=true; break;
-      }
-      if(!placed){ var b0=S.bathrooms[0]; var ex0=b0.items.find(function(i){return i.code===pickCode;}); if(ex0)ex0.qty++; else { var n0=resolveProduct(pickCode); n0.qty=1; b0.items.push(n0); } }
-      syncItemsFromBathrooms();
-    } else {
-      var fidx=S.items.findIndex(function(i){return i.code===refCode;});
-      var fex=S.items.find(function(i){return i.code===pickCode;});
-      if(fex){ fex.qty++; }
-      else { var fnp=resolveProduct(pickCode); fnp.qty=1; if(fidx<0) S.items.push(fnp); else S.items.splice(where==='above'?fidx:fidx+1,0,fnp); }
-    }
-    refreshAll();
-    if($('screen-search') && $('screen-search').classList.contains('active')) renderSearchEdit();
-  }, where==='above'?'Insert product above this row':'Insert product below this row');
-}
-
-// ── EXPORT · code & qty (or bathroom+code+qty) to Excel ──────────────
-function exportQuoteExcel(){
-  if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
-  var bathMode = S.bathrooms && S.bathrooms.length>0;
-  var aoa, fname;
-  if(bathMode){
-    aoa=[['Bathroom','Code','Qty']];
-    S.bathrooms.forEach(function(b){ (b.items||[]).forEach(function(i){ aoa.push([b.name||'', i.code, i.qty]); }); });
-    fname='quotation_bathroomwise.xlsx';
-    if(aoa.length===1){ alert('No products in the quotation to export.'); return; }
-  } else {
-    if(!S.items.length){ alert('No products in the quotation to export.'); return; }
-    aoa=[['Code','Qty']];
-    S.items.forEach(function(i){ aoa.push([i.code, i.qty]); });
-    fname='quotation_codes.xlsx';
-  }
-  var ws=XLSX.utils.aoa_to_sheet(aoa);
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Quotation');
-  XLSX.writeFile(wb,fname);
-}
-
-// ── SAVED QUOTATIONS (Google Sheet) ─────────────────────────────────
-var QUOTES_SHEET_ID='1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
-var CACHE_QUOTES='gbw_quotes_csv_v1';
-var QUOTES=[];               // [{name, hasBath, rows:[{bath,code,qty}]}]
-var _quotesLoading=false;
-
-function quotesCsvUrl(){
-  // omit &sheet= so the first/visible tab is used regardless of its name; cache-buster forces fresh data
-  return 'https://docs.google.com/spreadsheets/d/'+QUOTES_SHEET_ID+'/gviz/tq?tqx=out:csv&_cb='+Date.now();
-}
-
-function parseQuotesCSV(text){
-  var rows=parseCSV(text).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});});
-  if(!rows.length) return [];
-  var headers=rows[0].map(_norm);
-  var qi=_col(headers,['quotationname','quotename','quotation','quoteset','quote','setname','projectname','project','name','set']);
-  var bi=_col(headers,['bathroomname','bathroom','bath','area','room','zone','location']);
-  var ci=_col(headers,['itemcode','code','sku','item','product']);
-  var qtyi=_col(headers,['qty','quantity','pcs','nos','units','count']);
-  var hasHeader = (qi>=0 || ci>=0);
-  var body;
-  if(hasHeader){
-    body=rows.slice(1);
-  } else {
-    body=rows;
-    var ncol=rows[0].length;
-    if(ncol>=4){ qi=0; bi=1; ci=2; qtyi=3; }
-    else if(ncol===3){ qi=0; ci=1; qtyi=2; bi=-1; }
-    else { qi=0; ci=1; qtyi=-1; bi=-1; }
-  }
-  if(ci<0) ci=(bi>=0?bi+1:(qi>=0?qi+1:1));
-  var map={}, order=[];
-  body.forEach(function(r){
-    var code=String(ci>=0?(r[ci]||''):'').trim().toUpperCase();
-    if(!code) return;
-    var qname=String(qi>=0?(r[qi]||''):'').trim() || 'Untitled Quotation';
-    var bath=String(bi>=0?(r[bi]||''):'').trim();
-    var qty=qtyi>=0 ? (parseInt(String(r[qtyi]).replace(/[^0-9\-]/g,''))||1) : 1;
-    if(qty<=0) qty=1;
-    if(!map[qname]){ map[qname]={name:qname,hasBath:false,rows:[]}; order.push(qname); }
-    if(bath) map[qname].hasBath=true;
-    map[qname].rows.push({bath:bath,code:code,qty:qty});
-  });
-  return order.map(function(n){return map[n];});
-}
-
-function setSeSyncStatus(msg,state){
-  var el=$('se-sync-status'); if(!el) return;
-  el.style.display='block';
-  var bg,bd,col;
-  if(state===true){ bg='rgba(42,157,96,0.15)'; bd='rgba(42,157,96,0.4)'; col='#2A9D60'; }
-  else if(state===false){ bg='rgba(220,60,50,0.12)'; bd='rgba(220,60,50,0.3)'; col='#E06060'; }
-  else { bg='rgba(201,168,76,0.12)'; bd='rgba(201,168,76,0.35)'; col='var(--gold-l)'; }
-  el.style.background=bg; el.style.border='1px solid '+bd; el.style.color=col; el.textContent=msg;
-}
-
-async function reloadQuotes(manual){
-  if(_quotesLoading) return;
-  _quotesLoading=true;
-  setSeSyncStatus(manual?'↻ Refreshing saved quotations…':'Loading saved quotations…', null);
-  try{
-    var res=await fetch(quotesCsvUrl(),{cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var text=await res.text();
-    if(/^\s*</.test(text)) throw new Error('sheet not shared publicly');
-    if(!text.trim()) throw new Error('empty sheet');
-    QUOTES=parseQuotesCSV(text);
-    cacheSet(CACHE_QUOTES,text);
-    var lines=QUOTES.reduce(function(a,q){return a+q.rows.length;},0);
-    setSeSyncStatus('✔ '+QUOTES.length+' saved quotation(s) · '+lines+' line(s) · '+new Date().toLocaleTimeString(), true);
-  }catch(e){
-    var c=cacheGet(CACHE_QUOTES);
-    if(c){ try{ QUOTES=parseQuotesCSV(c); setSeSyncStatus('⚠ Live refresh failed ('+e.message+') — showing cached quotations.', false); }
-           catch(e2){ QUOTES=[]; setSeSyncStatus('⚠ Could not load quotations: '+e.message, false); } }
-    else { QUOTES=[]; setSeSyncStatus('⚠ Could not load quotations: '+e.message+'. Share the sheet as "Anyone with the link → Viewer".', false); }
-  }
-  _quotesLoading=false;
-  renderQuoteCards($('se-search-inp')?$('se-search-inp').value:'');
-}
-
-// ── SEARCH & EDIT · render ───────────────────────────────────────────
-function renderSearchEdit(){
-  renderQuoteCards($('se-search-inp')?$('se-search-inp').value:'');
-  renderWorkspace();
-}
-
-function quoteStockPct(q){
-  var inS=0, tot=0;
-  q.rows.forEach(function(r){ tot++; var st=getStock(r.code); if(st!==null&&st>0) inS++; });
-  if(!tot) return null;
-  return Math.round(inS/tot*100);
-}
-
-function renderQuoteCards(filter){
-  var wrap=$('se-quote-list'); if(!wrap) return;
-  var f=String(filter||'').toLowerCase().trim();
-  if(!QUOTES.length){
-    wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;text-align:center;font-family:\'Cormorant\',serif;font-style:italic;color:var(--muted);font-size:14px">No saved quotations loaded yet. Tap ↻ Refresh Quotations.</div>';
-    return;
-  }
-  var list=QUOTES;
-  if(f) list=QUOTES.filter(function(q){ return q.name.toLowerCase().includes(f) || q.rows.some(function(r){return r.code.toLowerCase().includes(f);}); });
-  if(!list.length){
-    wrap.innerHTML='<div style="grid-column:1/-1;padding:20px;text-align:center;font-family:\'Cormorant\',serif;font-style:italic;color:var(--muted);font-size:14px">No quotation matches "'+esc(filter)+'".</div>';
-    return;
-  }
-  wrap.innerHTML=list.map(function(q){
-    var gi=QUOTES.indexOf(q);
-    var pct=quoteStockPct(q);
-    var pctTag='';
-    if(pct!==null){ var ok=pct>=90; pctTag='<span style="font-size:10px;font-weight:700;color:'+(ok?'#2A9D60':'#C9A84C')+'">'+pct+'% in stock</span>'; }
-    var bathTag = q.hasBath ? '<span style="font-size:10px;color:var(--gold-l)">🛁 bathroom-wise</span>' : '';
-    return '<div class="se-qcard">'+
-      '<div class="se-qcard-name">'+esc(q.name)+'</div>'+
-      '<div class="se-qcard-meta">'+q.rows.length+' line(s)</div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-height:14px">'+pctTag+bathTag+'</div>'+
-      '<button class="se-qcard-load" onclick="loadQuoteByIndex('+gi+')">Load into editor</button>'+
-    '</div>';
-  }).join('');
-}
-
-function loadQuoteByIndex(i){ var q=QUOTES[i]; if(q) loadQuoteIntoWorkspace(q); }
-
-function loadQuoteIntoWorkspace(q){
-  if(typeof q==='number') q=QUOTES[q];
-  if(typeof q==='string') q=QUOTES.find(function(x){return x.name===q;});
-  if(!q) return;
-  var notFound=0;
-  if(q.hasBath){
-    var bmap={}, order=[];
-    q.rows.forEach(function(r){
-      var bath=r.bath||'Bathroom';
-      if(!bmap[bath]){ bmap[bath]={name:bath,items:[]}; order.push(bath); }
-      var ex=bmap[bath].items.find(function(it){return it.code===r.code;});
-      if(ex){ ex.qty+=r.qty; }
-      else { var p=resolveProduct(r.code); if(!PMAP[r.code]) notFound++; p.qty=r.qty; bmap[bath].items.push(p); }
-    });
-    S.bathrooms=order.map(function(n){return bmap[n];});
-    syncItemsFromBathrooms();
-  } else {
-    S.bathrooms=[]; S.items=[];
-    q.rows.forEach(function(r){
-      var ex=S.items.find(function(it){return it.code===r.code;});
-      if(ex){ ex.qty+=r.qty; }
-      else { var p=resolveProduct(r.code); if(!PMAP[r.code]) notFound++; p.qty=r.qty; S.items.push(p); }
-    });
-  }
-  S.stockOverrides={};
-  if(typeof showBathroomModeBar==='function') showBathroomModeBar();
-  refreshAll();
-  renderSearchEdit();
-  var msg='✔ Loaded "'+q.name+'" — this workspace is now the live Quotation & Stock source.';
-  if(notFound>0) msg+=' ('+notFound+' code(s) not in catalogue — kept as typed.)';
-  setSeSyncStatus(msg, notFound>0?null:true);
-  try{ $('se-workspace').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
-}
-
-function _seItemImg(code){
-  var url=IMAGE_MAP[code]||'';
-  return url ? '<img class="se-item-img" src="'+url+'" onerror="this.style.display=\'none\'" alt=""/>' : '<div class="se-item-img-ph">IMG</div>';
-}
-function _seMissingTag(code){ return PMAP[code] ? '' : ' <span style="color:#C9803C;font-size:8px;white-space:nowrap">· not in catalogue</span>'; }
-
-function seItemRow(bi,it){
-  var c=esc(it.code);
-  return '<div class="se-item">'+_seItemImg(it.code)+
-    '<div style="flex:1;min-width:0">'+
-      '<div class="se-item-code">'+c+_seMissingTag(it.code)+'</div>'+
-      '<div class="se-item-desc">'+esc(it.desc||it.code)+'</div>'+
-    '</div>'+
-    '<div class="p-qty-wrap">'+
-      '<button class="p-qty-btn" onclick="seSetItemQty('+bi+',\''+c+'\','+(it.qty-1)+')">−</button>'+
-      '<input class="p-qty-val" type="number" value="'+it.qty+'" min="1" inputmode="numeric" onchange="seSetItemQty('+bi+',\''+c+'\',this.value)"/>'+
-      '<button class="p-qty-btn" onclick="seSetItemQty('+bi+',\''+c+'\','+(it.qty+1)+')">+</button>'+
-    '</div>'+
-    '<button class="p-del-btn" onclick="seDelItemFromBathroom('+bi+',\''+c+'\')">✕</button>'+
-  '</div>';
-}
-function seFlatRow(it){
-  var c=esc(it.code);
-  return '<div class="se-item">'+_seItemImg(it.code)+
-    '<div style="flex:1;min-width:0">'+
-      '<div class="se-item-code">'+c+_seMissingTag(it.code)+'</div>'+
-      '<div class="se-item-desc">'+esc(it.desc||it.code)+'</div>'+
-    '</div>'+
-    '<div class="p-qty-wrap">'+
-      '<button class="p-qty-btn" onclick="seSetFlatQty(\''+c+'\','+(it.qty-1)+')">−</button>'+
-      '<input class="p-qty-val" type="number" value="'+it.qty+'" min="1" inputmode="numeric" onchange="seSetFlatQty(\''+c+'\',this.value)"/>'+
-      '<button class="p-qty-btn" onclick="seSetFlatQty(\''+c+'\','+(it.qty+1)+')">+</button>'+
-    '</div>'+
-    '<button class="p-del-btn" onclick="seDelFlat(\''+c+'\')">✕</button>'+
-  '</div>';
-}
-
-function renderWorkspace(){
-  var wrap=$('se-workspace'); if(!wrap) return;
-  var hasBath = S.bathrooms && S.bathrooms.length>0;
-  if(hasBath){
-    wrap.innerHTML=S.bathrooms.map(function(b,bi){
-      var itemsHtml = b.items.map(function(it){return seItemRow(bi,it);}).join('')
-        || '<div style="padding:12px;font-family:\'Cormorant\',serif;font-style:italic;color:var(--muted);font-size:12px">No products yet — tap “Add product”.</div>';
-      return '<div class="se-bath">'+
-        '<div class="se-bath-head">'+
-          '<input class="se-bath-name" value="'+esc(b.name)+'" placeholder="Bathroom name" onchange="seRenameBathroom('+bi+',this.value)"/>'+
-          '<button class="se-bath-del" title="Delete bathroom" onclick="seDeleteBathroom('+bi+')">✕</button>'+
-        '</div>'+
-        itemsHtml+
-        '<button class="se-add-item" onclick="seAddItemToBathroom('+bi+')">+ Add product to this bathroom</button>'+
-      '</div>';
-    }).join('');
-  } else if(S.items && S.items.length){
-    var rows=S.items.map(function(it){return seFlatRow(it);}).join('');
-    wrap.innerHTML='<div class="se-bath">'+
-      '<div class="se-bath-head"><span style="flex:1;font-family:\'Cinzel\',serif;font-size:11px;color:var(--gold-l);letter-spacing:1px">UNGROUPED · '+S.items.length+' product(s)</span></div>'+
-      rows+
-      '<button class="se-add-item" onclick="seAddFlatItem()">+ Add product</button>'+
-    '</div>'+
-    '<button onclick="seConvertToBathroom()" style="width:100%;margin-top:2px;background:transparent;border:1px solid rgba(201,168,76,0.35);color:var(--gold-l);border-radius:7px;padding:10px;font-family:\'Jost\',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Convert to bathroom-wise</button>';
-  } else {
-    wrap.innerHTML='<div style="padding:24px 16px;text-align:center;border:1px dashed rgba(201,168,76,0.2);border-radius:10px"><div style="font-family:\'Cormorant\',serif;font-style:italic;color:var(--muted);font-size:14px;line-height:1.6">Workspace is empty.<br/>Load a saved quotation above, or tap <b style="color:var(--gold-l)">🛁 Add Bathroom</b> to build one from scratch.</div></div>';
-  }
-}
-
-// ── SEARCH & EDIT · bathroom + item mutations ────────────────────────
-function seAddBathroom(){
-  if(!S.bathrooms) S.bathrooms=[];
-  // promote an existing ungrouped flat list into the first bathroom so nothing is lost
-  if(!S.bathrooms.length && S.items && S.items.length){
-    S.bathrooms.push({name:'Bathroom 1',items:S.items.map(function(i){return Object.assign({},i);})});
-  }
-  S.bathrooms.push({name:'Bathroom '+(S.bathrooms.length+1),items:[]});
-  syncItemsFromBathrooms();
-  if(typeof showBathroomModeBar==='function') showBathroomModeBar();
-  refreshAll(); renderSearchEdit();
-}
-function seRenameBathroom(idx,val){
-  if(S.bathrooms[idx]) S.bathrooms[idx].name=String(val||'').trim()||('Bathroom '+(idx+1));
-}
-function seDeleteBathroom(idx){
-  if(!S.bathrooms) return;
-  S.bathrooms.splice(idx,1);
-  syncItemsFromBathrooms();
-  if(typeof showBathroomModeBar==='function') showBathroomModeBar();
-  refreshAll(); renderSearchEdit();
-}
-function seAddItemToBathroom(idx){
-  openPicker(function(code){
-    var b=S.bathrooms[idx]; if(!b) return;
-    var ex=b.items.find(function(i){return i.code===code;});
-    if(ex) ex.qty++; else { var np=resolveProduct(code); np.qty=1; b.items.push(np); }
-    syncItemsFromBathrooms(); refreshAll(); renderSearchEdit();
-  }, 'Add product to bathroom');
-}
-function seSetItemQty(bi,code,qty){
-  var b=S.bathrooms[bi]; if(!b) return;
-  qty=parseInt(qty)||0;
-  if(qty<=0){ b.items=b.items.filter(function(i){return i.code!==code;}); }
-  else { var it=b.items.find(function(i){return i.code===code;}); if(it) it.qty=qty; }
-  syncItemsFromBathrooms(); refreshAll(); renderSearchEdit();
-}
-function seDelItemFromBathroom(bi,code){
-  var b=S.bathrooms[bi]; if(!b) return;
-  b.items=b.items.filter(function(i){return i.code!==code;});
-  syncItemsFromBathrooms(); refreshAll(); renderSearchEdit();
-}
-function seClearWorkspace(){
-  S.bathrooms=[]; S.items=[]; S.stockOverrides={};
-  if(typeof showBathroomModeBar==='function') showBathroomModeBar();
-  refreshAll(); renderSearchEdit();
-  setSeSyncStatus('Workspace cleared. Load a saved quotation or add a bathroom.', null);
-}
-// ungrouped (flat) editing
-function seSetFlatQty(code,qty){ setQty(code,qty); renderSearchEdit(); }
-function seDelFlat(code){ delItem(code); renderSearchEdit(); }
-function seAddFlatItem(){
-  openPicker(function(code){
-    var ex=S.items.find(function(i){return i.code===code;});
-    if(ex) ex.qty++; else { var np=resolveProduct(code); np.qty=1; S.items.push(np); }
-    refreshAll(); renderSearchEdit();
-  }, 'Add product');
-}
-function seConvertToBathroom(){
-  if(!S.items.length) return;
-  S.bathrooms=[{name:'Bathroom 1',items:S.items.map(function(i){return Object.assign({},i);})}];
-  syncItemsFromBathrooms();
-  if(typeof showBathroomModeBar==='function') showBathroomModeBar();
-  refreshAll(); renderSearchEdit();
-}
-
-// live filter on the quote search box
-(function(){
-  var inp=$('se-search-inp');
-  if(inp){ var t=null; inp.addEventListener('input',function(){ clearTimeout(t); var v=this.value; t=setTimeout(function(){renderQuoteCards(v);},120); }); }
-})();
-
 // ── BOOTSTRAP ──
 // Hide stale baked upload statuses
 (function(){
@@ -3550,15 +3045,6 @@ function seConvertToBathroom(){
 
 // 2) Refresh from the live sheet in the background (overwrites data + cache)
 syncFromGoogleSheet();
-
-// 3) Saved quotations (Search & Edit): hydrate the LIST from cache, then refresh live.
-//    Only the reference list is cached — the working set itself is never persisted,
-//    so every page refresh starts with an empty workspace (no selections carried over).
-(function hydrateQuotesFromCache(){
-  var c=cacheGet(CACHE_QUOTES);
-  if(c){ try{ QUOTES=parseQuotesCSV(c); }catch(e){ QUOTES=[]; } }
-})();
-reloadQuotes();
 </script>
 
 
