@@ -3409,7 +3409,10 @@ function renderSearchResults(){
   const dd=$('se-quote-dd'); if(!dd) return;
   const term=($('se-search-box')?$('se-search-box').value:'').trim().toUpperCase();
   if(!QUOTES.length){ dd.innerHTML='<div class="qd-empty">No saved quotations yet.<br>Add quotes to your sheet, then tap ↻ Refresh.</div>'; return; }
-  const res=QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,400);
+  const res=QUOTES.map((q,i)=>({q,i,mrp:quoteMRP(q)}))
+    .filter(o=>!term||o.q.name.toUpperCase().includes(term))
+    .sort((a,b)=>a.mrp-b.mrp)            // smallest MRP total first
+    .slice(0,400);
   if(!res.length){ dd.innerHTML='<div class="qd-empty">No quotation matches “'+esc(term)+'”.</div>'; return; }
   dd.innerHTML=res.map(o=>{
     const av=quoteAvail(o.q);
@@ -3418,7 +3421,7 @@ function renderSearchResults(){
     return '<div class="qd-row" data-qi="'+o.i+'">'+
       '<div class="qd-l"><div class="qd-n">'+esc(o.q.name)+'</div>'+
       '<div class="qd-m">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs</div></div>'+
-      '<div class="qd-r"><div class="qd-mrp">₹'+fmtN(quoteMRP(o.q))+'</div>'+avHTML+'</div></div>';
+      '<div class="qd-r"><div class="qd-mrp">₹'+fmtN(o.mrp)+'</div>'+avHTML+'</div></div>';
   }).join('');
 }
 function openQuoteDD(){ const dd=$('se-quote-dd'); if(dd){ renderSearchResults(); dd.classList.add('open'); } }
