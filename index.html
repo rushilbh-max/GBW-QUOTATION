@@ -778,6 +778,24 @@ html, body{
 .q-card .qav.lo{background:rgba(224,96,96,0.2);color:#FF9B8F;border:1px solid rgba(224,96,96,0.45)}
 .se-empty{text-align:center;padding:30px 16px;font-family:'Cormorant',serif;font-style:italic;color:var(--muted);font-size:14px}
 
+/* ── QUOTATION SEARCH DROPDOWN (scrollable) ── */
+.se-searchwrap{position:relative;z-index:60}
+#se-quote-dd{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:10px;box-shadow:0 16px 44px rgba(0,0,0,0.6);max-height:min(56vh,440px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;z-index:60;display:none}
+#se-quote-dd.open{display:block}
+.qd-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background .12s}
+.qd-row:last-child{border-bottom:none}
+.qd-row:active,.qd-row:hover{background:rgba(201,168,76,0.09)}
+.qd-row .qd-l{min-width:0;flex:1}
+.qd-row .qd-n{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qd-row .qd-m{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:2px}
+.qd-row .qd-r{text-align:right;flex-shrink:0}
+.qd-row .qd-mrp{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#D8E4EC}
+.qd-row .qd-av{font-size:9px;font-weight:700;border-radius:3px;padding:1px 6px;display:inline-block;margin-top:3px}
+.qd-row .qd-av.hi{background:#4ADF90;color:#0D1520}
+.qd-row .qd-av.mid{background:rgba(232,208,138,0.22);color:#E8D08A}
+.qd-row .qd-av.lo{background:rgba(224,96,96,0.2);color:#FF9B8F}
+.qd-empty{padding:18px 16px;text-align:center;font-family:'Cormorant',serif;font-style:italic;color:var(--muted);font-size:14px}
+
 /* ── EDITOR ── */
 #se-editor{display:none;background:var(--ink3);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:14px;display:none;flex-direction:column;gap:12px}
 .se-ed-head{display:flex;flex-direction:column;gap:8px}
@@ -1022,18 +1040,18 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <div class="se-head">Search &amp; Edit Saved Quotations</div>
     <div class="se-sub">Search a saved bathroom quote, edit its codes &amp; quantities, name it, then load it into the quotation. Add more bathrooms the same way.</div>
 
-    <div class="se-searchbar">
-      <span class="ic">⌕</span>
-      <input id="se-search-box" placeholder="Search by quotation name…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <div class="se-searchwrap">
+      <div class="se-searchbar">
+        <span class="ic">⌕</span>
+        <input id="se-search-box" placeholder="Search a quotation by name…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+      </div>
+      <div id="se-quote-dd"></div>
     </div>
 
     <div class="se-toolbar">
       <span class="se-status" id="se-status">Loading saved quotations…</span>
       <button class="se-btn" onclick="syncQuotes(true)">↻ Refresh</button>
     </div>
-
-    <div class="q-grid" id="se-results"></div>
-    <div class="se-empty" id="se-empty" style="display:none">No saved quotations loaded yet.<br>Add quotes to your sheet, then tap ↻ Refresh.</div>
 
     <!-- EDITOR -->
     <div id="se-editor">
@@ -3384,33 +3402,35 @@ function quoteMRP(q){ let m=0; q.items.forEach(it=>{ const p=PMAP[it.code]; if(p
 function quotePcs(q){ let n=0; q.items.forEach(it=>n+=it.qty); return n; }
 
 /* ── search page render ── */
-function renderSearchPage(){ renderSearchResults(); renderLoadedPanel(); }
+function renderSearchPage(){ renderSearchResults(); renderLoadedPanel(); closeQuoteDD(); }
 
+// Build the scrollable quotation dropdown (does not force it open).
 function renderSearchResults(){
-  const g=$('se-results'), empty=$('se-empty');
-  if(!g) return;
+  const dd=$('se-quote-dd'); if(!dd) return;
   const term=($('se-search-box')?$('se-search-box').value:'').trim().toUpperCase();
-  if(!QUOTES.length){ g.innerHTML=''; if(empty) empty.style.display='block'; return; }
-  if(empty) empty.style.display='none';
-  const res=QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,300);
-  if(!res.length){ g.innerHTML='<div class="se-empty" style="grid-column:1/-1;display:block">No quotation matches “'+esc(term)+'”.</div>'; return; }
-  g.innerHTML=res.map(o=>{
+  if(!QUOTES.length){ dd.innerHTML='<div class="qd-empty">No saved quotations yet.<br>Add quotes to your sheet, then tap ↻ Refresh.</div>'; return; }
+  const res=QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,400);
+  if(!res.length){ dd.innerHTML='<div class="qd-empty">No quotation matches “'+esc(term)+'”.</div>'; return; }
+  dd.innerHTML=res.map(o=>{
     const av=quoteAvail(o.q);
     const avCls=av.pct>=90?'hi':(av.pct>=60?'mid':'lo');
-    const avHTML=av.loaded?'<span class="qav '+avCls+'">'+av.pct+'% in stock</span>':'';
-    return '<div class="q-card" onclick="loadQuoteIntoEditor('+o.i+')">'+
-      '<div class="qn">'+esc(o.q.name)+'</div>'+
-      '<div class="qmeta">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs</div>'+
-      '<div class="qmrp">₹'+fmtN(quoteMRP(o.q))+' <span style="font-size:9px;color:var(--muted2);font-weight:500">MRP</span></div>'+
-      avHTML+'</div>';
+    const avHTML=av.loaded?'<span class="qd-av '+avCls+'">'+av.pct+'% stock</span>':'';
+    return '<div class="qd-row" data-qi="'+o.i+'">'+
+      '<div class="qd-l"><div class="qd-n">'+esc(o.q.name)+'</div>'+
+      '<div class="qd-m">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs</div></div>'+
+      '<div class="qd-r"><div class="qd-mrp">₹'+fmtN(quoteMRP(o.q))+'</div>'+avHTML+'</div></div>';
   }).join('');
 }
+function openQuoteDD(){ const dd=$('se-quote-dd'); if(dd){ renderSearchResults(); dd.classList.add('open'); } }
+function closeQuoteDD(){ const dd=$('se-quote-dd'); if(dd) dd.classList.remove('open'); }
 
 /* ── editor ── */
 function loadQuoteIntoEditor(idx){
   const q=QUOTES[idx]; if(!q) return;
   EDIT={ name:q.name, rows:q.items.map(it=>({code:it.code,qty:it.qty})) };
   const nm=$('se-bath-name'); if(nm) nm.value=q.name;
+  const sb=$('se-search-box'); if(sb) sb.value='';
+  closeQuoteDD();
   $('se-editor').style.display='flex';
   renderQuoteEditor();
   $('se-editor').scrollIntoView({behavior:'smooth',block:'start'});
@@ -3634,7 +3654,24 @@ function repositionEdCodeDrop(){
   dd.style.top=(r.bottom+4)+'px';
 }
 (function wireSearchEdit(){
-  const sb=$('se-search-box'); if(sb) sb.addEventListener('input', renderSearchResults);
+  const sb=$('se-search-box');
+  if(sb){
+    sb.addEventListener('input', ()=>{ renderSearchResults(); openQuoteDD(); });
+    sb.addEventListener('focus', openQuoteDD);
+  }
+  // Quotation dropdown: pick a quotation to load into the editor.
+  const qdd=$('se-quote-dd');
+  if(qdd){
+    qdd.addEventListener('mousedown', e=>{ e.preventDefault(); const r=e.target.closest('[data-qi]'); if(r) loadQuoteIntoEditor(+r.dataset.qi); });
+    let qmoved=false;
+    qdd.addEventListener('touchstart',()=>{ qmoved=false; },{passive:true});
+    qdd.addEventListener('touchmove',()=>{ qmoved=true; },{passive:true});
+    qdd.addEventListener('touchend', e=>{ if(qmoved) return; const r=e.target.closest('[data-qi]'); if(r){ e.preventDefault(); loadQuoteIntoEditor(+r.dataset.qi); } });
+  }
+  // Close the quotation dropdown when tapping outside the search area.
+  document.addEventListener('mousedown', e=>{ if(!e.target.closest('.se-searchwrap')) closeQuoteDD(); });
+  document.addEventListener('touchstart', e=>{ if(!e.target.closest('.se-searchwrap')) closeQuoteDD(); }, {passive:true});
+
   const dd=$('ed-code-dd');
   if(dd){
     // preventDefault on mousedown keeps focus on the code input (so the list & its
