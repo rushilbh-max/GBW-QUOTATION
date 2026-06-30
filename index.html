@@ -810,7 +810,7 @@ html, body{
 .se-ed-summary b{color:#D8E4EC;font-weight:700}
 
 /* ── FLOATING CODE PICKER (editor) ── */
-#ed-code-dd{position:fixed;z-index:9999;background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:300px;overflow-y:auto;display:none}
+#ed-code-dd{position:fixed;z-index:9999;background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:min(360px,60vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:none}
 #ed-code-dd.open{display:block}
 
 /* ── LOADED BATHROOMS PANEL ── */
@@ -2729,15 +2729,16 @@ function doPlainPrint(){
   if(!S.items.length){ alert('Add some products to the quotation first.'); return; }
   const tot   = totals();
   const totQty= S.items.reduce((a,i)=>a+i.qty,0);
+  const inBath = S.bathrooms && S.bathrooms.length>0;
 
-  const rows = S.items.map((item,idx)=>{
+  function itemRow(item, sr){
     const price = bp(item);
     const url   = IMAGE_MAP[item.code] || '';
     const imgCell = url
       ? `<div class="imgbox"><img src="${url}" onerror="this.parentNode.innerHTML=''" alt=""/></div>`
       : `<div class="imgbox"></div>`;
     return `<tr>
-      <td class="c-sr">${idx+1}</td>
+      <td class="c-sr">${sr}</td>
       <td class="c-code">${esc(item.code)}</td>
       <td class="c-qty">${item.qty} PCS</td>
       <td class="c-img">${imgCell}</td>
@@ -2746,7 +2747,35 @@ function doPlainPrint(){
       <td class="c-num">${fmtN(price)}</td>
       <td class="c-num">${fmtN(price*item.qty)}</td>
     </tr>`;
-  }).join('');
+  }
+
+  let rows='', bsum='';
+  if(inBath){
+    // Bathroom-wise: header band + items + per-bathroom subtotal, continuous SR#
+    let sr=0, grandMRP=0, grandBest=0, grandItems=0;
+    let summaryBody='';
+    S.bathrooms.forEach(bath=>{
+      let bMRP=0,bBest=0,bQty=0;
+      bath.items.forEach(i=>{ bMRP+=i.mrp*i.qty; bBest+=bp(i)*i.qty; bQty+=i.qty; });
+      grandMRP+=bMRP; grandBest+=bBest; grandItems+=bQty;
+      rows += `<tr class="bath-hd"><td colspan="8">${esc(bath.name)} &nbsp;·&nbsp; ${bath.items.length} product(s) &nbsp;·&nbsp; ${bQty} PCS</td></tr>`;
+      bath.items.forEach(item=>{ sr++; rows += itemRow(item, sr); });
+      rows += `<tr class="bath-sub">
+        <td colspan="5">${esc(bath.name)} — SUBTOTAL</td>
+        <td class="c-num">${fmtN(bMRP)}</td>
+        <td></td>
+        <td class="c-num">${fmtN(bBest)}</td>
+      </tr>`;
+      summaryBody += `<tr><td>${esc(bath.name)}</td><td>${bQty} PCS</td><td>${fmtN(bMRP)}</td><td>${fmtN(bBest)}</td></tr>`;
+    });
+    bsum = `<table class="bsum">
+      <thead><tr><th>BATHROOM</th><th>ITEMS</th><th>MRP TOTAL</th><th>BEST PRICE</th></tr></thead>
+      <tbody>${summaryBody}
+        <tr class="grand"><td>TOTAL</td><td>${grandItems} PCS</td><td>${fmtN(grandMRP)}</td><td>${fmtN(grandBest)}</td></tr>
+      </tbody></table>`;
+  } else {
+    rows = S.items.map((item,idx)=>itemRow(item, idx+1)).join('');
+  }
 
   const footRow = `<tr class="foot">
       <td></td>
@@ -2780,6 +2809,17 @@ function doPlainPrint(){
   /* column widths via colgroup */
   col.w-sr{width:34px} col.w-code{width:120px} col.w-qty{width:58px} col.w-img{width:96px}
   col.w-mrp{width:78px} col.w-bp{width:84px} col.w-tot{width:84px}
+  /* bathroom-wise rows */
+  tr.bath-hd td{ background:#e9e9e9; color:#000; font-weight:700; font-size:12px; letter-spacing:.5px; text-transform:uppercase; text-align:left; padding:9px 10px }
+  tr.bath-hd{ page-break-after:avoid; break-after:avoid }
+  tr.bath-sub td{ background:#f5f5f5; font-weight:700; font-size:11px }
+  tr.bath-sub td:first-child{ text-align:right; font-style:italic; padding-right:10px }
+  tr.bath-sub{ page-break-before:avoid; break-before:avoid }
+  /* bathroom summary table */
+  .bsum{ table-layout:auto; margin-top:16px; page-break-inside:avoid; break-inside:avoid }
+  .bsum th,.bsum td{ border:1px solid #000; padding:7px 12px; font-size:11px; text-align:center }
+  .bsum td:first-child{ text-align:left; font-weight:700 }
+  .bsum tr.grand td{ background:#e6e6e6; font-weight:700; font-size:12px }
   tr.foot td{ font-size:13px }
   .foot-strong{ font-weight:700; text-align:center }
   .foot-mrp{ text-align:center; font-style:italic; font-weight:700; font-size:13px }
@@ -2804,6 +2844,7 @@ function doPlainPrint(){
       ${footRow}
     </tbody>
   </table>
+  ${bsum}
   <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
 </body></html>`;
 
@@ -3583,14 +3624,34 @@ function exportQuotationExcel(){
 }
 
 /* ── wire Search & Edit listeners (DOM already parsed at this point) ── */
+let _edTouchMoved=false;
+function repositionEdCodeDrop(){
+  const dd=$('ed-code-dd');
+  if(!dd||!dd.classList.contains('open')||!_edActiveInput) return;
+  const r=_edActiveInput.getBoundingClientRect();
+  if(r.bottom<0||r.top>window.innerHeight){ hideEdCodeDrop(); return; }   // input scrolled out of view
+  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
+  dd.style.top=(r.bottom+4)+'px';
+}
 (function wireSearchEdit(){
   const sb=$('se-search-box'); if(sb) sb.addEventListener('input', renderSearchResults);
   const dd=$('ed-code-dd');
   if(dd){
-    dd.addEventListener('mousedown',e=>{ const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
-    dd.addEventListener('touchend',e=>{ const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
+    // preventDefault on mousedown keeps focus on the code input (so the list & its
+    // scrollbar stay usable instead of the input blurring and closing the list).
+    dd.addEventListener('mousedown',e=>{ e.preventDefault(); const b=e.target.closest('[data-pick]'); if(b) pickEdCode(b.dataset.pick); });
+    dd.addEventListener('touchstart',()=>{ _edTouchMoved=false; },{passive:true});
+    dd.addEventListener('touchmove',()=>{ _edTouchMoved=true; },{passive:true});   // a scroll, not a tap
+    dd.addEventListener('touchend',e=>{ if(_edTouchMoved) return; const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
   }
-  window.addEventListener('scroll', hideEdCodeDrop, true);
+  // Reposition (not hide) the list when the page/editor scrolls; ignore scrolls that
+  // happen *inside* the list itself so the dropdown can be scrolled normally.
+  window.addEventListener('scroll', e=>{
+    const d=$('ed-code-dd');
+    if(!d||!d.classList.contains('open')) return;
+    if(d===e.target || d.contains(e.target)) return;   // scrolling inside the dropdown
+    repositionEdCodeDrop();
+  }, true);
   window.addEventListener('resize', hideEdCodeDrop);
 })();
 
