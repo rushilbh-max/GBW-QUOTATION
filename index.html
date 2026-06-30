@@ -63,11 +63,12 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 #tabs{
   display:flex;background:var(--ink2);
   border-bottom:1px solid rgba(255,255,255,0.04);
-  flex-shrink:0;
+  flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
+#tabs::-webkit-scrollbar{display:none}
 .tab{
-  flex:1;padding:10px 4px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:1px;text-transform:uppercase;color:#9BAABD;
+  flex:1 0 auto;padding:10px 9px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:#9BAABD;white-space:nowrap;
   border:none;background:transparent;border-bottom:2px solid transparent;
   transition:all .25s;cursor:pointer;
 }
@@ -740,6 +741,92 @@ html, body{
 
 </style>
 
+<style id="search-edit-styles">
+/* ── INSERT-ROW MINI BUTTONS (builder cards) ── */
+.ins-row{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(201,168,76,0.18)}
+.ins-mini{flex:1;background:transparent;border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:5px;padding:6px 4px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.ins-mini:active,.ins-mini:hover{background:rgba(201,168,76,0.12)}
+#insert-banner{display:none;align-items:center;justify-content:space-between;gap:8px;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.45);border-radius:6px;padding:8px 12px;margin-top:6px}
+#insert-banner .ib-txt{font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold-l)}
+#insert-banner .ib-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer}
+
+/* ── SEARCH & EDIT SCREEN ── */
+#screen-search>.se-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px}
+.se-head{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;text-align:center;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15)}
+.se-sub{font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2);text-align:center;line-height:1.5;margin-top:-4px}
+.se-searchbar{display:flex;align-items:center;gap:10px;background:var(--ink3);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:0 14px}
+.se-searchbar .ic{color:var(--gold);font-size:17px}
+.se-searchbar input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:15px;padding:13px 0;font-family:'Jost',sans-serif}
+.se-searchbar input::placeholder{color:var(--slate);font-style:italic;font-family:'Cormorant',serif;font-size:15px}
+.se-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.se-status{flex:1;min-width:120px;font-family:'Jost',sans-serif;font-size:10px;font-weight:600;color:var(--muted2)}
+.se-btn{background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:6px;padding:9px 14px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:.6px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .15s}
+.se-btn:active,.se-btn:hover{background:rgba(201,168,76,0.12)}
+.se-btn.gold{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none}
+.se-btn.green{border-color:rgba(42,157,96,0.5);color:#2A9D60}
+.se-btn.red{border-color:rgba(224,96,96,0.5);color:#E06060}
+.q-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:380px){.q-grid{grid-template-columns:1fr}}
+.q-card{background:var(--ink3);border:1px solid rgba(201,168,76,0.2);border-radius:9px;padding:12px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:5px}
+.q-card:active,.q-card:hover{border-color:rgba(201,168,76,0.55);background:var(--ink4)}
+.q-card .qn{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);letter-spacing:.4px;line-height:1.3;word-break:break-word}
+.q-card .qmeta{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2)}
+.q-card .qmrp{font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:#D8E4EC}
+.q-card .qav{display:inline-block;align-self:flex-start;font-size:9px;font-weight:700;letter-spacing:.4px;border-radius:3px;padding:2px 7px;margin-top:2px}
+.q-card .qav.hi{background:#4ADF90;color:#0D1520}
+.q-card .qav.mid{background:rgba(232,208,138,0.22);color:#E8D08A;border:1px solid rgba(232,208,138,0.5)}
+.q-card .qav.lo{background:rgba(224,96,96,0.2);color:#FF9B8F;border:1px solid rgba(224,96,96,0.45)}
+.se-empty{text-align:center;padding:30px 16px;font-family:'Cormorant',serif;font-style:italic;color:var(--muted);font-size:14px}
+
+/* ── EDITOR ── */
+#se-editor{display:none;background:var(--ink3);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:14px;display:none;flex-direction:column;gap:12px}
+.se-ed-head{display:flex;flex-direction:column;gap:8px}
+.se-ed-namewrap{display:flex;flex-direction:column;gap:4px}
+.se-ed-namewrap label{font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold)}
+#se-bath-name{background:var(--ink4);border:1px solid rgba(201,168,76,0.35);border-radius:6px;padding:11px 12px;color:#fff;font-size:15px;font-family:'Jost',sans-serif;font-weight:600;outline:none}
+.se-ed-tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ed-tbl{width:100%;border-collapse:collapse;min-width:520px}
+.ed-tbl th{font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2);text-align:left;padding:6px 6px;border-bottom:1px solid rgba(201,168,76,0.2);white-space:nowrap}
+.ed-tbl td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle}
+.ed-tbl input{background:var(--ink4);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:8px 7px;color:#fff;font-size:13px;font-family:'Jost',sans-serif;outline:none;width:100%}
+.ed-tbl input:focus{border-color:rgba(201,168,76,0.5)}
+.ed-tbl input.code{font-family:'Cinzel',serif;font-size:12px;color:var(--gold-l);min-width:130px}
+.ed-tbl input.code.warn{border-color:rgba(224,96,96,0.6);color:#FF9B8F}
+.ed-tbl input.qty{width:56px;text-align:center}
+.ed-tbl .ed-img{width:34px;height:34px;object-fit:contain;background:#fff;border-radius:4px;display:block}
+.ed-tbl .ed-img-ph{width:34px;height:34px;background:var(--ink5);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted)}
+.ed-tbl .ed-name{font-family:'Jost',sans-serif;font-size:11px;color:#C0D4E4;min-width:120px;max-width:200px}
+.ed-tbl .ed-tot{font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:#D8E4EC;text-align:right;white-space:nowrap}
+.ed-tbl .ed-stk{text-align:center;font-size:9px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.ed-tbl .ed-stk.ok{color:#4ADF90}
+.ed-tbl .ed-stk.no{color:#FF9B8F}
+.ed-tbl .ed-stk.unk{color:var(--muted)}
+.ed-tbl .ed-acts{white-space:nowrap;text-align:right}
+.ed-tbl .ed-acts button{background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:4px;width:26px;height:26px;font-size:12px;font-weight:700;cursor:pointer;margin-left:3px;color:var(--gold)}
+.ed-tbl .ed-acts button.del{color:#E06060;border-color:rgba(224,96,96,0.4)}
+.ed-tbl .ed-acts button:active{background:rgba(201,168,76,0.12)}
+.se-ed-actions{display:flex;gap:8px;flex-wrap:wrap}
+.se-ed-summary{display:flex;gap:14px;flex-wrap:wrap;font-family:'Jost',sans-serif;font-size:12px;color:var(--muted2);padding-top:6px;border-top:1px dashed rgba(201,168,76,0.18)}
+.se-ed-summary b{color:#D8E4EC;font-weight:700}
+
+/* ── FLOATING CODE PICKER (editor) ── */
+#ed-code-dd{position:fixed;z-index:9999;background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:300px;overflow-y:auto;display:none}
+#ed-code-dd.open{display:block}
+
+/* ── LOADED BATHROOMS PANEL ── */
+#se-loaded{display:none;background:rgba(42,157,96,0.06);border:1px solid rgba(42,157,96,0.3);border-radius:10px;padding:14px;display:none;flex-direction:column;gap:10px}
+.se-loaded-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.se-loaded-h .t{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#4ADF90}
+.se-loaded-item{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--ink3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:9px 12px}
+.se-loaded-item .li-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l)}
+.se-loaded-item .li-meta{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2)}
+.se-loaded-item .li-x{background:transparent;border:none;color:#E06060;font-size:15px;font-weight:700;cursor:pointer}
+
+/* ── TOAST ── */
+#se-toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translateX(-50%) translateY(20px);background:#0D1520;border:1px solid rgba(201,168,76,0.5);color:var(--gold-l);font-family:'Jost',sans-serif;font-size:13px;font-weight:600;padding:12px 20px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:all .3s;z-index:10000;max-width:90vw;text-align:center}
+#se-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+
 </head>
 <body>
 <div id="app">
@@ -769,6 +856,7 @@ html, body{
 <!-- TABS -->
 <div id="tabs">
   <button class="tab" onclick="showScreen('builder')">Products</button>
+  <button class="tab" onclick="showScreen('search')">Search&nbsp;&amp;&nbsp;Edit</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
   <button class="tab" onclick="showScreen('stock')">Stock</button>
@@ -814,6 +902,11 @@ html, body{
     <div id="bathroom-mode-bar" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:8px 12px;margin-top:6px;display:none;align-items:center;justify-content:space-between">
       <span style="font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold)">🛁 Bathroom Mode Active</span>
       <button onclick="clearBathrooms()" style="background:transparent;border:none;color:#E06060;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
+    </div>
+    <!-- Insert position banner -->
+    <div id="insert-banner">
+      <span class="ib-txt" id="insert-banner-txt">Inserting…</span>
+      <button class="ib-x" onclick="cancelInsert()">✕</button>
     </div>
   </div>
 
@@ -919,6 +1012,69 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <div class="tot-actions">
       <button class="btn-clear" onclick="clearAll()">Clear</button>
       <button class="btn-preview" onclick="goPreview()">View Quotation →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH & EDIT -->
+<div id="screen-search" class="screen">
+  <div class="se-scroll">
+    <div class="se-head">Search &amp; Edit Saved Quotations</div>
+    <div class="se-sub">Search a saved bathroom quote, edit its codes &amp; quantities, name it, then load it into the quotation. Add more bathrooms the same way.</div>
+
+    <div class="se-searchbar">
+      <span class="ic">⌕</span>
+      <input id="se-search-box" placeholder="Search by quotation name…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+
+    <div class="se-toolbar">
+      <span class="se-status" id="se-status">Loading saved quotations…</span>
+      <button class="se-btn" onclick="syncQuotes(true)">↻ Refresh</button>
+    </div>
+
+    <div class="q-grid" id="se-results"></div>
+    <div class="se-empty" id="se-empty" style="display:none">No saved quotations loaded yet.<br>Add quotes to your sheet, then tap ↻ Refresh.</div>
+
+    <!-- EDITOR -->
+    <div id="se-editor">
+      <div class="se-ed-head">
+        <div class="se-head" style="border:none;padding:0;text-align:left">Editing Quotation</div>
+        <div class="se-ed-namewrap">
+          <label>Bathroom name (for this quote)</label>
+          <input id="se-bath-name" placeholder="e.g. Master Bathroom" autocomplete="off">
+        </div>
+      </div>
+      <div class="se-ed-tblwrap">
+        <table class="ed-tbl">
+          <thead><tr>
+            <th style="width:24px">#</th>
+            <th>Code</th>
+            <th style="width:56px">Qty</th>
+            <th style="width:40px">Img</th>
+            <th>Item Name</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:center;width:56px">Stock</th>
+            <th style="width:96px"></th>
+          </tr></thead>
+          <tbody id="se-ed-body"></tbody>
+        </table>
+      </div>
+      <div class="se-ed-summary" id="se-ed-summary"></div>
+      <div class="se-ed-actions">
+        <button class="se-btn" onclick="addEditRow()">+ Add row</button>
+        <button class="se-btn red" onclick="closeEditor()">Cancel</button>
+        <button class="se-btn gold" style="flex:1" onclick="loadBathroomToQuotation()">➕ Add this bathroom to Quotation</button>
+      </div>
+    </div>
+
+    <!-- LOADED BATHROOMS -->
+    <div id="se-loaded">
+      <div class="se-loaded-h">
+        <span class="t" id="se-loaded-t">Loaded into quotation</span>
+        <button class="se-btn red" style="padding:6px 10px" onclick="clearLoadedQuotation()">Clear all</button>
+      </div>
+      <div id="se-loaded-list"></div>
+      <button class="se-btn gold" onclick="goPreview()">🧾 Go to Quotation →</button>
     </div>
   </div>
 </div>
@@ -1083,6 +1239,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   <div class="prev-bar">
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain PDF</button>
       <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
     </div>
@@ -1239,6 +1396,10 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
 </div>
 
+<!-- Floating catalogue picker for the editor + toast -->
+<div id="ed-code-dd"></div>
+<div id="se-toast"></div>
+
 <script>
 const PRODUCTS_RAW=[];
 const IMAGE_MAP={};
@@ -1270,15 +1431,16 @@ function setMode(m){
 
 // ── SCREENS ──
 function showScreen(id){
-  ['builder','customer','summary','stock','editor','preview'].forEach(s=>{
+  ['builder','search','customer','summary','stock','editor','preview'].forEach(s=>{
     $('screen-'+s).classList.toggle('active',s===id);
   });
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('on',['builder','customer','summary','stock','editor','preview'][i]===id);
+    t.classList.toggle('on',['builder','search','customer','summary','stock','editor','preview'][i]===id);
   });
   if(id==='summary') renderSummary();
   if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
+  if(id==='search') renderSearchPage();
 }
 
 function renderSummary(){
@@ -1583,20 +1745,69 @@ sD.addEventListener('mousedown',e=>{e.preventDefault();const b=e.target.closest(
 sD.addEventListener('touchend',e=>{e.preventDefault();const b=e.target.closest('[data-code]');if(b)addItem(b.dataset.code);});
 
 // ── ITEMS ──
+// Working-set model:
+//   • The Products (builder) screen owns the FLAT working set in S.items.
+//   • The Search & Edit screen owns the BATHROOM-WISE working set in S.bathrooms
+//     (S.items is kept as the flattened mirror so Summary / Stock / Preview-flat work).
+//   • The Quotation/Stock/Summary screens always read whatever was touched last:
+//     adding/editing on the builder collapses any grouping (flat wins); loading a
+//     bathroom in Search & Edit (re)builds the grouping (bathroom-wise wins).
+let insertAt = null;   // builder insert position (index in S.items) or null
+
+function toast(msg){
+  const t=$('se-toast'); if(!t) return;
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// Collapse bathroom grouping into a flat builder quote (keeps the flattened items).
+function enterFlatFromBuilder(){
+  if(S.bathrooms && S.bathrooms.length){
+    S.bathrooms=[];
+    showBathroomModeBar();
+  }
+}
+
 function addItem(code){
   const p=PMAP[code];if(!p)return;
-  const ex=S.items.find(i=>i.code===code);
-  if(ex)ex.qty++;else S.items.push({...p,qty:1});
+  enterFlatFromBuilder();
+  const exIdx=S.items.findIndex(i=>i.code===code);
+  if(insertAt!==null){
+    if(exIdx>=0){ S.items[exIdx].qty++; toast(code+' already in list — qty increased'); }
+    else { const at=Math.max(0,Math.min(insertAt,S.items.length)); S.items.splice(at,0,{...p,qty:1}); toast('Inserted '+code); }
+    cancelInsert();
+  } else {
+    if(exIdx>=0) S.items[exIdx].qty++; else S.items.push({...p,qty:1});
+  }
   sI.value='';closeDD();refreshAll();
 }
+
+// Begin inserting a product above/below an existing builder row.
+function beginInsert(code,pos){
+  enterFlatFromBuilder();
+  const idx=S.items.findIndex(i=>i.code===code);
+  if(idx<0)return;
+  insertAt = pos==='above' ? idx : idx+1;
+  const bn=$('insert-banner'); const bt=$('insert-banner-txt');
+  if(bt) bt.textContent='Inserting '+pos+' '+code+' — search a product to place it here';
+  if(bn) bn.style.display='flex';
+  if(typeof sI!=='undefined'){ sI.focus(); }
+  $('search-zone').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cancelInsert(){
+  insertAt=null;
+  const bn=$('insert-banner'); if(bn) bn.style.display='none';
+}
+
 function setQty(code,n){
+  enterFlatFromBuilder();
   n=parseInt(n)||0;
   if(n<=0)S.items=S.items.filter(i=>i.code!==code);
   else{const it=S.items.find(i=>i.code===code);if(it)it.qty=n;}
   refreshAll();
 }
-function delItem(code){S.items=S.items.filter(i=>i.code!==code);refreshAll();}
-function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};showBathroomModeBar();refreshAll();}
+function delItem(code){ enterFlatFromBuilder(); S.items=S.items.filter(i=>i.code!==code);refreshAll();}
+function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};cancelInsert();showBathroomModeBar();refreshAll();}
 $('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0;refreshAll();});
 
 // ── BATHROOM MODE ──────────────────────────────────────────────────
@@ -2003,6 +2214,10 @@ function refreshList(){
           <button class="p-qty-btn" onclick="setQty('${esc(item.code)}',${item.qty+1})">+</button>
         </div>
         <button class="p-del-btn" onclick="delItem('${esc(item.code)}')">✕</button>
+      </div>
+      <div class="ins-row">
+        <button class="ins-mini" onclick="beginInsert('${esc(item.code)}','above')">↑ Add above</button>
+        <button class="ins-mini" onclick="beginInsert('${esc(item.code)}','below')">↓ Add below</button>
       </div>
     </div>`;
   }).join('');
@@ -2809,8 +3024,25 @@ const CACHE_PROD = 'gbw_csv_products_v1';
 const CACHE_IMG  = 'gbw_csv_images_v1';
 const CACHE_STOCK= 'gbw_csv_stock_v1';
 const CACHE_TIME = 'gbw_sync_time_v1';
+
+// ── SAVED QUOTATIONS sheet (Search & Edit) ──
+// Separate sheet that stores saved quotations in colour-tab matrix layout
+// (fixed columns incl. AREA + CODE, then one column per quotation, then DESCRIPTION/BRAND-3).
+// New quotations appear automatically when you add columns to these tabs.
+const GQUOTE_ID   = '1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
+let   GQUOTE_TABS = ['CHR','GBP','BGP','BCH'];   // colour tabs that are read & merged
+const CACHE_QUOTES= 'gbw_quotes_v1';
+let   QUOTES = [];     // [{name, tab, items:[{code,qty}]}]  (areas flattened per quotation)
+let   EDIT   = null;   // working copy in the editor: {name, rows:[{code,qty}]}
+let   _quotesSyncing = false;
+
 function cacheGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function cacheSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+
+function gvizQuoteUrl(tab){
+  return 'https://docs.google.com/spreadsheets/d/' + GQUOTE_ID +
+         '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tab) + '&_cb=' + Date.now();
+}
 
 function gvizCsvUrl(tab){
   // gviz CSV export honours the visible tab name; cache-buster forces fresh data each refresh
@@ -3019,6 +3251,349 @@ async function syncFromGoogleSheet(manual){
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   SEARCH & EDIT  —  saved quotations from the GQUOTE sheet
+   ════════════════════════════════════════════════════════════════════════ */
+async function fetchQuoteTab(tab){
+  const out={tab,ok:false,note:'',text:''};
+  try{
+    const r=await fetch(gvizQuoteUrl(tab),{cache:'no-store'});
+    if(!r.ok){ out.note='HTTP '+r.status; return out; }
+    const t=await r.text();
+    if(/^\s*</.test(t)){ out.note='tab not found / not shared'; return out; }
+    if(!t.trim()){ out.note='empty'; return out; }
+    out.text=t; out.ok=true; return out;
+  }catch(e){ out.note='blocked (CORS/offline)'; return out; }
+}
+
+// Parse one colour-tab CSV matrix into quotations, flattening AREA → {code,qty} per quote.
+function parseQuoteMatrix(text){
+  const grid=parseCSV(text).filter(r=>r.some(c=>String(c).trim()!==''));
+  if(grid.length<2) return [];
+  const header=grid[0].map(h=>h==null?'':String(h).trim());
+  const up=header.map(h=>h.toUpperCase());
+  let idxCode=up.findIndex(h=>h==='CODE-1'||h==='CODE'); if(idxCode<0) idxCode=1;
+  let brandIdx=up.indexOf('BRAND-3'); if(brandIdx<0)brandIdx=up.indexOf('DESCRIPTION'); if(brandIdx<0)brandIdx=header.length;
+  let sumIdx=up.indexOf('SUM'); const firstQ = sumIdx>=0 ? sumIdx+1 : 8;
+  const META=new Set(['AREA','CODE','CODE-1','SUM','BRAND','BRAND-1','BRAND-2','BRAND-3','DESCRIPTION','MRP','NRP','SDP','SDP NET','IMAGE','QTY','HSN','GST']);
+  const cols=[];
+  for(let c=firstQ;c<brandIdx;c++){ if(header[c] && !META.has(up[c])) cols.push(c); }
+  if(!cols.length) return [];
+  const quots=cols.map(c=>({name:header[c],items:[],_m:{}}));
+  for(let r=1;r<grid.length;r++){
+    const row=grid[r];
+    const code=String(row[idxCode]==null?'':row[idxCode]).trim().toUpperCase();
+    if(!code) continue;
+    for(let k=0;k<cols.length;k++){
+      const v=row[cols[k]];
+      const qty=(v==null||v==='')?0:Number(String(v).replace(/[, ]/g,''));
+      if(qty>0){
+        const q=quots[k];
+        if(q._m[code]!=null) q.items[q._m[code]].qty+=qty;
+        else { q._m[code]=q.items.length; q.items.push({code,qty}); }
+      }
+    }
+  }
+  return quots.filter(q=>q.items.length).map(q=>({name:q.name,items:q.items}));
+}
+
+function setQStatus(msg){ const el=$('se-status'); if(el) el.textContent=msg; }
+
+async function syncQuotes(manual){
+  if(_quotesSyncing) return;
+  _quotesSyncing=true;
+  setQStatus('⏳ Loading saved quotations…');
+  const tabs=GQUOTE_TABS.filter(Boolean);
+  const all=[], seen={}, sigSeen={}; let okTabs=0;
+  for(const tab of tabs){
+    const d=await fetchQuoteTab(tab);
+    if(!d.ok) continue;
+    const qs=parseQuoteMatrix(d.text);
+    if(!qs.length) continue;
+    const sig=qs.map(q=>q.name).sort().join('|');
+    if(sigSeen[sig]) continue;          // duplicate = Google returned the default tab for a missing tab
+    sigSeen[sig]=tab;
+    let added=0;
+    qs.forEach(q=>{ if(!seen[q.name]){ seen[q.name]=1; q.tab=tab; all.push(q); added++; } });
+    if(added>0) okTabs++;
+  }
+  _quotesSyncing=false;
+  if(all.length){
+    QUOTES=all;
+    try{ localStorage.setItem(CACHE_QUOTES, JSON.stringify(all)); }catch(e){}
+    setQStatus('✓ '+all.length+' quotation'+(all.length===1?'':'s')+' · '+okTabs+' tab'+(okTabs===1?'':'s')+' · '+new Date().toLocaleTimeString());
+    if(manual) toast(all.length+' saved quotations loaded');
+  }else if(QUOTES.length){
+    setQStatus('⚠ Refresh failed — showing '+QUOTES.length+' cached quotation'+(QUOTES.length===1?'':'s')+'.');
+    if(manual) toast('Could not refresh — showing cached quotations');
+  }else{
+    setQStatus('⚠ No quotations. Share the sheet as “Anyone with the link → Viewer”, then Refresh.');
+    if(manual) toast('No quotations loaded — check sheet sharing');
+  }
+  renderSearchResults();
+}
+
+/* ── stats helpers ── */
+function quoteAvail(q){
+  let loaded=false, tot=0, ok=0;
+  q.items.forEach(it=>{ const st=getStock(it.code); if(st!==null){ loaded=true; tot++; if(st>=it.qty) ok++; } });
+  return {loaded, pct: tot? Math.round(ok/tot*100):0};
+}
+function quoteMRP(q){ let m=0; q.items.forEach(it=>{ const p=PMAP[it.code]; if(p) m+=p.mrp*it.qty; }); return m; }
+function quotePcs(q){ let n=0; q.items.forEach(it=>n+=it.qty); return n; }
+
+/* ── search page render ── */
+function renderSearchPage(){ renderSearchResults(); renderLoadedPanel(); }
+
+function renderSearchResults(){
+  const g=$('se-results'), empty=$('se-empty');
+  if(!g) return;
+  const term=($('se-search-box')?$('se-search-box').value:'').trim().toUpperCase();
+  if(!QUOTES.length){ g.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  const res=QUOTES.map((q,i)=>({q,i})).filter(o=>!term||o.q.name.toUpperCase().includes(term)).slice(0,300);
+  if(!res.length){ g.innerHTML='<div class="se-empty" style="grid-column:1/-1;display:block">No quotation matches “'+esc(term)+'”.</div>'; return; }
+  g.innerHTML=res.map(o=>{
+    const av=quoteAvail(o.q);
+    const avCls=av.pct>=90?'hi':(av.pct>=60?'mid':'lo');
+    const avHTML=av.loaded?'<span class="qav '+avCls+'">'+av.pct+'% in stock</span>':'';
+    return '<div class="q-card" onclick="loadQuoteIntoEditor('+o.i+')">'+
+      '<div class="qn">'+esc(o.q.name)+'</div>'+
+      '<div class="qmeta">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs</div>'+
+      '<div class="qmrp">₹'+fmtN(quoteMRP(o.q))+' <span style="font-size:9px;color:var(--muted2);font-weight:500">MRP</span></div>'+
+      avHTML+'</div>';
+  }).join('');
+}
+
+/* ── editor ── */
+function loadQuoteIntoEditor(idx){
+  const q=QUOTES[idx]; if(!q) return;
+  EDIT={ name:q.name, rows:q.items.map(it=>({code:it.code,qty:it.qty})) };
+  const nm=$('se-bath-name'); if(nm) nm.value=q.name;
+  $('se-editor').style.display='flex';
+  renderQuoteEditor();
+  $('se-editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeEditor(){ EDIT=null; hideEdCodeDrop(); $('se-editor').style.display='none'; }
+function addEditRow(){
+  if(!EDIT){ EDIT={name:($('se-bath-name')&&$('se-bath-name').value)||'New bathroom', rows:[]}; $('se-editor').style.display='flex'; }
+  EDIT.rows.push({code:'',qty:1});
+  renderQuoteEditor();
+}
+function edInsertRow(i,dir){ if(!EDIT) return; const at=dir<0?i:i+1; EDIT.rows.splice(at,0,{code:'',qty:1}); renderQuoteEditor(); }
+function edDeleteRow(i){ if(!EDIT) return; EDIT.rows.splice(i,1); renderQuoteEditor(); }
+
+function edStockInfo(code,qty){
+  const st=getStock(code);
+  if(st===null) return {cls:'unk',txt:'—'};
+  return (st>=qty)?{cls:'ok',txt:'✓ '+fmtN(st)}:{cls:'no',txt:'✕ '+fmtN(st)};
+}
+function renderQuoteEditor(){
+  if(!EDIT) return;
+  const tb=$('se-ed-body'); if(!tb) return;
+  tb.innerHTML=EDIT.rows.map((row,i)=>{
+    const p=PMAP[row.code];
+    const missing=row.code && !p;
+    const url=IMAGE_MAP[row.code]||'';
+    const img=url?'<img class="ed-img" src="'+url+'" onerror="this.style.display=\'none\'"/>':'<div class="ed-img-ph">—</div>';
+    const mrp=p?p.mrp:0;
+    const si=edStockInfo(row.code,row.qty);
+    return '<tr>'+
+      '<td style="color:var(--muted)">'+(i+1)+'</td>'+
+      '<td><input class="code'+(missing?' warn':'')+'" data-i="'+i+'" data-f="code" value="'+esc(row.code)+'" autocomplete="off" autocapitalize="characters" placeholder="code"></td>'+
+      '<td><input class="qty" type="number" min="0" data-i="'+i+'" data-f="qty" value="'+row.qty+'" inputmode="numeric"></td>'+
+      '<td>'+img+'</td>'+
+      '<td class="ed-name">'+esc(p?p.desc:(missing?'⚠ not in catalogue':''))+'</td>'+
+      '<td class="ed-tot">₹'+fmtN(mrp*row.qty)+'</td>'+
+      '<td class="ed-stk '+si.cls+'">'+si.txt+'</td>'+
+      '<td class="ed-acts">'+
+        '<button onclick="edInsertRow('+i+',-1)" title="Insert row above">↑</button>'+
+        '<button onclick="edInsertRow('+i+',1)" title="Insert row below">↓</button>'+
+        '<button class="del" onclick="edDeleteRow('+i+')" title="Delete row">✕</button>'+
+      '</td></tr>';
+  }).join('');
+  tb.querySelectorAll('input').forEach(inp=>{
+    const f=inp.dataset.f;
+    if(f==='qty'){ inp.addEventListener('input',onEdQty); inp.addEventListener('change',onEdQty); }
+    if(f==='code'){
+      inp.addEventListener('input',e=>{ const i=+e.target.dataset.i; if(EDIT.rows[i]){ EDIT.rows[i].code=String(e.target.value||'').trim().toUpperCase(); } showEdCodeDrop(e.target,i); renderEditorSummary(); });
+      inp.addEventListener('change',()=>renderQuoteEditor());
+      inp.addEventListener('focus',e=>showEdCodeDrop(e.target,+e.target.dataset.i));
+      inp.addEventListener('blur',e=>setTimeout(()=>{ if(_edActiveInput===e.target) hideEdCodeDrop(); },180));
+    }
+  });
+  renderEditorSummary();
+}
+function onEdQty(e){
+  const i=+e.target.dataset.i; if(!EDIT||!EDIT.rows[i]) return;
+  EDIT.rows[i].qty=Math.max(0,parseInt(e.target.value)||0);
+  const tr=e.target.closest('tr');
+  if(tr){ const p=PMAP[EDIT.rows[i].code]; const mrp=p?p.mrp:0;
+    const tot=tr.querySelector('.ed-tot'); if(tot) tot.textContent='₹'+fmtN(mrp*EDIT.rows[i].qty);
+    const sc=tr.querySelector('.ed-stk'); if(sc){ const si=edStockInfo(EDIT.rows[i].code,EDIT.rows[i].qty); sc.className='ed-stk '+si.cls; sc.textContent=si.txt; }
+  }
+  renderEditorSummary();
+}
+
+/* collapse the editor rows to resolved product items (dup codes summed) */
+function editorResolvedItems(){
+  if(!EDIT) return [];
+  const order=[], sum={};
+  EDIT.rows.forEach(row=>{
+    const code=String(row.code||'').trim().toUpperCase();
+    const qty=Math.max(0,parseInt(row.qty)||0);
+    if(!code||qty<=0) return;
+    if(sum[code]==null){ sum[code]=0; order.push(code); }
+    sum[code]+=qty;
+  });
+  return order.map(code=>{
+    const p=PMAP[code];
+    const base=p?{...p}:{code,desc:code,brand:'',sdp:0,nrp:0,mrp:0,hsn:'',gst:0,sdp_net:0};
+    return {...base, qty:sum[code]};
+  });
+}
+function renderEditorSummary(){
+  if(!EDIT) return;
+  const items=editorResolvedItems();
+  let mrp=0,best=0,pcs=0,miss=0;
+  items.forEach(it=>{ mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; pcs+=it.qty; if(!PMAP[it.code])miss++; });
+  const el=$('se-ed-summary'); if(!el) return;
+  el.innerHTML='<span><b>'+items.length+'</b> products</span><span><b>'+pcs+'</b> pcs</span>'+
+    '<span>MRP <b>₹'+fmtN(mrp)+'</b></span><span>Best <b>₹'+fmtN(best)+'</b></span>'+
+    (miss?'<span style="color:#FF9B8F">⚠ '+miss+' not in catalogue</span>':'');
+}
+
+/* ── floating catalogue picker for the editor code field ── */
+let _edActiveInput=null, _edActiveRow=-1;
+function showEdCodeDrop(input,rowIdx){
+  _edActiveInput=input; _edActiveRow=rowIdx;
+  const dd=$('ed-code-dd'); if(!dd) return;
+  const q=String(input.value||'').trim().toLowerCase();
+  let res=[];
+  if(q){
+    const rank=p=>{ const st=getStock(p.code); if(st!==null&&st>0)return 0; if(IMAGE_MAP[p.code])return 1; return 2; };
+    res=ALL.filter(p=>p.code.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)).sort((a,b)=>rank(a)-rank(b)).slice(0,25);
+  }
+  if(!res.length){ hideEdCodeDrop(); return; }
+  dd.innerHTML=res.map(p=>{
+    const url=IMAGE_MAP[p.code]||'';
+    const st=getStock(p.code);
+    const tag = (st!==null&&st>0)?'<span class="sr-stock-in">✓ '+fmtN(st)+'</span>':(st!==null?'<span class="sr-stock-out">✕ 0</span>':'<span class="sr-stock-unk">—</span>');
+    return '<div class="sr" data-pick="'+esc(p.code)+'">'+
+      (url?'<img class="sr-img" src="'+url+'" onerror="this.style.display=\'none\'">':'<div class="sr-img-ph">IMG</div>')+
+      '<div style="flex:1;min-width:0"><div class="sr-code">'+esc(p.code)+'</div><div class="sr-desc">'+esc(p.desc)+'</div>'+
+      '<div class="sr-meta"><span class="sr-mrp">MRP ₹'+fmtN(p.mrp)+'</span>'+tag+'</div></div></div>';
+  }).join('');
+  const r=input.getBoundingClientRect();
+  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
+  dd.style.top=(r.bottom+4)+'px';
+  dd.style.width=Math.min(Math.max(r.width,260), window.innerWidth-12)+'px';
+  dd.classList.add('open');
+}
+function hideEdCodeDrop(){ const dd=$('ed-code-dd'); if(dd){ dd.classList.remove('open'); dd.innerHTML=''; } _edActiveInput=null; _edActiveRow=-1; }
+function pickEdCode(code){
+  if(_edActiveRow<0||!EDIT||!EDIT.rows[_edActiveRow]){ hideEdCodeDrop(); return; }
+  EDIT.rows[_edActiveRow].code=code;
+  hideEdCodeDrop();
+  renderQuoteEditor();
+}
+
+/* ── load the edited bathroom into the quotation (accumulate) ── */
+function rebuildItemsFromBathrooms(){
+  const order=[], idx={};
+  (S.bathrooms||[]).forEach(b=>b.items.forEach(it=>{
+    if(idx[it.code]==null){ idx[it.code]=order.length; order.push({...it}); }
+    else order[idx[it.code]].qty+=it.qty;
+  }));
+  S.items=order;
+}
+function loadBathroomToQuotation(){
+  if(!EDIT){ toast('Nothing to load'); return; }
+  const items=editorResolvedItems();
+  if(!items.length){ toast('Add at least one valid product first'); return; }
+  let name=(($('se-bath-name')&&$('se-bath-name').value)||'').trim();
+  if(!name) name='Bathroom '+(((S.bathrooms&&S.bathrooms.length)||0)+1);
+  if(!S.bathrooms) S.bathrooms=[];
+  S.bathrooms.push({name, items});
+  rebuildItemsFromBathrooms();
+  S.stockOverrides={};
+  cancelInsert();
+  showBathroomModeBar();
+  refreshAll();
+  renderLoadedPanel();
+  EDIT=null;
+  $('se-editor').style.display='none';
+  toast('“'+name+'” added — '+items.length+' products');
+}
+
+/* ── loaded-bathrooms panel ── */
+function renderLoadedPanel(){
+  const panel=$('se-loaded'), list=$('se-loaded-list');
+  if(!panel||!list) return;
+  if(!S.bathrooms||!S.bathrooms.length){ panel.style.display='none'; return; }
+  panel.style.display='flex';
+  const t=$('se-loaded-t'); if(t) t.textContent='Loaded into quotation · '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s');
+  list.innerHTML=S.bathrooms.map((b,i)=>{
+    let pcs=0,mrp=0; b.items.forEach(it=>{pcs+=it.qty;mrp+=it.mrp*it.qty;});
+    return '<div class="se-loaded-item"><div><div class="li-name">'+esc(b.name)+'</div>'+
+      '<div class="li-meta">'+b.items.length+' products · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
+      '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button></div>';
+  }).join('');
+}
+function removeLoadedBathroom(i){
+  if(!S.bathrooms||!S.bathrooms[i]) return;
+  S.bathrooms.splice(i,1);
+  if(S.bathrooms.length) rebuildItemsFromBathrooms(); else S.items=[];
+  showBathroomModeBar();
+  refreshAll();
+  renderLoadedPanel();
+}
+function clearLoadedQuotation(){
+  S.bathrooms=[]; S.items=[]; S.stockOverrides={};
+  showBathroomModeBar();
+  refreshAll();
+  renderLoadedPanel();
+  toast('Cleared loaded quotation');
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   EXCEL EXPORT  —  Quotation page (code + qty, bathroom-wise when grouped)
+   ════════════════════════════════════════════════════════════════════════ */
+function exportQuotationExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
+  const inBath = S.bathrooms && S.bathrooms.length>0;
+  let aoa, fname;
+  if(inBath){
+    aoa=[['Bathroom','Code','Qty']];
+    S.bathrooms.forEach(b=>b.items.forEach(it=>aoa.push([b.name, it.code, it.qty])));
+    fname='quotation_bathroomwise.xlsx';
+  }else{
+    if(!S.items.length){ alert('No products in the quotation to export.'); return; }
+    aoa=[['Code','Qty']];
+    S.items.forEach(it=>aoa.push([it.code, it.qty]));
+    fname='quotation_codes.xlsx';
+  }
+  if(aoa.length<=1){ alert('No products in the quotation to export.'); return; }
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']= inBath ? [{wch:24},{wch:20},{wch:8}] : [{wch:20},{wch:8}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
+  XLSX.writeFile(wb, fname);
+  toast('Excel exported — '+(aoa.length-1)+' rows');
+}
+
+/* ── wire Search & Edit listeners (DOM already parsed at this point) ── */
+(function wireSearchEdit(){
+  const sb=$('se-search-box'); if(sb) sb.addEventListener('input', renderSearchResults);
+  const dd=$('ed-code-dd');
+  if(dd){
+    dd.addEventListener('mousedown',e=>{ const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
+    dd.addEventListener('touchend',e=>{ const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
+  }
+  window.addEventListener('scroll', hideEdCodeDrop, true);
+  window.addEventListener('resize', hideEdCodeDrop);
+})();
+
 // ── BOOTSTRAP ──
 // Hide stale baked upload statuses
 (function(){
@@ -3045,6 +3620,14 @@ async function syncFromGoogleSheet(manual){
 
 // 2) Refresh from the live sheet in the background (overwrites data + cache)
 syncFromGoogleSheet();
+
+// 3) Saved quotations (Search & Edit): hydrate from cache instantly, then refresh live.
+(function hydrateQuotes(){
+  const c=cacheGet(CACHE_QUOTES);
+  if(c){ try{ const a=JSON.parse(c); if(Array.isArray(a)&&a.length){ QUOTES=a; setQStatus('Loaded '+a.length+' cached quotation'+(a.length===1?'':'s')+'. Checking for updates…'); } }catch(e){} }
+  renderSearchResults();
+})();
+syncQuotes();
 </script>
 
 
