@@ -873,12 +873,12 @@ html, body{
 
 <!-- TABS -->
 <div id="tabs">
-  <button class="tab" onclick="showScreen('builder')">Products</button>
+  <button class="tab on" onclick="showScreen('builder')">Products</button>
   <button class="tab" onclick="showScreen('search')">Search&nbsp;&amp;&nbsp;Edit</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
   <button class="tab" onclick="showScreen('stock')">Stock</button>
-  <button class="tab on" onclick="showScreen('editor')">Editor</button>
+  <button class="tab" onclick="showScreen('editor')">Editor</button>
   <button class="tab" onclick="goPreview()">Quotation</button>
 </div>
 
@@ -899,7 +899,7 @@ html, body{
 </div>
 
 <!-- BUILDER -->
-<div id="screen-builder" class="screen">
+<div id="screen-builder" class="screen active">
   <div id="search-zone">
     <div id="search-wrap">
       <input type="text" id="search-inp" placeholder="Search by code, name or brand…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -1195,7 +1195,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 </div>
 
 <!-- EDITOR SCREEN -->
-<div id="screen-editor" class="screen active">
+<div id="screen-editor" class="screen">
   <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px">
     <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.15);text-align:center">Data Upload</div>
     <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px;font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);line-height:1.7">
@@ -3436,12 +3436,38 @@ function applyImageData(map){
   },100);
 }
 
+
+/* Force the baked/downloaded HTML to open on the Products screen, whatever
+   screen was live in the DOM at the moment it was serialised.
+
+   NOTE: htmlStr is the WHOLE document — including this function's own source.
+   So the needles are assembled by concatenation and the patterns are built with
+   new RegExp(): if they appeared as contiguous literals here, this function
+   would rewrite its own code inside every file it bakes. */
+function normaliseStartScreen(htmlStr){
+  var SCR = 'class="' + 'screen';
+  var TAB = 'class="' + 'tab';
+  var ACT = ' ' + 'active';
+  var ON  = ' ' + 'on';
+
+  // 1. clear every active screen and every highlighted tab
+  htmlStr = htmlStr.replace(new RegExp('(<div id="screen-[a-z]+" ' + SCR + ')\\s+active"', 'g'), '$1"');
+  htmlStr = htmlStr.replace(new RegExp('(<button ' + TAB + ')\\s+on"', 'g'), '$1"');
+
+  // 2. switch Products on (first match = the real markup, which precedes this script)
+  htmlStr = htmlStr.replace('<div id="screen-builder" ' + SCR + '"',
+                            '<div id="screen-builder" ' + SCR + ACT + '"');
+  htmlStr = htmlStr.replace('<button ' + TAB + '" onclick="showScreen(\'builder\')"',
+                            '<button ' + TAB + ON + '" onclick="showScreen(\'builder\')"');
+  return htmlStr;
+}
+
 function bakeAndDownload(htmlStr,filename){
-  // Ensure Products screen is active and Products tab is on in the baked file
-  htmlStr = htmlStr.replace(/ class="screen"/g,' class="screen"');
-  htmlStr = htmlStr.replace(/id="screen-builder" class="screen"/,'id="screen-builder" class="screen"');
-  htmlStr = htmlStr.replace(/class="tab"/g,'class="tab"');
-  htmlStr = htmlStr.replace(/class="tab"/,'class="tab"'); // first match only = Products tab
+  // getCurrentHTML() serialises the LIVE DOM, so whichever tab you happen to be
+  // standing on when you bake would otherwise be frozen in as the start screen
+  // (always Editor, since the bake buttons live there). Normalise it back to
+  // Products so every downloaded index.html opens on the Products page.
+  htmlStr = normaliseStartScreen(htmlStr);
   const blob=new Blob([htmlStr],{type:'text/html'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -4093,6 +4119,10 @@ function repositionEdCodeDrop(){
   const ps=$('ed-prod-status'); if(ps) ps.style.display='none';
   const is=$('ed-img-status');  if(is) is.style.display='none';
 })();
+
+// 0) Always open on the Products screen. Enforced in code, not left to whatever
+//    class happened to get baked into the markup — so it can never drift again.
+showScreen('builder');
 
 // 1) Instantly hydrate from the last successful sync saved in localStorage,
 //    so the app is usable immediately and works offline after a first load.
