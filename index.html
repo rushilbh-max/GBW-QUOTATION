@@ -912,7 +912,7 @@ html, body{
       <button onclick="$('bathroom-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
         🛁 Bathroom Wise
       </button>
-      <button onclick="checkAndExportMissingImages()" style="background:transparent;border:1px solid rgba(231,180,100,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:#E8C070;cursor:pointer" title="Check which items in your list have no image URL">
+      <button onclick="openImageAudit()" style="background:transparent;border:1px solid rgba(231,180,100,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:#E8C070;cursor:pointer" title="Load-test every product image — lists items with no URL and with broken URLs">
         🖼 Missing Images
       </button>
     </div>
@@ -960,7 +960,7 @@ COP-CHR-083NKPM, 3"></textarea>
           </label>
         </div>
         <!-- Error/result message -->
-        <div id="upload-msg" style="display: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; margin-bottom: 12px; background: rgba(42, 157, 96, 0.1); border: 1px solid rgba(42, 157, 96, 0.3); color: rgb(74, 223, 144);">✓ Imported 18 items<br><span style="color:#E8D08A;font-size:11px">⚠ 1 item have no image URL</span><br><button onclick="exportMissingImages()" style="margin-top:8px;padding:6px 14px;background:#C9A84C;color:#0D1520;border:none;border-radius:4px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;text-transform:uppercase">⬇ Download Missing Images List</button></div>
+        <div id="upload-msg" style="display: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; margin-bottom: 12px; background: rgba(42, 157, 96, 0.1); border: 1px solid rgba(42, 157, 96, 0.3); color: rgb(74, 223, 144);">✓ Imported 18 items<br><span style="color:#E8D08A;font-size:11px">⚠ 1 item have no image URL</span><br><button onclick="openImageAudit()" style="margin-top:8px;padding:6px 14px;background:#C9A84C;color:#0D1520;border:none;border-radius:4px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;text-transform:uppercase">⬇ Download Missing Images List</button></div>
         <!-- Actions -->
         <div style="display:flex;gap:8px">
           <button onclick="closeUpload()" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:5px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--muted2);cursor:pointer;text-transform:uppercase">Cancel</button>
@@ -1417,6 +1417,43 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 <!-- Floating catalogue picker for the editor + toast -->
 <div id="ed-code-dd"></div>
 <div id="se-toast"></div>
+
+<!-- ═══ IMAGE AUDIT MODAL ═══ -->
+<div id="imgaudit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10001;align-items:center;justify-content:center;padding:14px">
+  <div style="background:var(--ink2);border:1px solid rgba(201,168,76,0.25);border-radius:10px;width:100%;max-width:960px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- header -->
+    <div style="padding:13px 18px;background:rgba(201,168,76,0.06);border-bottom:1px solid rgba(201,168,76,0.12);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">🖼 Image Audit</div>
+        <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:2px">Every image URL is actually loaded and verified — missing, broken and fixable links are all reported</div>
+      </div>
+      <button onclick="closeImageAudit()" style="background:transparent;border:none;color:var(--muted2);font-size:22px;line-height:1;cursor:pointer;padding:0 4px">&times;</button>
+    </div>
+
+    <!-- progress -->
+    <div id="ia-prog" style="display:none;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0">
+      <div style="height:5px;background:var(--ink4);border-radius:3px;overflow:hidden">
+        <div id="ia-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8B6914,#E8D08A);transition:width .18s ease"></div>
+      </div>
+      <div id="ia-progtxt" style="font-family:'Jost',sans-serif;font-size:11px;color:var(--gold-l);margin-top:6px">Starting…</div>
+    </div>
+
+    <!-- filter chips -->
+    <div id="ia-chips" style="padding:10px 18px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0"></div>
+
+    <!-- results -->
+    <div id="ia-body" style="flex:1;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:120px"></div>
+
+    <!-- footer -->
+    <div id="ia-foot" style="display:none;padding:11px 18px;border-top:1px solid rgba(201,168,76,0.12);background:rgba(201,168,76,0.04);gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0">
+      <button onclick="recheckImageAudit()" style="background:transparent;border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:8px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#C0D4E4;cursor:pointer">↻ Re-check</button>
+      <button id="ia-copy" onclick="auditCopyCodes()" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);cursor:pointer">⧉ Copy Codes</button>
+      <button onclick="exportMissingImages()" style="background:#C9A84C;border:none;border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#0D1520;cursor:pointer">⬇ Download CSV</button>
+    </div>
+
+  </div>
+</div>
 
 <script>
 const PRODUCTS_RAW=[];
@@ -2064,46 +2101,401 @@ function importRows(rows){
   return {found, notFound};
 }
 
-function getMissingImageItems(){
-  // Return items in S.items that have no image URL
-  return S.items.filter(item=>{
-    const url=IMAGE_MAP[item.code];
-    return !url || url.trim()==='' || url==='https://static.wixstatic.com/media/DIRECT';
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMAGE AUDIT ENGINE  —  foolproof "Missing / Broken Images" checker
+   ---------------------------------------------------------------------------
+   Finds, for every product currently in the quotation (S.items):
+     • NO URL     – the catalogue has no usable image URL at all
+     • BROKEN     – a URL exists but the browser cannot render an image from it
+                    (404 / DNS fail / not an image / blocked / 0-pixel / timeout)
+     • NEEDS FIX  – the stored URL is malformed but a repaired version DOES load
+                    (bare Wix handle, http:// on an https page, Drive/Dropbox
+                     share link, …) — the corrected URL is reported back
+     • OK         – renders correctly
+   Every URL is verified by ACTUALLY LOADING IT (new Image()), not by guessing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const IMG_AUDIT = {
+  cache      : new Map(),   // url  -> probe result  {ok, code, w, h}
+  results    : [],          // per-item audit rows
+  running    : false,
+  cancelled  : false,
+  filter     : 'PROBLEM',   // PROBLEM | ALL | NO_URL | BROKEN | NEEDS_FIX | OK
+  CONCURRENCY: 8,
+  TIMEOUT_MS : 12000,
+  RETRIES    : 1
+};
+
+/* ---- case/space tolerant reverse index into IMAGE_MAP (prevents false "no URL") ---- */
+let _imgKeyIndex = null, _imgKeyIndexSize = -1;
+function _imgKeyLookup(code){
+  const n = Object.keys(IMAGE_MAP).length;
+  if(_imgKeyIndex === null || _imgKeyIndexSize !== n){       // rebuild when sheet reloads
+    _imgKeyIndex = {}; _imgKeyIndexSize = n;
+    for(const k in IMAGE_MAP){ _imgKeyIndex[String(k).replace(/\s+/g,'').toUpperCase()] = IMAGE_MAP[k]; }
+  }
+  return _imgKeyIndex[String(code||'').replace(/\s+/g,'').toUpperCase()];
+}
+
+/* ---- resolve the URL the app would actually try to render for a code ---- */
+function auditResolveUrl(code){
+  const custom = (getCustomProducts()[code] || {}).img;
+  const raw    = custom || IMAGE_MAP[code] || _imgKeyLookup(code) || '';
+  return String(raw == null ? '' : raw).trim();
+}
+
+/* ---- values that mean "there is no image", however they were typed in the sheet ---- */
+const _JUNK = new Set(['','-','--','---','.','n/a','na','n.a.','nil','none','null','undefined',
+                       'no','no image','noimage','no url','nourl','not available','notavailable',
+                       'tbd','todo','0','false','#n/a','#ref!','#value!','#name?','#div/0!','#null!']);
+
+/* ---- STAGE 1: static classification. Returns what (if anything) to probe. ---- */
+function auditClassify(url){
+  const u = String(url || '').trim();
+  const lo = u.toLowerCase();
+
+  if(_JUNK.has(lo))                       return {status:'NO_URL', reason:'No image URL in the catalogue'};
+  if(/^#(n\/a|ref|value|name|div|null)/i.test(u))
+                                          return {status:'NO_URL', reason:'Spreadsheet error value in the sheet ('+u+')'};
+  if(/\/media\/direct\/?$/i.test(lo))     return {status:'NO_URL', reason:'Placeholder stub "…/media/DIRECT" — no real image'};
+  if(lo === 'https://static.wixstatic.com/media' || lo === 'https://static.wixstatic.com/media/')
+                                          return {status:'NO_URL', reason:'Wix media path with no file handle'};
+
+  /* absolute URL? */
+  let p = null;
+  try { p = new URL(u); } catch(e) { p = null; }
+
+  if(!p){
+    /* bare Wix media handle, e.g. 9d4b3c_ab12…~mv2.jpg  → auto-complete */
+    if(/^[A-Za-z0-9_~.\-%]+\.(jpe?g|png|webp|gif|avif|bmp|svg)$/i.test(u))
+      return {status:'PROBE', probe:'https://static.wixstatic.com/media/'+u, repaired:'https://static.wixstatic.com/media/'+u,
+              fixNote:'Sheet holds a bare Wix media handle — needs the full https://static.wixstatic.com/media/ prefix'};
+    /* protocol-relative //host/path */
+    if(/^\/\//.test(u))
+      return {status:'PROBE', probe:'https:'+u, repaired:'https:'+u, fixNote:'URL is missing the https: scheme'};
+    return {status:'BROKEN', reason:'Not a valid URL ("'+ (u.length>60 ? u.slice(0,60)+'…' : u) +'")'};
+  }
+
+  if(p.protocol !== 'http:' && p.protocol !== 'https:')
+    return {status:'BROKEN', reason:'Unsupported protocol "'+p.protocol+'" — only http/https images can load'};
+
+  /* http:// on an https:// page is hard-blocked by the browser → try https instead */
+  if(p.protocol === 'http:' && location.protocol === 'https:'){
+    const https = 'https://' + u.replace(/^http:\/\//i,'');
+    return {status:'PROBE', probe:https, repaired:https,
+            fixNote:'Stored as insecure http:// — browsers block it on this page. Use https://'};
+  }
+
+  return {status:'PROBE', probe:u};
+}
+
+/* ---- STAGE 2: the actual load test. This is the part that cannot be faked. ---- */
+function auditProbeOnce(url){
+  return new Promise(resolve=>{
+    let settled = false;
+    const img = new Image();
+    img.decoding    = 'async';
+    img.referrerPolicy = 'no-referrer';       // some CDNs 403 on a referrer they don't know
+    const isSvg = /\.svg(\?|#|$)/i.test(url);
+
+    const finish = r => { if(settled) return; settled = true; clearTimeout(timer); img.onload=img.onerror=null; resolve(r); };
+    const timer = setTimeout(()=>{ img.src = ''; finish({ok:false, code:'TIMEOUT', w:0, h:0}); }, IMG_AUDIT.TIMEOUT_MS);
+
+    img.onload  = ()=>{
+      const w = img.naturalWidth|0, h = img.naturalHeight|0;
+      /* SVGs can legitimately report 0 intrinsic size — a successful load is enough */
+      if(isSvg)                 return finish({ok:true,  code:'OK',    w, h});
+      if(w <= 1 || h <= 1)      return finish({ok:false, code:'EMPTY', w, h});   // 0×0 or 1×1 tracking pixel
+      finish({ok:true, code:'OK', w, h});
+    };
+    img.onerror = ()=> finish({ok:false, code:'ERROR', w:0, h:0});
+
+    img.src = url;
   });
 }
+
+/* retry once — kills false positives from a momentary network blip */
+async function auditProbe(url){
+  if(IMG_AUDIT.cache.has(url)) return IMG_AUDIT.cache.get(url);
+  let r = await auditProbeOnce(url);
+  for(let i=0; i<IMG_AUDIT.RETRIES && !r.ok && r.code!=='EMPTY' && !IMG_AUDIT.cancelled; i++){
+    await new Promise(res=>setTimeout(res, 400));
+    r = await auditProbeOnce(url);
+  }
+  IMG_AUDIT.cache.set(url, r);
+  return r;
+}
+
+/* ---- human-readable diagnosis for a URL that failed to load ---- */
+function auditDiagnose(url, probe){
+  const lo = String(url).toLowerCase();
+  if(/drive\.google\.com|docs\.google\.com/.test(lo))
+    return 'Google Drive share link — this is a viewer page, not a direct image link';
+  if(/dropbox\.com/.test(lo) && /[?&]dl=0/.test(lo))
+    return 'Dropbox share link — needs ?raw=1 instead of ?dl=0';
+  if(/\.(pdf|html?|docx?|xlsx?|zip)(\?|#|$)/i.test(lo))
+    return 'URL points to a document, not an image file';
+  if(/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.)/.test(lo))
+    return 'Local/private address — not reachable from this device';
+  if(probe.code === 'TIMEOUT') return 'Timed out — server did not respond (dead link or very slow host)';
+  if(probe.code === 'EMPTY')   return 'Loads but is a blank / 0-pixel image ('+probe.w+'×'+probe.h+')';
+  return 'Broken link — image did not load (removed, renamed, 404, or blocked)';
+}
+
+/* ---- map code → bathroom name(s), when bathroom mode is on ---- */
+function auditBathroomOf(code){
+  if(!S.bathrooms || !S.bathrooms.length) return '';
+  const hit = S.bathrooms.filter(b => b.items.some(i => i.code === code)).map(b => b.name);
+  return hit.join(' / ');
+}
+
+/* ═══ MAIN RUN ═══ */
+async function runImageAudit(force){
+  if(IMG_AUDIT.running) return;
+  if(force) IMG_AUDIT.cache.clear();
+
+  IMG_AUDIT.running = true;
+  IMG_AUDIT.cancelled = false;
+  IMG_AUDIT.results = [];
+
+  const items = S.items.slice();
+  auditSetProgress(0, items.length, 'Reading catalogue…');
+
+  /* 1 ─ classify every item, collect the unique URLs that need a real load test */
+  const rows = items.map((item, i) => {
+    const url = auditResolveUrl(item.code);
+    const c   = auditClassify(url);
+    return {
+      sr       : i + 1,
+      code     : item.code,
+      desc     : item.desc || item.description || '',
+      qty      : item.qty || 0,
+      mrp      : item.mrp || 0,
+      bathroom : auditBathroomOf(item.code),
+      url      : url,
+      probeUrl : c.probe || '',
+      repaired : c.repaired || '',
+      fixNote  : c.fixNote || '',
+      status   : c.status,                 // NO_URL | BROKEN | PROBE
+      reason   : c.reason || ''
+    };
+  });
+
+  const unique = [...new Set(rows.filter(r => r.status === 'PROBE').map(r => r.probeUrl))];
+
+  /* 2 ─ load-test each unique URL, N at a time */
+  let done = 0;
+  const total = unique.length;
+  if(total === 0) auditSetProgress(1, 1, 'No URLs to test');
+
+  let cursor = 0;
+  const worker = async () => {
+    while(cursor < total && !IMG_AUDIT.cancelled){
+      const u = unique[cursor++];
+      await auditProbe(u);
+      done++;
+      auditSetProgress(done, total, 'Testing image ' + done + ' of ' + total + '…');
+    }
+  };
+  await Promise.all(Array.from({length: Math.min(IMG_AUDIT.CONCURRENCY, total)}, worker));
+
+  if(IMG_AUDIT.cancelled){ IMG_AUDIT.running = false; auditRender(true); return; }
+
+  /* 3 ─ fold the probe results back into the rows */
+  rows.forEach(r => {
+    if(r.status !== 'PROBE') return;
+    const p = IMG_AUDIT.cache.get(r.probeUrl) || {ok:false, code:'ERROR', w:0, h:0};
+    r.w = p.w; r.h = p.h;
+    if(p.ok){
+      if(r.repaired){ r.status = 'NEEDS_FIX'; r.reason = r.fixNote + ' → use: ' + r.repaired; }
+      else          { r.status = 'OK';        r.reason = 'Renders fine (' + p.w + '×' + p.h + ')'; }
+    } else {
+      r.status = 'BROKEN';
+      r.reason = auditDiagnose(r.probeUrl, p);
+    }
+  });
+
+  IMG_AUDIT.results = rows;
+  IMG_AUDIT.running = false;
+  auditRender();
+}
+
+/* ═══ UI ═══ */
+function openImageAudit(){
+  const m = $('imgaudit-modal');
+  if(!S.items.length){ alert('No products in the quotation yet.\n\nAdd or upload some codes first, then run the image check.'); return; }
+  m.style.display = 'flex';
+  IMG_AUDIT.filter = 'PROBLEM';
+  runImageAudit(false);
+}
+function closeImageAudit(){
+  IMG_AUDIT.cancelled = true;
+  $('imgaudit-modal').style.display = 'none';
+}
+function recheckImageAudit(){ runImageAudit(true); }
+
+function auditSetProgress(done, total, label){
+  const bar = $('ia-bar'), txt = $('ia-progtxt'), wrap = $('ia-prog');
+  if(!wrap) return;
+  wrap.style.display = 'block';
+  const pct = total ? Math.round((done / total) * 100) : 100;
+  bar.style.width = pct + '%';
+  txt.textContent = label + '  (' + pct + '%)';
+  $('ia-body').innerHTML = '<div style="padding:34px 18px;text-align:center;font-family:\'Cormorant\',serif;font-style:italic;font-size:15px;color:var(--muted2)">Verifying every image by actually loading it…</div>';
+  $('ia-chips').innerHTML = '';
+  $('ia-foot').style.display = 'none';
+}
+
+const _IA_META = {
+  NO_URL   : {label:'NO IMAGE URL', col:'#FF9B8F', bg:'rgba(224,96,96,0.16)',  bd:'rgba(224,96,96,0.5)'},
+  BROKEN   : {label:'BROKEN URL',   col:'#FFB870', bg:'rgba(231,140,60,0.16)', bd:'rgba(231,140,60,0.5)'},
+  NEEDS_FIX: {label:'NEEDS FIX',    col:'#E8D08A', bg:'rgba(201,168,76,0.16)', bd:'rgba(201,168,76,0.5)'},
+  OK       : {label:'OK',           col:'#4ADF90', bg:'rgba(42,157,96,0.16)',  bd:'rgba(42,157,96,0.45)'}
+};
+
+function auditCounts(){
+  const c = {NO_URL:0, BROKEN:0, NEEDS_FIX:0, OK:0};
+  IMG_AUDIT.results.forEach(r => { if(c[r.status] !== undefined) c[r.status]++; });
+  c.PROBLEM = c.NO_URL + c.BROKEN + c.NEEDS_FIX;
+  c.TOTAL   = IMG_AUDIT.results.length;
+  return c;
+}
+
+function auditSetFilter(f){ IMG_AUDIT.filter = f; auditRender(); }
+
+function auditRender(cancelled){
+  const c = auditCounts();
+  $('ia-prog').style.display = 'none';
+  $('ia-foot').style.display = 'flex';
+
+  /* summary chips (clickable filters) */
+  const chip = (key, label, n, col) => {
+    const on = IMG_AUDIT.filter === key;
+    return '<button onclick="auditSetFilter(\'' + key + '\')" style="background:' + (on ? 'rgba(201,168,76,0.18)' : 'transparent') +
+      ';border:1px solid ' + (on ? 'var(--gold)' : 'rgba(255,255,255,0.14)') + ';border-radius:20px;padding:5px 12px;cursor:pointer;' +
+      'font-family:\'Jost\',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:' + col + ';white-space:nowrap">' +
+      label + ' <b style="color:#fff">' + n + '</b></button>';
+  };
+  $('ia-chips').innerHTML =
+      chip('PROBLEM',  '⚠ PROBLEMS',    c.PROBLEM,   '#FFB870')
+    + chip('NO_URL',   '⛔ NO URL',      c.NO_URL,    '#FF9B8F')
+    + chip('BROKEN',   '🔗 BROKEN',      c.BROKEN,    '#FFB870')
+    + chip('NEEDS_FIX','🔧 NEEDS FIX',   c.NEEDS_FIX, '#E8D08A')
+    + chip('OK',       '✓ OK',           c.OK,        '#4ADF90')
+    + chip('ALL',      '☰ ALL',          c.TOTAL,     '#C0D4E4');
+
+  const list = IMG_AUDIT.results.filter(r =>
+      IMG_AUDIT.filter === 'ALL'     ? true
+    : IMG_AUDIT.filter === 'PROBLEM' ? r.status !== 'OK'
+    : r.status === IMG_AUDIT.filter);
+
+  const body = $('ia-body');
+
+  if(cancelled){
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted2);font-family:\'Jost\',sans-serif;font-size:13px">Check cancelled.</div>';
+    return;
+  }
+  if(!list.length){
+    const msg = (IMG_AUDIT.filter === 'PROBLEM' && c.TOTAL)
+      ? '<div style="font-size:34px;margin-bottom:8px">✅</div><div style="font-family:\'Cinzel\',serif;font-size:14px;color:#4ADF90;letter-spacing:1px">ALL ' + c.TOTAL + ' PRODUCTS HAVE WORKING IMAGES</div><div style="font-family:\'Jost\',sans-serif;font-size:12px;color:var(--muted2);margin-top:6px">Every URL was loaded and verified.</div>'
+      : '<div style="font-family:\'Jost\',sans-serif;font-size:13px;color:var(--muted2)">Nothing in this category.</div>';
+    body.innerHTML = '<div style="padding:40px 18px;text-align:center">' + msg + '</div>';
+    return;
+  }
+
+  const showBath = IMG_AUDIT.results.some(r => r.bathroom);
+
+  let h = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr style="position:sticky;top:0;background:#0E1520;z-index:2">'
+    + '<th style="padding:8px 6px;text-align:center;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">#</th>'
+    + '<th style="padding:8px 6px;text-align:center;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">IMG</th>'
+    + '<th style="padding:8px 6px;text-align:left;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">CODE</th>'
+    + (showBath ? '<th style="padding:8px 6px;text-align:left;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">BATHROOM</th>' : '')
+    + '<th style="padding:8px 6px;text-align:left;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">DESCRIPTION</th>'
+    + '<th style="padding:8px 6px;text-align:center;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">STATUS</th>'
+    + '<th style="padding:8px 6px;text-align:left;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(201,168,76,0.25)">WHAT’S WRONG / URL</th>'
+    + '</tr></thead><tbody>';
+
+  list.forEach((r, i) => {
+    const m  = _IA_META[r.status] || _IA_META.BROKEN;
+    const ok = r.status === 'OK';
+    const thumbSrc = ok ? r.probeUrl : (r.status === 'NEEDS_FIX' ? r.repaired : '');
+    const thumb = thumbSrc
+      ? '<div style="width:38px;height:38px;background:#fff;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="' + esc(thumbSrc) + '" style="width:38px;height:38px;object-fit:contain" onerror="this.parentNode.style.background=\'var(--ink4)\';this.remove()"/></div>'
+      : '<div style="width:38px;height:38px;background:var(--ink4);border:1px dashed ' + m.bd + ';border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;color:' + m.col + '">✕</div>';
+
+    const urlLine = r.url
+      ? '<div style="margin-top:3px"><a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="font-family:monospace;font-size:9.5px;color:#7FB0D0;word-break:break-all;text-decoration:none">' + esc(r.url.length > 110 ? r.url.slice(0,110) + '…' : r.url) + '</a></div>'
+      : '<div style="margin-top:3px;font-family:monospace;font-size:9.5px;color:var(--muted);font-style:italic">— cell is empty in the IMAGE NEW sheet —</div>';
+
+    h += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:' + (ok ? 'transparent' : m.bg.replace('0.16','0.06')) + '">'
+      + '<td style="padding:7px 6px;text-align:center;font-family:\'Jost\',sans-serif;font-size:11px;color:var(--muted2)">' + (i+1) + '</td>'
+      + '<td style="padding:6px">' + thumb + '</td>'
+      + '<td style="padding:7px 6px;font-family:\'Cinzel\',serif;font-size:11px;font-weight:600;color:var(--gold-l);white-space:nowrap">' + esc(r.code) + '</td>'
+      + (showBath ? '<td style="padding:7px 6px;font-family:\'Jost\',sans-serif;font-size:10px;color:#9FC0D8">' + esc(r.bathroom || '—') + '</td>' : '')
+      + '<td style="padding:7px 6px;font-family:\'Jost\',sans-serif;font-size:11px;color:#C0D4E4;min-width:150px">' + esc(r.desc || '—') + '</td>'
+      + '<td style="padding:7px 6px;text-align:center"><span style="display:inline-block;background:' + m.bg + ';border:1px solid ' + m.bd + ';color:' + m.col + ';border-radius:4px;padding:3px 7px;font-family:\'Jost\',sans-serif;font-size:8.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap">' + m.label + '</span></td>'
+      + '<td style="padding:7px 6px;min-width:220px"><div style="font-family:\'Jost\',sans-serif;font-size:11px;color:' + (ok ? 'var(--muted2)' : m.col) + '">' + esc(r.reason) + '</div>' + urlLine + '</td>'
+      + '</tr>';
+  });
+
+  h += '</tbody></table>';
+  body.innerHTML = h;
+}
+
+/* ---- Copy just the codes (ready to paste into the IMAGE NEW sheet) ---- */
+function auditCopyCodes(){
+  const list = IMG_AUDIT.results.filter(r => r.status !== 'OK');
+  if(!list.length){ alert('Nothing to copy — no problem items.'); return; }
+  const txt = list.map(r => r.code).join('\n');
+  const done = () => { const b = $('ia-copy'); const o = b.textContent; b.textContent = '✓ Copied ' + list.length; setTimeout(()=>{ b.textContent = o; }, 1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>auditFallbackCopy(txt, done));
+  } else auditFallbackCopy(txt, done);
+}
+function auditFallbackCopy(txt, cb){
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); cb(); }catch(e){ alert('Copy failed. Codes:\n\n' + txt); }
+  document.body.removeChild(ta);
+}
+
+/* ---- CSV export of the problem list ---- */
+const _csv = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
 
 function exportMissingImages(){
-  const missing=getMissingImageItems();
-  if(!missing.length){
-    alert('✅ All items have images! No missing image URLs.');
-    return;
-  }
-  // Build CSV
-  let csv='SR,CODE,DESCRIPTION,MRP,IMAGE URL\n';
-  missing.forEach((item,i)=>{
-    const desc=(item.desc||item.description||'').replace(/,/g,' ');
-    csv+=`${i+1},${item.code},"${desc}",${item.mrp||0},\n`;
+  const list = IMG_AUDIT.results.filter(r => r.status !== 'OK');
+  if(!IMG_AUDIT.results.length){ alert('Run the image check first.'); return; }
+  if(!list.length){ alert('✅ Every product image loads correctly. Nothing to export.'); return; }
+
+  const showBath = IMG_AUDIT.results.some(r => r.bathroom);
+  const head = ['SR','CODE','DESCRIPTION','QTY','MRP', ...(showBath ? ['BATHROOM'] : []), 'PROBLEM','REASON','URL IN SHEET','SUGGESTED URL'];
+  let csv = '\uFEFF' + head.join(',') + '\n';   // BOM so Excel opens UTF-8 cleanly
+
+  list.forEach((r, i) => {
+    csv += [
+      i + 1, _csv(r.code), _csv(r.desc), r.qty, r.mrp,
+      ...(showBath ? [_csv(r.bathroom)] : []),
+      _csv((_IA_META[r.status] || {}).label || r.status),
+      _csv(r.reason), _csv(r.url), _csv(r.repaired || '')
+    ].join(',') + '\n';
   });
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='missing_images.csv'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),5000);
+
+  const stamp = new Date().toISOString().slice(0,10);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href; a.download = 'GBW_image_issues_' + stamp + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(href), 5000);
 }
 
-function checkAndExportMissingImages(){
-  if(!S.items.length){
-    alert('No items loaded yet. Please upload a code list first.');
-    return;
-  }
-  const missing=getMissingImageItems();
-  if(!missing.length){
-    alert(`✅ All ${S.items.length} items have image URLs. Nothing to export!`);
-    return;
-  }
-  const confirm=window.confirm(`⚠ Found ${missing.length} item${missing.length!==1?'s':''} out of ${S.items.length} with no image URL.\n\nDownload the list as CSV?`);
-  if(confirm) exportMissingImages();
+/* ---- kept for backward-compatibility with existing call sites ---- */
+function getMissingImageItems(){
+  return S.items.filter(item => auditClassify(auditResolveUrl(item.code)).status === 'NO_URL');
 }
+function checkAndExportMissingImages(){ openImageAudit(); }
 
 
 
@@ -2170,8 +2562,8 @@ function showImportResult(found, notFound){
   let html=`✓ Imported ${found} item${found!==1?'s':''}`;
   if(notFound.length) html+=` · ${notFound.length} code(s) not found`;
   if(missing.length){
-    html+=`<br><span style="color:#E8D08A;font-size:11px">⚠ ${missing.length} item${missing.length!==1?'s':''} have no image URL</span>`;
-    html+=`<br><button onclick="exportMissingImages()" style="margin-top:8px;padding:6px 14px;background:#C9A84C;color:#0D1520;border:none;border-radius:4px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;text-transform:uppercase">⬇ Download Missing Images List</button>`;
+    html+=`<br><span style="color:#E8D08A;font-size:11px">⚠ ${missing.length} item${missing.length!==1?'s':''} have no image URL — run the full image check for broken links too</span>`;
+    html+=`<br><button onclick="openImageAudit()" style="margin-top:8px;padding:6px 14px;background:#C9A84C;color:#0D1520;border:none;border-radius:4px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;text-transform:uppercase">⬇ Download Missing Images List</button>`;
   }
   msgEl.innerHTML=html;
   // Auto close after 4 seconds if no missing images
