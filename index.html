@@ -1162,6 +1162,9 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
         <button onclick="exportStockPDF()" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">🖨 Export Availability PDF</button>
         <button onclick="resetStockStatuses()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--muted2);border-radius:7px;padding:11px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">↻ Reset to Auto</button>
       </div>
+      <!-- Availability filter -->
+      <div id="stock-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+
       <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);line-height:1.6">Status is auto-judged on <b style="color:var(--gold-l)">GBW Stock</b> vs <b style="color:var(--gold-l)">Order Qty</b>. Tap any status to override it manually.</div>
     </div>
 
@@ -1463,7 +1466,7 @@ const getStock=code=>{ const v=STOCK_MAP[code]; return (v===undefined||v===null)
 let ALL=PRODUCTS_RAW.map(r=>({code:r[0],desc:r[1],brand:r[2]||'',sdp:r[3]||0,nrp:r[4],mrp:r[5],hsn:r[6]||'',gst:r[7]||0,sdp_net:r[8]}));
 let PMAP={};ALL.forEach(p=>{PMAP[p.code]=p;});
 
-const S={items:[],disc:0,mode:'NRP',stockOverrides:{}};   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
+const S={items:[],disc:0,mode:'NRP',stockOverrides:{},stockFilter:'ALL'};   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fmtN=n=>new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Math.round(n||0));
@@ -1570,47 +1573,93 @@ function resetStockStatuses(){
 // Stock scrolling is handled purely by CSS flex layout (#stock-scroll: flex:1; min-height:0; overflow-y:auto),
 // matching the Editor screen. No JS height sizing needed.
 
+function setStockFilter(f){
+  S.stockFilter = f;
+  renderStock();
+}
+
+function renderStockChips(total, avail, notAvail){
+  const el = $('stock-filter'); if(!el) return;
+  const f = S.stockFilter || 'ALL';
+  const chip = (key, label, n, col) => {
+    const on = (f === key);
+    return '<button onclick="setStockFilter(\'' + key + '\')" style="flex:1;min-width:98px;'
+      + 'background:' + (on ? 'rgba(201,168,76,0.18)' : 'transparent') + ';'
+      + 'border:1px solid ' + (on ? 'var(--gold)' : 'rgba(255,255,255,0.14)') + ';'
+      + 'border-radius:20px;padding:8px 10px;cursor:pointer;font-family:\'Jost\',sans-serif;'
+      + 'font-size:11px;font-weight:700;letter-spacing:.5px;color:' + col + ';white-space:nowrap">'
+      + label + ' <b style="color:#fff">' + n + '</b></button>';
+  };
+  el.innerHTML = chip('ALL',           '\u2630 ALL',            total,    '#C0D4E4')
+               + chip('AVAILABLE',     '\u2713 AVAILABLE',      avail,    '#4ADF90')
+               + chip('NOT AVAILABLE', '\u2715 NOT AVAILABLE',  notAvail, '#FF9B8F');
+}
+
 function renderStock(){
   const wrap=$('stock-table-wrap'), empty=$('stock-empty'), tb=$('stock-tbody'), sum=$('stock-summary');
   if(!wrap) return;
   if(!S.items.length){
     wrap.style.display='none'; empty.style.display='block';
-    sum.textContent='No items yet'; return;
+    sum.textContent='No items yet';
+    renderStockChips(0,0,0);
+    return;
   }
   empty.style.display='none'; wrap.style.display='block';
 
+  // Counts are ALWAYS taken over the full list, so the summary and the chip
+  // badges never lie just because a filter is on.
   let avail=0, notAvail=0, totQty=0;
-  tb.innerHTML = S.items.map((item,idx)=>{
-    const status=effectiveStockStatus(item);
-    const isAvail=status==='AVAILABLE';
-    if(isAvail) avail++; else notAvail++;
-    totQty+=item.qty;
-    const st=getStock(item.code);
-    const stDisp=(st===null)?'—':fmtN(st);
-    const stColor=(st===null)?'var(--muted)':(st>0?'#4ADF90':'#FF9B8F');
-    const overridden=!!S.stockOverrides[item.code];
-    const url=IMAGE_MAP[item.code]||'';
-    const img=url
-      ? `<div style="width:40px;height:40px;background:#fff;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:40px;height:40px;object-fit:contain"/></div>`
-      : `<div style="width:40px;height:40px;background:var(--ink4);border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted)">IMG</div>`;
-    const rowBg=isAvail?'transparent':'rgba(224,96,96,0.08)';
-    const statusBtn=isAvail
-      ? `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(42,157,96,0.18);border:1px solid rgba(42,157,96,0.5);color:#4ADF90;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">AVAILABLE</button>`
-      : `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(224,96,96,0.2);border:1px solid rgba(224,96,96,0.5);color:#FF9B8F;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">NOT AVAILABLE</button>`;
-    return `<tr style="background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.05)">
-      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;color:var(--muted2)">${idx+1}</td>
-      <td style="padding:8px;font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-l);white-space:nowrap">${esc(item.code)}</td>
-      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:#D8E4EC">${item.qty}</td>
-      <td style="padding:8px;text-align:center">${statusBtn}${overridden?'<div style="font-size:8px;color:var(--muted);margin-top:2px;font-style:italic">manual</div>':''}</td>
-      <td style="padding:6px;text-align:center">${img}</td>
-      <td style="padding:8px;font-family:'Jost',sans-serif;font-size:11px;color:#C0D4E4">${esc(item.desc||item.code)}</td>
-      <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:${stColor}">${stDisp}</td>
-    </tr>`;
-  }).join('');
+  S.items.forEach(item=>{ effectiveStockStatus(item)==='AVAILABLE' ? avail++ : notAvail++; totQty+=item.qty; });
+
+  const f = S.stockFilter || 'ALL';
+  renderStockChips(S.items.length, avail, notAvail);
+
+  // Keep each item's ORIGINAL serial number so a filtered row still matches
+  // the same row in the full list and in the PDF.
+  const rows = S.items
+    .map((item, idx) => ({ item, sr: idx+1, status: effectiveStockStatus(item) }))
+    .filter(r => f === 'ALL' || r.status === f);
+
+  if(!rows.length){
+    tb.innerHTML = '<tr><td colspan="7" style="padding:30px 14px;text-align:center;font-family:\'Cormorant\',serif;font-style:italic;font-size:14px;color:var(--muted2)">'
+      + (f === 'AVAILABLE' ? 'Nothing in this quotation is available right now.'
+                           : 'Everything in this quotation is available \u2014 nothing is out of stock.')
+      + '</td></tr>';
+  } else {
+    tb.innerHTML = rows.map(r=>{
+      const item=r.item;
+      const isAvail=r.status==='AVAILABLE';
+      const st=getStock(item.code);
+      const stDisp=(st===null)?'\u2014':fmtN(st);
+      const stColor=(st===null)?'var(--muted)':(st>0?'#4ADF90':'#FF9B8F');
+      const overridden=!!S.stockOverrides[item.code];
+      const url=IMAGE_MAP[item.code]||'';
+      const img=url
+        ? `<div style="width:40px;height:40px;background:#fff;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:40px;height:40px;object-fit:contain"/></div>`
+        : `<div style="width:40px;height:40px;background:var(--ink4);border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted)">IMG</div>`;
+      const rowBg=isAvail?'transparent':'rgba(224,96,96,0.08)';
+      const statusBtn=isAvail
+        ? `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(42,157,96,0.18);border:1px solid rgba(42,157,96,0.5);color:#4ADF90;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">AVAILABLE</button>`
+        : `<button onclick="toggleStockStatus('${esc(item.code)}')" style="background:rgba(224,96,96,0.2);border:1px solid rgba(224,96,96,0.5);color:#FF9B8F;border-radius:5px;padding:5px 8px;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap">NOT AVAILABLE</button>`;
+      return `<tr style="background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.05)">
+        <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;color:var(--muted2)">${r.sr}</td>
+        <td style="padding:8px;font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-l);white-space:nowrap">${esc(item.code)}</td>
+        <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:#D8E4EC">${item.qty}</td>
+        <td style="padding:8px;text-align:center">${statusBtn}${overridden?'<div style="font-size:8px;color:var(--muted);margin-top:2px;font-style:italic">manual</div>':''}</td>
+        <td style="padding:6px;text-align:center">${img}</td>
+        <td style="padding:8px;font-family:'Jost',sans-serif;font-size:11px;color:#C0D4E4">${esc(item.desc||item.code)}</td>
+        <td style="padding:8px;text-align:center;font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:${stColor}">${stDisp}</td>
+      </tr>`;
+    }).join('');
+  }
 
   const pct = S.items.length ? Math.round((avail/S.items.length)*100) : 0;
   const pctColor = pct>=80 ? '#4ADF90' : (pct>=50 ? '#E8D08A' : '#FF9B8F');
-  sum.innerHTML=`<span style="color:${pctColor};font-weight:800;font-size:13px">${pct}% of products are ready</span><br>${S.items.length} item${S.items.length!==1?'s':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
+  let html = `<span style="color:${pctColor};font-weight:800;font-size:13px">${pct}% of products are ready</span><br>${S.items.length} item${S.items.length!==1?'s':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
+  if(f !== 'ALL'){
+    html += `<br><span style="color:var(--gold-l);font-weight:700;font-size:11px">Showing ${rows.length} ${f==='AVAILABLE'?'available':'not-available'} item${rows.length!==1?'s':''} · PDF export will match this filter</span>`;
+  }
+  sum.innerHTML = html;
 }
 
 // Export the availability report as a clean PDF — mirrors the attached layout (no GBW-stock column shown).
@@ -1619,6 +1668,21 @@ function exportStockPDF(){
 
   let avail=0, notAvail=0, totQty=0;
   S.items.forEach(item=>{ effectiveStockStatus(item)==='AVAILABLE'?avail++:notAvail++; totQty+=item.qty; });
+
+  // The PDF mirrors whatever the Stock tab is currently showing. When a filter
+  // is on, the report is banner-labelled so a partial list can never be mistaken
+  // for the full availability report.
+  const fS   = S.stockFilter || 'ALL';
+  const list = S.items
+    .map((item, idx) => ({ item, sr: idx+1, isAvail: effectiveStockStatus(item)==='AVAILABLE' }))
+    .filter(r => fS === 'ALL' || (fS === 'AVAILABLE') === r.isAvail);
+  if(!list.length){
+    alert('No ' + (fS==='AVAILABLE'?'available':'not-available') + ' items to export.\n\nSwitch the filter on the Stock tab and try again.');
+    return;
+  }
+  const fQty  = list.reduce((a,r)=>a+r.item.qty, 0);
+  const fTag  = fS==='AVAILABLE' ? 'AVAILABLE ITEMS ONLY'
+              : fS==='NOT AVAILABLE' ? 'NOT AVAILABLE ITEMS ONLY' : '';
 
   const logos=document.querySelectorAll('.tb-logo');
   const gbwLogo=logos[0]?logos[0].src:'';
@@ -1632,14 +1696,14 @@ function exportStockPDF(){
   const gen=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear()+', '+
             String(h12).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' '+mer;
 
-  const rows=S.items.map((item,idx)=>{
-    const isAvail=effectiveStockStatus(item)==='AVAILABLE';
+  const rows=list.map(r=>{
+    const item=r.item, isAvail=r.isAvail;
     const url=IMAGE_MAP[item.code]||'';
     const img=url
       ? `<div class="ib"><img src="${url}" onerror="this.parentNode.innerHTML=''"/></div>`
       : `<div class="ib"></div>`;
     return `<tr class="${isAvail?'':'na'}">
-      <td class="ctr">${idx+1}</td>
+      <td class="ctr">${r.sr}</td>
       <td class="code">${esc(item.code)}</td>
       <td class="ctr oq">${item.qty}</td>
       <td class="ctr"><span class="${isAvail?'st-ok':'st-no'}">${isAvail?'AVAILABLE':'NOT AVAILABLE'}</span></td>
@@ -1664,6 +1728,8 @@ function exportStockPDF(){
   .meta{ text-align:right; font-size:10px; color:#444; line-height:1.7 }
   .meta b{ color:#111 }
   .meta .counts{ color:#0F5C43; font-weight:700; font-size:11px }
+  .ftag{ display:inline-block; margin-left:8px; margin-top:5px; padding:3px 9px; border-radius:3px; background:#0F5C43; color:#fff; font-size:9px; font-weight:800; letter-spacing:1px }
+  .ftag.no{ background:#C0392B }
   .rule{ height:3px; background:#0F5C43; border-radius:2px; margin:8px 0 12px }
   table{ width:100%; border-collapse:collapse; table-layout:fixed }
   thead th{ background:#0F5C43; color:#EAF6F0; font-size:10px; letter-spacing:.5px; text-transform:uppercase; padding:9px 8px; text-align:left; font-weight:700 }
@@ -1691,11 +1757,14 @@ function exportStockPDF(){
         <span class="x">×</span>
         ${gbwLogo?`<img src="${gbwLogo}" alt="GBW"/>`:''}
       </div>
-      <div class="title">Stock Availability<br>Report</div>
+      <div>
+        <div class="title">Stock Availability<br>Report</div>
+        ${fTag?`<div class="ftag${fS==='NOT AVAILABLE'?' no':''}">${fTag}</div>`:''}
+      </div>
     </div>
     <div class="meta">
       <div>Generated: <b>${gen}</b></div>
-      <div class="counts">${S.items.length} items &nbsp;·&nbsp; total qty ${totQty} &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${notAvail} not available</div>
+      <div class="counts">${fTag?`Showing ${list.length} of ${S.items.length} items &nbsp;·&nbsp; qty ${fQty}`:`${S.items.length} items &nbsp;·&nbsp; total qty ${totQty}`} &nbsp;·&nbsp; ${avail} available &nbsp;·&nbsp; ${notAvail} not available</div>
     </div>
   </div>
   <div class="rule"></div>
@@ -1862,7 +1931,7 @@ function setQty(code,n){
   refreshAll();
 }
 function delItem(code){ enterFlatFromBuilder(); S.items=S.items.filter(i=>i.code!==code);refreshAll();}
-function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};cancelInsert();showBathroomModeBar();refreshAll();}
+function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};S.stockFilter='ALL';cancelInsert();showBathroomModeBar();refreshAll();}
 $('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0;refreshAll();});
 
 // ── BATHROOM MODE ──────────────────────────────────────────────────
