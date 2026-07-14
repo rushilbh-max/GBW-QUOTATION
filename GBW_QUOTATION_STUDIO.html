@@ -226,6 +226,12 @@ input,select{font-family:'Jost'}
 .cfilter .chip{background:#0f1b3c;border:1px solid #2c3d6b;color:var(--txt);border-radius:999px;padding:6px 15px;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer}
 .cfilter .chip:hover{border-color:var(--gold)}
 .cfilter .chip.on{background:linear-gradient(180deg,#caa24c,#b8923f);color:#1a1407;border-color:transparent}
+.cfilter .chip.man{background:linear-gradient(180deg,#6f8fd8,#5a79c2);color:#0b1224}
+.tabtools{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tabtools input{flex:1;min-width:240px;background:#0a132e;border:1px solid #22335f;color:var(--txt);border-radius:10px;padding:9px 12px;font-size:13px}
+.tabtools .apikey{flex-basis:100%;margin-top:4px}
+.tabtools .apikey summary{cursor:pointer;color:var(--muted);font-size:12px;letter-spacing:.3px}
+.tabtools .apikey summary:hover{color:var(--gold-soft)}
 .warn-cell{outline:1.5px solid var(--bad) !important}
 
 .hint{font-size:12.5px;color:var(--muted)}
@@ -304,8 +310,22 @@ input,select{font-family:'Jost'}
       </div>
       <div class="row" style="margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
         <span class="tag" id="qSyncTag">—</span>
+        <button class="btn ghost sm" id="qRescanBtn">Re-scan tabs &amp; sync</button>
       </div>
+      <div id="tabList" class="cfilter" style="margin:14px 0 4px"></div>
       <div class="qdiag" id="qdiag"></div>
+      <div class="tabtools">
+        <input id="tabAdd" placeholder="Add a tab name manually (only if auto-scan missed it)" spellcheck="false">
+        <button class="btn ghost sm" id="tabAddBtn">Add tab</button>
+        <details class="apikey">
+          <summary>Advanced · exact tab list via Google Sheets API key</summary>
+          <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+            <input id="apiKey" placeholder="Optional Google Sheets API key" spellcheck="false">
+            <button class="btn ghost sm" id="apiKeyBtn">Save key</button>
+          </div>
+          <div class="qsync-sub" style="margin-top:6px">Without a key the app auto-scans and finds tabs named after Jaquar finish codes (CHR, GMP, GBP…). A key makes the tab list exact, whatever the tabs are named.</div>
+        </details>
+      </div>
       <div class="qmiss">
         <button class="btn ghost sm" id="qMissImgBtn">Export items with missing / broken images (xlsx)</button>
         <span class="qsync-sub" id="qImgMsg" style="margin:0"></span>
@@ -457,14 +477,25 @@ const LS_STK      = 'gbw_stk_v1';
 const LS_QUOTES   = 'gbw_quotes_v1';
 const LS_SRC      = 'gbw_src_v1';   // {id,code,image} override
 const LS_QSRC     = 'gbw_qsrc_v1';  // {id,tabs:[...]} override
+const LS_QTABS    = 'gbw_qtabs_v2';  // {tabs:[...],manual:[...],key:''}
 /* ---- Live quotation sheet (DISPLAY QUOTATION) — one matrix tab per colour ---- */
 let GQUOTE_ID     = '1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
-let GQUOTE_TABS   = ['CHR','GBP','BGP','BCH'];   // add a colour tab in the sheet, list its name here
+let GQUOTE_TABS   = ['CHR','GBP','BGP','BCH'];   // seed only — real list is DISCOVERED from the sheet
+let QTABS_MANUAL  = [];      // tab names you added by hand (for non-standard names)
+let GAPI_KEY      = '';      // optional Google Sheets API key -> exact tab list
+let TAB_METHOD    = '';      // how the last discovery ran
+/* Fallback seed of Jaquar finish codes, used only if the catalog hasn't loaded yet. */
+const FINISH_SEED = ['CHR','GMP','GBP','BGP','BCH','SSF','ANT','BLM','GLD','RSG','WHM','BLK','DGM','CGM','PCG','ABR','NKL','MBL','SCR','GRF'];
 /* load any saved Source override */
 (function(){try{const s=JSON.parse(localStorage.getItem(LS_SRC)||'null');
   if(s&&s.id){GSHEET_ID=s.id;TAB_CODE=s.code||TAB_CODE;TAB_IMAGE=s.image||TAB_IMAGE;}if(s&&s.stock)TAB_STOCK=s.stock;}catch(e){}})();
 (function(){try{const s=JSON.parse(localStorage.getItem(LS_QSRC)||'null');
   if(s&&s.id){GQUOTE_ID=s.id;} if(s&&Array.isArray(s.tabs)&&s.tabs.length){GQUOTE_TABS=s.tabs;}}catch(e){}})();
+(function(){try{const t=JSON.parse(localStorage.getItem(LS_QTABS)||'null');
+  if(t){ if(Array.isArray(t.tabs)&&t.tabs.length)GQUOTE_TABS=t.tabs;
+         if(Array.isArray(t.manual))QTABS_MANUAL=t.manual;
+         if(typeof t.key==='string')GAPI_KEY=t.key; }}catch(e){}})();
+function saveTabState(){ try{localStorage.setItem(LS_QTABS,JSON.stringify({tabs:GQUOTE_TABS,manual:QTABS_MANUAL,key:GAPI_KEY}));}catch(e){} }
 let SYNCDIAG = [];   // last sync per-tab diagnostics
 const IS_FILE = (location.protocol==='file:');   // opened as a local file → Google blocks fetch (CORS)
 
@@ -878,6 +909,95 @@ function parseMatrixCSV(text){
   return quots.filter(q=>q.items.length);
 }
 function setQSync(state,txt){ const t=$('qSyncTag'); if(t){ t.textContent=txt; t.className='tag q-'+state; } }
+/* ═══════════ TAB DISCOVERY ═══════════
+   Google's gviz endpoint returns the DEFAULT (first) sheet when you ask for a tab
+   that doesn't exist — so we can't just guess. Strategy:
+     1. If an API key is set, ask the Sheets API for the exact tab list.
+     2. Otherwise probe candidate names (derived from the finish codes in your own
+        catalog) and fingerprint the default sheet with a deliberately bogus name,
+        so phantom hits are discarded.                                              */
+function uniqArr(a){ const s={},o=[]; a.forEach(x=>{ const k=String(x||'').trim(); if(k&&!s[k.toUpperCase()]){s[k.toUpperCase()]=1;o.push(k);} }); return o; }
+async function pool(items,limit,fn){
+  let i=0; const workers=[];
+  for(let w=0;w<Math.min(limit,items.length);w++){
+    workers.push((async()=>{ while(i<items.length){ const idx=i++; try{ await fn(items[idx]); }catch(e){} } })());
+  }
+  await Promise.all(workers);
+}
+/* finish tokens straight from the catalog: ALD-[CHR]-079N -> CHR */
+function catalogFinishTokens(){
+  const freq={};
+  for(let i=0;i<ALLCODES.length;i++){
+    const p=ALLCODES[i].split('-');
+    if(p.length<3)continue;
+    const t=p[1];
+    if(!/^[A-Z]{2,4}$/.test(t))continue;
+    freq[t]=(freq[t]||0)+1;
+  }
+  return Object.keys(freq).filter(t=>freq[t]>=25).sort((a,b)=>freq[b]-freq[a]);
+}
+function gvizHead(tab){
+  return 'https://docs.google.com/spreadsheets/d/'+GQUOTE_ID+'/gviz/tq?tqx=out:csv&sheet='+
+         encodeURIComponent(tab)+'&tq='+encodeURIComponent('select * limit 1')+'&_cb='+Date.now()+Math.random();
+}
+async function probeTab(tab){
+  const out={tab,ok:false,sig:'',header:''};
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetch(gvizHead(tab),{redirect:'follow'});
+      if(!r.ok)continue;
+      const t=await r.text();
+      const low=t.slice(0,200).toLowerCase();
+      if(low.includes('<!doctype')||low.startsWith('<html'))continue;
+      if(!t.trim())continue;
+      out.header=t.split(/\r?\n/)[0]||'';
+      out.sig=out.header.trim();
+      out.ok=true; return out;
+    }catch(e){}
+  }
+  return out;
+}
+/* the default sheet's own name, read from the colour baked into its quotation names */
+function colourFromHeader(headerLine){
+  const cells=(parseCSV(headerLine)[0]||[]);
+  const freq={};
+  cells.forEach(c=>{
+    const p=String(c||'').toUpperCase().split(/[^A-Z0-9]+/);
+    p.forEach(seg=>{ if(/^[A-Z]{2,4}$/.test(seg))freq[seg]=(freq[seg]||0)+1; });
+  });
+  const ranked=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
+  for(const t of ranked){ if(freq[t]>=2)return t; }
+  return ranked[0]||'';
+}
+async function discoverTabs(){
+  /* 1 — exact, if an API key is configured */
+  if(GAPI_KEY){
+    try{
+      const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+GQUOTE_ID+
+                          '?fields=sheets.properties.title&key='+encodeURIComponent(GAPI_KEY));
+      if(r.ok){
+        const j=await r.json();
+        const titles=((j&&j.sheets)||[]).map(s=>s&&s.properties&&s.properties.title).filter(Boolean);
+        if(titles.length)return {tabs:uniqArr(titles.concat(QTABS_MANUAL)), method:'Google Sheets API · exact'};
+      }
+    }catch(e){}
+  }
+  /* 2 — auto-scan: fingerprint the default sheet, then probe candidates */
+  const bogus=await probeTab('__GBW_NO_SUCH_TAB__'+Date.now());
+  const defSig=bogus.ok?bogus.sig:'';
+  const defName=bogus.ok?colourFromHeader(bogus.header):'';
+  const cands=uniqArr([].concat(GQUOTE_TABS,QTABS_MANUAL,catalogFinishTokens(),FINISH_SEED));
+  const found=[];
+  await pool(cands,6,async(t)=>{
+    const d=await probeTab(t);
+    if(!d.ok)return;
+    if(defSig && d.sig===defSig){ if(defName && t.toUpperCase()===defName.toUpperCase())found.push(t); }
+    else found.push(t);
+  });
+  if(defName && !found.some(t=>t.toUpperCase()===defName.toUpperCase()))found.unshift(defName);
+  const ordered=uniqArr(found.concat(QTABS_MANUAL));
+  return {tabs:ordered, method: ordered.length? ('auto-scan · '+cands.length+' names probed') : 'auto-scan found nothing'};
+}
 function renderQDiag(report){
   const el=$('qdiag'); if(!el)return;
   if(!report||!report.length){ el.innerHTML=''; return; }
@@ -888,9 +1008,17 @@ function renderQDiag(report){
   }).join('');
 }
 async function syncQuotations(manual){
-  const tabs=GQUOTE_TABS.filter(Boolean);
-  if(!tabs.length){ toast('Add at least one tab name'); return; }
-  setQSync('busy', manual?'Re-syncing…':'Loading…');
+  setQSync('busy','Scanning sheet for tabs…');
+  let tabs=[];
+  try{
+    const disc=await discoverTabs();
+    TAB_METHOD=disc.method;
+    if(disc.tabs.length){ tabs=disc.tabs; GQUOTE_TABS=tabs; saveTabState(); }
+  }catch(e){}
+  if(!tabs.length)tabs=GQUOTE_TABS.filter(Boolean);
+  if(!tabs.length){ setQSync('err','No tabs found'); toast('No tabs found in the sheet'); return; }
+  renderTabChips();
+  setQSync('busy', manual?'Re-syncing '+tabs.length+' tabs…':'Loading '+tabs.length+' tabs…');
   const all=[], seen={}, report=[], sigSeen={};
   for(const tab of tabs){
     const d=await fetchTab(tab, GQUOTE_ID);
@@ -919,16 +1047,36 @@ async function syncQuotations(manual){
     try{localStorage.setItem(LS_QUOTES,JSON.stringify(all));}catch(e){}
     renderGenerate(); renderSearchList(); renderEditList();
     setQSync('ok','Live · '+all.length+' quotations · '+okTabs+' tab'+(okTabs===1?'':'s'));
+    renderTabChips();
     if(manual)toast(all.length+' quotations loaded from '+okTabs+' tab'+(okTabs===1?'':'s'));
   }else{
     setQSync('err','No quotations — check sharing & tab names');
     if(manual)toast('No quotations loaded — check the sheet sharing and tab names.');
   }
 }
-function saveQTabs(){
-  const raw=$('qTabs').value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
-  GQUOTE_TABS = raw.length?raw:GQUOTE_TABS;
-  try{localStorage.setItem(LS_QSRC,JSON.stringify({id:GQUOTE_ID,tabs:GQUOTE_TABS}));}catch(e){}
+function renderTabChips(){
+  const box=$('tabList'); if(!box)return;
+  if(!GQUOTE_TABS.length){ box.innerHTML='<span class="qsync-sub">No tabs discovered yet — hit Sync.</span>'; return; }
+  let h='<span class="cflbl">Tabs found</span>';
+  GQUOTE_TABS.forEach(t=>{
+    const n=QUOTES.filter(q=>colourOf(q)===t).length;
+    const man=QTABS_MANUAL.some(m=>m.toUpperCase()===t.toUpperCase());
+    h+='<span class="chip on'+(man?' man':'')+'">'+esc(t)+(n?' ('+n+')':'')+'</span>';
+  });
+  if(TAB_METHOD)h+='<span class="qsync-sub" style="margin-left:6px">'+esc(TAB_METHOD)+'</span>';
+  box.innerHTML=h;
+}
+function addManualTab(){
+  const el=$('tabAdd'); if(!el)return;
+  const v=el.value.trim(); if(!v)return;
+  if(!QTABS_MANUAL.some(m=>m.toUpperCase()===v.toUpperCase()))QTABS_MANUAL.push(v);
+  if(!GQUOTE_TABS.some(t=>t.toUpperCase()===v.toUpperCase()))GQUOTE_TABS.push(v);
+  saveTabState(); el.value=''; renderTabChips(); syncQuotations(true);
+}
+function saveApiKey(){
+  const el=$('apiKey'); if(!el)return;
+  GAPI_KEY=el.value.trim(); saveTabState();
+  toast(GAPI_KEY?'API key saved — tabs will be listed exactly':'API key cleared — using auto-scan');
   syncQuotations(true);
 }
 function handleWorkbook(wb){
@@ -1479,9 +1627,14 @@ function initEvents(){
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
   dz.addEventListener('drop',e=>{if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);});
   $('reuploadBtn').onclick=()=>fi.click();
-  if($('qTabs'))$('qTabs').value=GQUOTE_TABS.join('\n');
+  if($('apiKey'))$('apiKey').value=GAPI_KEY;
+  renderTabChips();
   if($('qSyncBtn'))$('qSyncBtn').onclick=()=>syncQuotations(true);
   if($('qMissImgBtn'))$('qMissImgBtn').onclick=exportMissingImages;
+  if($('qRescanBtn'))$('qRescanBtn').onclick=()=>syncQuotations(true);
+  if($('tabAddBtn'))$('tabAddBtn').onclick=addManualTab;
+  if($('tabAdd'))$('tabAdd').onkeydown=e=>{ if(e.key==='Enter')addManualTab(); };
+  if($('apiKeyBtn'))$('apiKeyBtn').onclick=saveApiKey;
 
   $('searchBox').addEventListener('input',()=>{ if($('previewWrap').style.display==='block')closePreview(); renderSearchList(); });
   $('pvBackBtn').onclick=closePreview;
