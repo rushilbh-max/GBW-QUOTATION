@@ -3576,7 +3576,16 @@ const CACHE_TIME = 'gbw_sync_time_v1';
 // (fixed columns incl. AREA + CODE, then one column per quotation, then DESCRIPTION/BRAND-3).
 // New quotations appear automatically when you add columns to these tabs.
 const GQUOTE_ID   = '1NCIbAEXiHqqqezK317mRtEVewEKB-stF_wA96pZjjgU';
-let   GQUOTE_TABS = ['CHR','GBP','BGP','BCH'];   // colour tabs that are read & merged
+let   GQUOTE_TABS = ['CHR','GBP','BGP','BCH'];   // seed only — the real list is DISCOVERED from the sheet
+let   QTABS_MANUAL = [];    // tab names added by hand (for non-standard names)
+let   TAB_METHOD   = '';
+const CACHE_QTABS  = 'gbw_qtabs_v2';
+/* Fallback finish codes, used only if the catalog hasn't loaded yet. */
+const FINISH_SEED = ['CHR','GMP','GBP','BGP','BCH','SSF','ANT','BLM','GLD','RSG','WHM','BLK','DGM','CGM','PCG','ABR','NKL','MBL','SCR','GRF'];
+(function(){ try{ const t=JSON.parse(localStorage.getItem(CACHE_QTABS)||'null');
+  if(t){ if(Array.isArray(t.tabs)&&t.tabs.length)GQUOTE_TABS=t.tabs;
+         if(Array.isArray(t.manual))QTABS_MANUAL=t.manual; } }catch(e){} })();
+function saveTabState(){ try{ localStorage.setItem(CACHE_QTABS,JSON.stringify({tabs:GQUOTE_TABS,manual:QTABS_MANUAL})); }catch(e){} }
 const CACHE_QUOTES= 'gbw_quotes_v1';
 let   QUOTES = [];     // [{name, tab, items:[{code,qty}]}]  (areas flattened per quotation)
 let   EDIT   = null;   // working copy in the editor: {name, rows:[{code,qty}]}
@@ -3843,13 +3852,83 @@ function parseQuoteMatrix(text){
   return quots.filter(q=>q.items.length).map(q=>({name:q.name,items:q.items}));
 }
 
+/* ═══════════ TAB DISCOVERY ═══════════
+   gviz returns the DEFAULT (first) sheet when a tab name doesn't exist, so we
+   fingerprint the default with a bogus name and probe candidate names mined
+   from the finish codes in the catalog (ALD-[CHR]-079N -> CHR).            */
+function uniqArr(a){ const s={},o=[]; a.forEach(x=>{ const k=String(x||'').trim(); if(k&&!s[k.toUpperCase()]){s[k.toUpperCase()]=1;o.push(k);} }); return o; }
+async function tabPool(items,limit,fn){
+  let i=0; const w=[];
+  for(let n=0;n<Math.min(limit,items.length);n++){
+    w.push((async()=>{ while(i<items.length){ const idx=i++; try{ await fn(items[idx]); }catch(e){} } })());
+  }
+  await Promise.all(w);
+}
+function catalogFinishTokens(){
+  const freq={};
+  for(let i=0;i<ALL.length;i++){
+    const p=String(ALL[i].code||'').split('-');
+    if(p.length<3)continue;
+    const t=p[1];
+    if(!/^[A-Z]{2,4}$/.test(t))continue;
+    freq[t]=(freq[t]||0)+1;
+  }
+  return Object.keys(freq).filter(t=>freq[t]>=25).sort((a,b)=>freq[b]-freq[a]);
+}
+function gvizQuoteHead(tab){
+  return 'https://docs.google.com/spreadsheets/d/'+GQUOTE_ID+'/gviz/tq?tqx=out:csv&sheet='+
+         encodeURIComponent(tab)+'&tq='+encodeURIComponent('select * limit 1')+'&_cb='+Date.now()+Math.random();
+}
+async function probeQuoteTab(tab){
+  const out={tab,ok:false,sig:'',header:''};
+  for(let a=0;a<2;a++){
+    try{
+      const r=await fetch(gvizQuoteHead(tab),{cache:'no-store'});
+      if(!r.ok)continue;
+      const t=await r.text();
+      if(/^\s*</.test(t)||!t.trim())continue;
+      out.header=t.split(/\r?\n/)[0]||'';
+      out.sig=out.header.trim(); out.ok=true; return out;
+    }catch(e){}
+  }
+  return out;
+}
+function colourFromHeader(line){
+  const cells=(parseCSV(line)[0]||[]); const freq={};
+  cells.forEach(c=>{ String(c||'').toUpperCase().split(/[^A-Z0-9]+/).forEach(seg=>{ if(/^[A-Z]{2,4}$/.test(seg))freq[seg]=(freq[seg]||0)+1; }); });
+  const ranked=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
+  for(const t of ranked){ if(freq[t]>=2)return t; }
+  return ranked[0]||'';
+}
+async function discoverQuoteTabs(){
+  const bogus=await probeQuoteTab('__GBW_NO_SUCH_TAB__'+Date.now());
+  const defSig=bogus.ok?bogus.sig:'';
+  const defName=bogus.ok?colourFromHeader(bogus.header):'';
+  const cands=uniqArr([].concat(GQUOTE_TABS,QTABS_MANUAL,catalogFinishTokens(),FINISH_SEED));
+  const found=[];
+  await tabPool(cands,6,async(t)=>{
+    const d=await probeQuoteTab(t);
+    if(!d.ok)return;
+    if(defSig && d.sig===defSig){ if(defName && t.toUpperCase()===defName.toUpperCase())found.push(t); }
+    else found.push(t);
+  });
+  if(defName && !found.some(t=>t.toUpperCase()===defName.toUpperCase()))found.unshift(defName);
+  const out=uniqArr(found.concat(QTABS_MANUAL));
+  TAB_METHOD = out.length ? ('auto-scan · '+cands.length+' names probed') : '';
+  return out;
+}
 function setQStatus(msg){ const el=$('se-status'); if(el) el.textContent=msg; }
 
 async function syncQuotes(manual){
   if(_quotesSyncing) return;
   _quotesSyncing=true;
-  setQStatus('⏳ Loading saved quotations…');
+  setQStatus('⏳ Scanning sheet for colour tabs…');
+  try{
+    const disc=await discoverQuoteTabs();
+    if(disc.length){ GQUOTE_TABS=disc; saveTabState(); }
+  }catch(e){}
   const tabs=GQUOTE_TABS.filter(Boolean);
+  setQStatus('⏳ Loading saved quotations from '+tabs.length+' tab'+(tabs.length===1?'':'s')+'…');
   const all=[], seen={}, sigSeen={}; let okTabs=0;
   for(const tab of tabs){
     const d=await fetchQuoteTab(tab);
@@ -3867,7 +3946,8 @@ async function syncQuotes(manual){
   if(all.length){
     QUOTES=all;
     try{ localStorage.setItem(CACHE_QUOTES, JSON.stringify(all)); }catch(e){}
-    setQStatus('✓ '+all.length+' quotation'+(all.length===1?'':'s')+' · '+okTabs+' tab'+(okTabs===1?'':'s')+' · '+new Date().toLocaleTimeString());
+    const tabNames=uniqArr(all.map(q=>q.tab)).join(', ');
+    setQStatus('✓ '+all.length+' quotation'+(all.length===1?'':'s')+' · '+okTabs+' tab'+(okTabs===1?'':'s')+(tabNames?' ('+tabNames+')':'')+' · '+new Date().toLocaleTimeString());
     if(manual) toast(all.length+' saved quotations loaded');
   }else if(QUOTES.length){
     setQStatus('⚠ Refresh failed — showing '+QUOTES.length+' cached quotation'+(QUOTES.length===1?'':'s')+'.');
