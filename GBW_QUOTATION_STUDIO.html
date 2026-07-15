@@ -377,6 +377,11 @@ input,select{font-family:'Jost'}
     <button class="btn ghost" id="exportAllBtn">Export all as one combined PDF</button>
   </div>
   <div class="sub" id="exportAllNote" style="margin:0 0 6px">One file per quotation (named by its code) — save each as it appears; the next opens automatically. The combined option puts everything in a single file instead.</div>
+
+  <div class="row" id="exportCatRow" style="margin:14px 0 8px;gap:12px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:16px">
+    <button class="btn gold" id="exportCatalogueBtn">✦ Export each as luxury catalogue PDF</button>
+  </div>
+  <div class="sub" id="exportCatalogueNote" style="margin:0 0 6px">A customer-ready catalogue — one product per page at big size, product image with its description in premium gold, your logo across the top and an address &amp; contact strip below. One PDF per quotation, named only by its code (e.g. <b>KUP-CHR-079</b>) — save each as it appears; the next opens automatically.</div>
   <div class="sub" id="exportEachNote" style="margin:0 0 18px;display:none;color:var(--gold-soft)"></div>
   <div id="searchResults" class="qgrid"></div>
   <div id="searchEmpty" class="empty"><div class="big">No set generated yet</div><div>Go to Generate and sync quotations from your sheet first.</div></div>
@@ -390,6 +395,7 @@ input,select{font-family:'Jost'}
       </div>
       <div class="row">
         <button class="btn ghost" id="pvBackBtn">← Back to results</button>
+        <button class="btn ghost" id="pvCatalogueBtn">✦ Catalogue PDF</button>
         <button class="btn gold" id="pvPdfBtn">Export PDF</button>
       </div>
     </div>
@@ -1184,6 +1190,7 @@ function openPreview(idx){
     quoteTableHTML(rows) +
     '<div class="asum">'+areaSummaryHTML(rows)+priceLevelHTML(pl)+'</div>';
   $('pvPdfBtn').onclick=()=>exportQuotePDF(q);
+  if($('pvCatalogueBtn'))$('pvCatalogueBtn').onclick=()=>exportQuoteCatalogue(q);
   $('previewWrap').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closePreview(){
@@ -1518,6 +1525,137 @@ function exportAllPDF(){
   toast('Building one PDF with '+quotes.length+' quotations\u2026 it may take a few seconds.');
 }
 
+/* ════════════════ LUXURY CATALOGUE  (one product / page · image + description) ════════════════ */
+/* File name = ONLY the quotation code (e.g. KUP-CHR-079). Illegal filename chars stripped. */
+function catFileName(name){
+  return (String(name==null?'':name).trim().replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ')) || 'Catalogue';
+}
+/* one product's image cell — falls back to an elegant placeholder if the image is missing/broken */
+function catImgHTML(r){
+  if(r.img){
+    return '<div class="catframe"><img src="'+esc(r.img)+'" '+
+      'onerror="this.style.display=&#39;none&#39;;this.nextElementSibling.style.display=&#39;flex&#39;">'+
+      '<div class="catnoimg" style="display:none"><b>GBW</b><span>Image on request</span></div></div>';
+  }
+  return '<div class="catframe"><div class="catnoimg"><b>GBW</b><span>Image on request</span></div></div>';
+}
+function buildCatalogueDoc(quote){
+  /* quote: {name, rows[]} — rows are lineRows() output. Produces ONE document, one product per A4 page. */
+  const title   = catFileName(quote.name);
+  const rows    = quote.rows || [];
+  const brand   = 'GRACE BATH WORLD';
+  const addr    = 'Authorized Jaquar \u00b7 Artize \u00b7 Essco Dealer \u00b7 M.P. Nagar Zone-2, Bhopal';
+  const phones  = 'B L Bhatia <b>9826050648</b> &nbsp;\u00b7&nbsp; Rushil Bhatia <b>8109683955</b>';
+
+  const P=[];
+  P.push('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>');
+  P.push('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
+  P.push('<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">');
+  P.push('<style>');
+  P.push('@page{size:A4 portrait;margin:0;}');
+  P.push('*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}');
+  P.push('html,body{margin:0;padding:0;}');
+  P.push('body{font-family:"Jost",Arial,Helvetica,sans-serif;color:#0B1530;background:#fff;}');
+  /* full-sheet page; overflow:hidden guards against a stray blank page */
+  P.push('.catpage{position:relative;width:100%;height:100vh;display:flex;flex-direction:column;overflow:hidden;background:#fff;page-break-after:always;break-after:page;}');
+  P.push('.catpage:last-child{page-break-after:auto;break-after:auto;}');
+  /* ---- header : logo (same as our logo) + gold rule ---- */
+  P.push('.cathead{flex:0 0 auto;padding:13mm 16mm 0;text-align:center;}');
+  P.push('.catlogo{height:56px;max-width:70%;object-fit:contain;}');
+  P.push('.catrule{width:100%;height:0;border-top:2px solid #0B1530;margin-top:9px;position:relative;}');
+  P.push('.catrule:after{content:"";position:absolute;left:0;right:0;top:2px;border-top:1px solid #C9A24B;}');
+  /* ---- body : big image + gold description ---- */
+  P.push('.catbody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6mm 18mm;text-align:center;}');
+  P.push('.catframe{display:flex;align-items:center;justify-content:center;width:100%;}');
+  P.push('.catframe img{max-height:52vh;max-width:84%;object-fit:contain;display:block;}');
+  P.push('.catnoimg{width:60%;height:34vh;border:1px solid #C9A24B;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#B8912F;font-family:"Cormorant Garamond",Georgia,serif;}');
+  P.push('.catnoimg b{font-size:20px;letter-spacing:5px;font-weight:600;}');
+  P.push('.catnoimg span{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#a9a08a;margin-top:7px;}');
+  P.push('.catorn{display:flex;align-items:center;justify-content:center;gap:11px;margin:9mm 0 5mm;}');
+  P.push('.catorn i{display:block;width:54px;height:0;border-top:1px solid #C9A24B;}');
+  P.push('.catorn b{width:5px;height:5px;background:#C9A24B;transform:rotate(45deg);}');
+  /* premium gold description */
+  P.push('.catdesc{font-family:"Cormorant Garamond",Georgia,serif;color:#B8912F;font-weight:600;font-size:24px;line-height:1.34;letter-spacing:1.1px;text-transform:uppercase;max-width:86%;text-shadow:0 1px 0 rgba(184,145,47,.12);}');
+  /* ---- footer strip : address & contact ---- */
+  P.push('.catfoot{flex:0 0 auto;background:#0B1530;border-top:2px solid #C9A24B;padding:7.5mm 14mm;text-align:center;}');
+  P.push('.catfoot .fb{font-family:"Cormorant Garamond",Georgia,serif;color:#E7D49E;font-size:16px;font-weight:600;letter-spacing:3px;}');
+  P.push('.catfoot .fa{margin-top:4px;font-size:9px;letter-spacing:1.7px;text-transform:uppercase;color:#aeb9d8;}');
+  P.push('.catfoot .fp{margin-top:8px;font-size:11px;letter-spacing:.8px;color:#dce3f4;}');
+  P.push('.catfoot .fp b{color:#E7D49E;font-weight:600;}');
+  P.push('</style></head><body>');
+
+  rows.forEach(r=>{
+    P.push('<div class="catpage">');
+    P.push('<div class="cathead"><img class="catlogo" src="'+LOGO_BANNER+'" alt="Grace Bath World"><div class="catrule"></div></div>');
+    P.push('<div class="catbody">'+catImgHTML(r)+
+      '<div class="catorn"><i></i><b></b><i></i></div>'+
+      '<div class="catdesc">'+esc(r.desc)+'</div></div>');
+    P.push('<div class="catfoot"><div class="fb">'+esc(brand)+'</div>'+
+      '<div class="fa">'+esc(addr)+'</div>'+
+      '<div class="fp">'+phones+'</div></div>');
+    P.push('</div>');
+  });
+
+  /* auto-print once images AND fonts are ready; advance a sequential batch via the opener */
+  P.push('<script>(function(){'+
+    'var printed=false;function go(){if(printed)return;printed=true;window.focus();window.print();}'+
+    'window.addEventListener("afterprint",function(){try{if(window.opener&&window.opener.__gbwNext)window.opener.__gbwNext();}catch(e){}});'+
+    'function ready(){var fp=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();fp.then(function(){setTimeout(go,180);},function(){setTimeout(go,180);});}'+
+    'var imgs=Array.prototype.slice.call(document.images);var left=imgs.length;'+
+    'if(!left){ready();return;}'+
+    'imgs.forEach(function(im){if(im.complete){if(!--left)ready();}'+
+    'else{im.addEventListener("load",function(){if(!--left)ready();});'+
+    'im.addEventListener("error",function(){if(!--left)ready();});}});'+
+    'setTimeout(go,'+Math.min(60000,7000+rows.length*400)+');})();<\/script>');
+  P.push('</body></html>');
+  return {html:P.join(''), title:title};
+}
+/* single quotation -> its own luxury catalogue (used from the preview) */
+function exportQuoteCatalogue(q){
+  if(!ALLCODES.length){ toast('Sheet not loaded \u2014 descriptions & images would be blank. Wait for the green \u201cLive\u201d pill, then export.'); return; }
+  const rows=lineRows(q.items);
+  if(!rows.length){ toast('This quotation has no items.'); return; }
+  const {html,title}=buildCatalogueDoc({name:q.name, rows:rows});
+  const w=window.open('','_blank');
+  if(!w){ toast('Allow pop-ups to export the catalogue'); return; }
+  window.__gbwNext=null;                 // single export — no sequence to advance
+  w.document.open(); w.document.write(html); w.document.close();
+  try{w.document.title=title;}catch(e){}
+  toast('Building luxury catalogue \u201c'+title+'\u201d\u2026 save it as a PDF.');
+}
+/* batch : each quotation in the current search/colour filter -> its own catalogue PDF (named by code) */
+let _cseq=null;
+function exportCataloguesEach(){
+  if(!QUOTES.length){ toast('No quotations loaded \u2014 sync on the Generate page first.'); return; }
+  if(!ALLCODES.length){ toast('Sheet not loaded \u2014 wait for the green \u201cLive\u201d pill, then export.'); return; }
+  const sel=filterQuotes($('searchBox')?$('searchBox').value:'');
+  const list=sel.map(o=>({name:o.q.name, rows:lineRows(o.q.items)}))
+               .filter(Q=>Q.rows.length);
+  if(!list.length){ toast('No quotations match the current colour/search filter.'); return; }
+  const w=window.open('','_blank');
+  if(!w){ toast('Allow pop-ups to export the catalogues'); return; }
+  _cseq={list,i:0,w};
+  window.__gbwNext=_cseqAdvance;
+  _cseqWrite();
+}
+function _cseqWrite(){
+  const s=_cseq; if(!s)return;
+  const note=$('exportEachNote');
+  if(s.i>=s.list.length){
+    try{s.w.close();}catch(e){}
+    window.__gbwNext=null; _cseq=null;
+    if(note){ note.style.display='block'; note.textContent='All '+s.list.length+' luxury catalogues exported \u2713'; }
+    toast('All '+s.list.length+' luxury catalogues exported \u2713'); return;
+  }
+  if(s.w.closed){ window.__gbwNext=null; _cseq=null; if(note)note.textContent='Export stopped ('+s.i+' of '+s.list.length+' saved).'; return; }
+  const Q=s.list[s.i];
+  const {html,title}=buildCatalogueDoc(Q);
+  try{ s.w.document.open(); s.w.document.write(html); s.w.document.close(); s.w.document.title=title; }
+  catch(e){ window.__gbwNext=null; _cseq=null; toast('Export interrupted'); return; }
+  if(note){ note.style.display='block'; note.textContent='Saving catalogue \u201c'+catFileName(Q.name)+'\u201d \u2014 '+(s.i+1)+' of '+s.list.length+'. Save it and the next opens automatically.'; }
+}
+function _cseqAdvance(){ const s=_cseq; if(!s)return; s.i++; setTimeout(_cseqWrite,300); }
+
 /* ════════════════ Excel export (edit page) ════════════════ */
 function exportEditXLSX(){
   if(!EDIT)return;
@@ -1640,6 +1778,7 @@ function initEvents(){
   $('pvBackBtn').onclick=closePreview;
   if($('exportAllBtn'))$('exportAllBtn').onclick=exportAllPDF;
   if($('exportEachBtn'))$('exportEachBtn').onclick=exportSeparatePDFs;
+  if($('exportCatalogueBtn'))$('exportCatalogueBtn').onclick=exportCataloguesEach;
 
   $('editSearchBox').addEventListener('input',()=>{ if(EDIT){EDIT=null;$('editWrap').style.display='none';$('editResults').style.display='grid';} renderEditList(); });
   $('edAddBtn').onclick=addEditRow;
