@@ -1261,6 +1261,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
+      <button class="btn-print-alt" onclick="doPrintMRP()">💎 MRP Only</button>
       <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain PDF</button>
       <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
     </div>
@@ -3201,6 +3202,316 @@ html, body{
   const win=window.open(url,'_blank');
   if(!win)setTimeout(()=>window.print(),300);
   setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+// ── MRP-ONLY PDF EXPORT ─────────────────────────────────────────────
+// Columns: Sr · Code · Qty · Image · Description · MRP · MRP Total
+// No discount / margin / best-price maths is touched anywhere in this path.
+function doPrintMRP(){
+  if(!S.items || !S.items.length){ alert('Add some products to the quotation first.'); return; }
+
+  // ---- totals (MRP only) ----
+  var grandMRP = 0, grandQty = 0;
+  S.items.forEach(function(i){ grandMRP += i.mrp * i.qty; grandQty += i.qty; });
+
+  // ---- pull branded assets straight off the live preview DOM ----
+  var coverEl  = document.querySelector('.p-cover-img');
+  var logoLEl  = document.querySelector('.p-logo-l');
+  var logoREl  = document.querySelector('.p-logo-r');
+  var coverSrc = coverEl ? coverEl.src : '';
+  var logoLSrc = logoLEl ? logoLEl.src : '';
+  var logoRSrc = logoREl ? logoREl.src : '';
+
+  // ---- header meta ----
+  var now  = new Date();
+  var mins = now.getMinutes().toString().padStart(2,'0');
+  var ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+  var h12  = (now.getHours() % 12 || 12).toString().padStart(2,'0');
+  var timeStr = h12 + ':' + mins + ' ' + ampm;
+  var dv = $('f-date').value;
+  var dateStr = dv ? new Date(dv).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}) : '\u2014';
+  var qno = $('f-qno').value || '';
+
+  // ---- customer strip ----
+  var cName = $('f-name').value, cPhone = $('f-phone').value, cAddr = $('f-addr').value, cGst = $('f-gst').value;
+  var custHTML = '';
+  if(cName){
+    custHTML = '<div class="p-cust-strip">'
+             +   '<div>'
+             +     '<div class="p-cust-key">Customer</div>'
+             +     '<div class="p-cust-name">' + esc(cName) + '</div>'
+             +     (cPhone ? '<div class="p-cust-detail">\uD83D\uDCDE ' + esc(cPhone) + '</div>' : '')
+             +     (cGst   ? '<div class="p-cust-gst">GSTIN: <b>' + esc(cGst) + '</b></div>' : '')
+             +   '</div>'
+             +   (cAddr ? '<div><div class="p-cust-key">Site / Address</div><div class="p-cust-detail" style="max-width:300px">' + esc(cAddr) + '</div></div>' : '')
+             + '</div>';
+  }
+
+  // ---- single item row ----
+  function mrpRow(item, sr){
+    var url = IMAGE_MAP[item.code] || '';
+    var img = url
+      ? '<div class="m-imgbox"><img src="' + url + '" onerror="this.parentNode.innerHTML=&quot;&quot;" alt=""/></div>'
+      : '<div class="m-imgbox"></div>';
+    return '<tr>'
+      +  '<td class="td-sr">' + sr + '</td>'
+      +  '<td class="td-code"><div class="td-code-val">' + esc(item.code) + '</div></td>'
+      +  '<td class="td-qty">' + item.qty + '<sub>pcs</sub></td>'
+      +  '<td class="td-img">' + img + '</td>'
+      +  '<td class="td-name"><div class="td-name-val">' + esc(item.desc || item.code) + '</div></td>'
+      +  '<td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">' + fmtN(item.mrp) + '</div></td>'
+      +  '<td class="td-mtot"><div class="td-mtot-label">Total</div><div class="td-mtot-val">' + fmtN(item.mrp * item.qty) + '</div></td>'
+      + '</tr>';
+  }
+
+  // ---- body: bathroom-wise or flat ----
+  var rowsHTML = '', bathSummary = '';
+  var inBath = S.bathrooms && S.bathrooms.length > 0;
+
+  if(inBath){
+    var sr = 0, sumBody = '', sGrandMRP = 0, sGrandQty = 0;
+    S.bathrooms.forEach(function(bath){
+      var bMRP = 0, bQty = 0;
+      bath.items.forEach(function(i){ bMRP += i.mrp * i.qty; bQty += i.qty; });
+      sGrandMRP += bMRP; sGrandQty += bQty;
+
+      rowsHTML += '<tr class="m-bath-hd"><td colspan="7">'
+               +    '<div class="m-bath-hd-in">'
+               +      '<div class="m-bath-name"><span class="m-dia">\u2726</span><span>' + esc(bath.name) + '</span><span class="m-dia">\u2726</span></div>'
+               +      '<div class="m-bath-meta">' + bath.items.length + ' product(s) &nbsp;\u00B7&nbsp; ' + bQty + ' pcs</div>'
+               +    '</div>'
+               + '</td></tr>';
+
+      bath.items.forEach(function(item){ sr++; rowsHTML += mrpRow(item, sr); });
+
+      rowsHTML += '<tr class="m-bath-sub">'
+               +    '<td colspan="6">' + esc(bath.name) + ' \u2014 Subtotal</td>'
+               +    '<td><div class="m-sub-box"><div class="m-sub-lbl">MRP Total</div><div class="m-sub-val">\u20B9' + fmtN(bMRP) + '</div></div></td>'
+               + '</tr>';
+
+      sumBody += '<tr><td><b>' + esc(bath.name) + '</b></td><td>' + bQty + ' pcs</td><td>\u20B9' + fmtN(bMRP) + '</td></tr>';
+    });
+
+    bathSummary = '<div class="m-bsum-wrap">'
+                +   '<div class="m-bsum-title">Bathroom Summary</div>'
+                +   '<table class="m-bsum">'
+                +     '<tr><th>Bathroom</th><th>Items</th><th>Total MRP</th></tr>'
+                +     sumBody
+                +     '<tr class="m-bsum-total"><td>TOTAL</td><td>' + sGrandQty + ' pcs</td><td>\u20B9' + fmtN(sGrandMRP) + '</td></tr>'
+                +   '</table>'
+                + '</div>';
+  } else {
+    rowsHTML = S.items.map(function(item, i){ return mrpRow(item, i + 1); }).join('');
+  }
+
+  // ---- table foot ----
+  var footHTML = '<table class="m-foot">'
+               +   '<tr>'
+               +     '<td class="m-foot-lbl" colspan="2">Total</td>'
+               +     '<td class="m-foot-qty"><div class="m-foot-box"><span class="m-foot-k">Qty</span><span class="m-foot-v">' + grandQty + '</span><span class="m-foot-u">pcs</span></div></td>'
+               +     '<td colspan="3"></td>'
+               +     '<td class="m-foot-tot"><div class="m-foot-tbox"><span class="m-foot-tk">Total MRP</span><span class="m-foot-tv">\u20B9' + fmtN(grandMRP) + '</span></div></td>'
+               +   '</tr>'
+               + '</table>';
+
+  // ---- assemble ----
+  var html = '<!DOCTYPE html><html><head>'
+  + '<meta charset="UTF-8"/>'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1.0"/>'
+  + '<title>Quotation ' + esc(qno) + ' \u2014 MRP</title>'
+  + '<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700;800&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>'
+  + '<style>'
+  + '*{box-sizing:border-box;margin:0;padding:0}'
+  + 'html,body{margin:0!important;padding:0!important;background:#000!important}'
+  + 'body{font-family:\'Jost\',sans-serif}'
+  + '@page{margin:8mm 6mm;size:A4 portrait}'
+  + '@page:first{margin:0;size:A4 portrait}'
+  /* cover */
+  + '.cover-wrapper{width:100%;height:100vh;min-height:297mm;position:relative;overflow:hidden;line-height:0;page-break-after:always;break-after:page;background:#000}'
+  + '.cover-wrapper img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border:none}'
+  /* page shell */
+  + '.mpage{background:#FEFCF7;width:100%;position:relative}'
+  + '.p-gold-top{height:4px;background:linear-gradient(90deg,#8B6914,#C9A84C,#E8D08A,#C9A84C,#8B6914);display:block}'
+  + '.p-gold-bottom{height:3px;background:linear-gradient(90deg,#8B6914,#C9A84C,#E8D08A,#C9A84C,#8B6914)}'
+  /* header */
+  + '.p-doc-head{padding:20px 28px 16px;background:#FFF;border-bottom:1px solid #E8DCC0;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px}'
+  + '.p-logo-l,.p-logo-r{height:68px;object-fit:contain}'
+  + '.p-logo-r{justify-self:end}'
+  + '.p-brand-block{text-align:center}'
+  + '.p-brand-name{font-family:\'Cinzel\',serif;font-size:20px;font-weight:700;color:#0D1117;letter-spacing:4px;text-transform:uppercase;line-height:1}'
+  + '.p-brand-tagline{font-family:\'Cormorant\',serif;font-style:italic;font-size:12px;color:#8B7040;letter-spacing:2px;margin-top:4px}'
+  + '.p-brand-contact{font-size:9px;color:#444;letter-spacing:.3px;line-height:1.9;margin-top:5px}'
+  /* divider */
+  + '.p-divider{display:flex;align-items:center;height:18px;background:#FEFCF7}'
+  + '.p-divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.4))}'
+  + '.p-divider-line-r{flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,.4),transparent)}'
+  + '.p-divider-center{padding:0 16px;font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:5px;color:#6B4F10;text-transform:uppercase;white-space:nowrap}'
+  /* quote band */
+  + '.p-quote-band{background:#FEFCF7;padding:16px 28px 12px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid #E8DCC0}'
+  + '.p-quote-word{font-family:\'Cinzel\',serif;font-size:30px;font-weight:700;color:#C9A84C;letter-spacing:10px;text-transform:uppercase;line-height:1}'
+  + '.p-quote-sub{font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:4px;color:#7A6830;text-transform:uppercase;margin-top:6px}'
+  + '.p-quote-details{display:flex;gap:20px}'
+  + '.p-quote-item{text-align:right}'
+  + '.p-quote-key{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:2px;color:#5A7888;text-transform:uppercase;margin-bottom:2px}'
+  + '.p-quote-val{font-family:\'Cinzel\',serif;font-size:13px;color:#1A2535;font-weight:600;letter-spacing:.5px}'
+  /* customer */
+  + '.p-cust-strip{padding:12px 28px;background:#FEFCF7;border-bottom:1px solid #E8DCC0;display:flex;gap:32px;flex-wrap:wrap}'
+  + '.p-cust-key{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:2px;color:#5C4A1E;text-transform:uppercase;margin-bottom:3px}'
+  + '.p-cust-name{font-family:\'Cinzel\',serif;font-size:15px;color:#0D1117;letter-spacing:1px}'
+  + '.p-cust-detail{font-family:\'Cormorant\',serif;font-size:13px;color:#444;line-height:1.5;margin-top:1px}'
+  + '.p-cust-gst{font-family:\'Jost\',sans-serif;font-size:9px;letter-spacing:.5px;margin-top:2px;color:#444}'
+  /* table */
+  + '.m-table{width:100%;border-collapse:collapse;table-layout:fixed}'
+  + '.m-table thead{background:#FEFCF7;border-bottom:1px solid #D8C898}'
+  + '.m-table th{padding:9px 4px;font-family:\'Jost\',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#1A2535;text-transform:uppercase;text-align:center;vertical-align:middle;white-space:nowrap}'
+  + '.m-table tbody tr{border-bottom:1px solid #E8DCC0;background:#FFF}'
+  + '.m-table td{padding:7px 4px;vertical-align:middle;text-align:center;overflow:visible}'
+  + '.td-sr{width:4%;font-family:\'Jost\',sans-serif;font-size:10px;font-weight:700;color:#1A2535}'
+  + '.td-code{width:22%;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere}'
+  + '.td-code-val{font-family:\'Cinzel\',serif;font-size:11px;color:#1A2535;font-weight:700;letter-spacing:.5px;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.25;display:block}'
+  + '.td-qty{width:6%;font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;color:#1A2535}'
+  + '.td-qty sub{font-size:7px;font-weight:400;color:#666;letter-spacing:.5px;display:block;margin-top:1px}'
+  + '.td-img{width:13%;padding:4px;overflow:hidden}'
+  + '.td-name{width:21%;text-align:left}'
+  + '.td-name-val{font-family:\'Cormorant\',serif;font-size:10px;font-weight:600;color:#1A2535;line-height:1.3}'
+  + '.td-mrp{width:15%}'
+  + '.td-mrp-label{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1px;color:#666;text-transform:uppercase;margin-bottom:2px}'
+  + '.td-mrp-val{font-family:\'Jost\',sans-serif;font-size:15px;color:#555;font-weight:500;letter-spacing:.3px}'
+  + '.td-mtot{width:19%;white-space:nowrap}'
+  + '.td-mtot-label{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1px;color:#6B4F10;text-transform:uppercase;margin-bottom:2px}'
+  + '.td-mtot-val{font-family:\'Jost\',sans-serif;font-size:16px;font-weight:700;color:#1A2535;letter-spacing:.3px}'
+  + '.m-imgbox{width:88px;height:88px;max-width:100%;background:#FFF;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden}'
+  + '.m-imgbox img{width:88px;height:88px;max-width:100%;object-fit:contain;display:block}'
+  /* bathroom bands */
+  + '.m-bath-hd td{background:linear-gradient(135deg,#FBF6EA,#F4EAD2,#FBF6EA);border-top:3px solid #C9A84C;border-bottom:2px solid #D8C898;padding:13px 20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  + '.m-bath-hd-in{display:flex;align-items:center;justify-content:space-between}'
+  + '.m-bath-name{display:flex;align-items:center;gap:12px;font-family:\'Cinzel\',serif;font-size:15px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#0A2A55}'
+  + '.m-dia{font-family:\'Cinzel\',serif;font-size:16px;color:#C9A84C;line-height:1;letter-spacing:0}'
+  + '.m-bath-meta{font-family:\'Jost\',sans-serif;font-size:10px;font-weight:700;color:#0A2A55;letter-spacing:.5px}'
+  + '.m-bath-sub td{background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;padding:10px 12px}'
+  + '.m-bath-sub td:first-child{text-align:right;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#0A2A55;font-weight:700}'
+  + '.m-sub-box{background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:92px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  + '.m-sub-lbl{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:2px}'
+  + '.m-sub-val{font-family:\'Jost\',sans-serif;font-size:15px;font-weight:700;color:#E8D08A;letter-spacing:.3px}'
+  /* foot */
+  + '.m-foot{width:100%;border-collapse:collapse;table-layout:fixed;border-top:2px solid #D8C898}'
+  + '.m-foot td{background:#FEFCF7;padding:12px 6px;text-align:center;vertical-align:middle}'
+  + '.m-foot-lbl{width:30%;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:2px;color:#7A6830;text-transform:uppercase}'
+  + '.m-foot-qty{width:6%}'
+  + '.m-foot-box{display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 8px;width:100%}'
+  + '.m-foot-k{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1px;color:#7A6830;text-transform:uppercase;margin-bottom:3px}'
+  + '.m-foot-v{font-family:\'Cinzel\',serif;font-size:15px;font-weight:700;color:#1A2535}'
+  + '.m-foot-u{font-family:\'Jost\',sans-serif;font-size:8px;color:#7A6830;margin-top:1px}'
+  + '.m-foot-tot{width:19%}'
+  + '.m-foot-tbox{display:inline-flex;flex-direction:column;align-items:center;background:#1A2535;border-radius:5px;padding:7px 10px;width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  + '.m-foot-tk{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:3px}'
+  + '.m-foot-tv{font-family:\'Jost\',sans-serif;font-size:17px;font-weight:700;color:#E8D08A;letter-spacing:.5px;white-space:nowrap}'
+  /* bathroom summary */
+  + '.m-bsum-wrap{margin-top:16px;page-break-inside:avoid;break-inside:avoid}'
+  + '.m-bsum-title{font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:3px;color:#7A6830;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #E8DCC0;background:#FEFCF7}'
+  + '.m-bsum{width:100%;border-collapse:collapse}'
+  + '.m-bsum th{font-family:\'Jost\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#1A2535;background:#FEFCF7;padding:8px 12px;border-bottom:2px solid #D8C898;text-align:left}'
+  + '.m-bsum th:not(:first-child){text-align:right}'
+  + '.m-bsum td{font-family:\'Jost\',sans-serif;font-size:12px;padding:9px 12px;border-bottom:1px solid #F0EAD8;color:#1A2535}'
+  + '.m-bsum td:not(:first-child){text-align:right}'
+  + '.m-bsum-total td{background:#1A2535;color:#C9A84C;font-weight:700;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  + '.m-bsum-total td:first-child{color:#E8D08A}'
+  /* grand total */
+  + '.m-grand{padding:24px 28px;background:#FFF;border-top:1px solid #E8DCC0;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}'
+  + '.m-pay-key{font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:2px;color:#7A6830;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #E8DCC0}'
+  + '.m-pay-line{font-family:\'Jost\',sans-serif;font-size:10px;color:#1A2535;font-weight:600;line-height:1.6}'
+  + '.m-grand-box{min-width:300px;text-align:right}'
+  + '.m-grand-rule{height:2px;background:linear-gradient(90deg,transparent,#C9A84C);margin-bottom:10px}'
+  + '.m-grand-lbl{font-family:\'Cinzel\',serif;font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#7A6830;margin-bottom:4px}'
+  + '.m-grand-val{font-family:\'Jost\',sans-serif;font-size:44px;line-height:1.05;font-weight:800;color:#1A2535;letter-spacing:.5px;white-space:nowrap}'
+  + '.m-grand-note{font-family:\'Cormorant\',serif;font-style:italic;font-size:11px;color:#7A6830;letter-spacing:1px;margin-top:6px}'
+  /* signature + footer */
+  + '.p-sign-section{display:flex;justify-content:space-between;align-items:flex-end;padding:28px 36px 24px;background:#FFF;border-top:1px solid #E8DCC0}'
+  + '.p-sign-col{text-align:center;min-width:140px}'
+  + '.p-sign-k{font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#5C4A1E;margin-bottom:8px}'
+  + '.p-sign-n{font-family:\'Jost\',sans-serif;font-size:11px;font-weight:700;color:#1A2535;margin-bottom:5px}'
+  + '.p-sign-p{font-family:\'Jost\',sans-serif;font-size:11px;color:#1A2535}'
+  + '.p-terms{text-align:center;padding-top:10px;font-family:\'Cormorant\',serif;font-style:italic;font-size:11px;color:#3D2E0D;letter-spacing:1px;line-height:2}'
+  + '.p-footer-strip{padding:10px 28px;background:#FFF;border-top:1px solid #E8DCC0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}'
+  + '.p-footer-terms{font-family:\'Jost\',sans-serif;font-size:8px;color:#3D2E0D;letter-spacing:.3px;line-height:1.8}'
+  + '.p-footer-brand{font-family:\'Cormorant\',serif;font-style:italic;font-size:13px;color:#3D2E0D;letter-spacing:2px}'
+  /* print */
+  + '@media print{'
+  +   'body{margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  +   '.m-table tbody tr{page-break-inside:avoid;break-inside:avoid}'
+  +   '.m-bath-hd{page-break-after:avoid;break-after:avoid}'
+  +   '.m-bath-sub{page-break-before:avoid;break-before:avoid}'
+  +   '.m-foot,.m-grand,.p-sign-section,.p-footer-strip,.p-gold-bottom{page-break-inside:avoid;break-inside:avoid}'
+  +   '.m-foot,.m-grand{page-break-before:avoid;break-before:avoid}'
+  +   '.m-table{orphans:2;widows:2}'
+  + '}'
+  + '</style></head><body>'
+
+  + (coverSrc ? '<div class="cover-wrapper"><img src="' + coverSrc + '" alt="Cover"/></div>' : '')
+
+  + '<div class="mpage">'
+  +   '<div class="p-gold-top"></div>'
+  +   '<div class="p-doc-head">'
+  +     (logoLSrc ? '<img class="p-logo-l" src="' + logoLSrc + '" alt=""/>' : '<span></span>')
+  +     '<div class="p-brand-block">'
+  +       '<div class="p-brand-name">Grace Bath World</div>'
+  +       '<div class="p-brand-tagline">Authorised Jaquar Dealer</div>'
+  +       '<div class="p-brand-contact">57, Zone-II, M.P. Nagar, Bhopal &nbsp;|&nbsp; \uD83D\uDCDE 9826050648 &nbsp;|&nbsp; 8109683955<br>GSTIN: 23AAPFG4819C1ZK</div>'
+  +     '</div>'
+  +     (logoRSrc ? '<img class="p-logo-r" src="' + logoRSrc + '" alt=""/>' : '<span></span>')
+  +   '</div>'
+  +   '<div class="p-divider"><div class="p-divider-line"></div><div class="p-divider-center">\u2726</div><div class="p-divider-line-r"></div></div>'
+  +   '<div class="p-quote-band">'
+  +     '<div><div class="p-quote-word">Quotation</div><div class="p-quote-sub">MRP Price List</div></div>'
+  +     '<div class="p-quote-details">'
+  +       '<div class="p-quote-item"><div class="p-quote-key">Time</div><div class="p-quote-val">' + timeStr + '</div></div>'
+  +       '<div class="p-quote-item"><div class="p-quote-key">Date</div><div class="p-quote-val">' + dateStr + '</div></div>'
+  +     '</div>'
+  +   '</div>'
+  +   custHTML
+  +   '<table class="m-table"><thead><tr>'
+  +     '<th class="td-sr">Sr</th>'
+  +     '<th class="td-code">Code</th>'
+  +     '<th class="td-qty">Qty</th>'
+  +     '<th class="td-img">Image</th>'
+  +     '<th class="td-name">Description</th>'
+  +     '<th class="td-mrp">MRP</th>'
+  +     '<th class="td-mtot">MRP Total</th>'
+  +   '</tr></thead><tbody>' + rowsHTML + '</tbody></table>'
+  +   footHTML
+  +   bathSummary
+  +   '<div class="m-grand">'
+  +     '<div style="flex:1;padding-right:24px">'
+  +       '<div class="m-pay-key">Payment Details</div>'
+  +       '<div class="m-pay-line">Grace Bath World &nbsp;\u00B7&nbsp; Kotak Mahindra Bank &nbsp;\u00B7&nbsp; <b>8711749089</b> &nbsp;\u00B7&nbsp; IFSC: <b>KKBK0005886</b></div>'
+  +       '<div class="m-pay-line" style="margin-top:2px">GPay / PhonePe: <b>9826050648</b> &nbsp;\u00B7&nbsp; UPI: <b style="color:#C9A84C">9826050648@ybl</b></div>'
+  +     '</div>'
+  +     '<div class="m-grand-box">'
+  +       '<div class="m-grand-rule"></div>'
+  +       '<div class="m-grand-lbl">Total MRP</div>'
+  +       '<div class="m-grand-val">\u20B9' + fmtN(grandMRP) + '</div>'
+  +       '<div class="m-grand-note">' + grandQty + ' pcs &nbsp;\u00B7&nbsp; inclusive of all taxes</div>'
+  +     '</div>'
+  +   '</div>'
+  +   '<div class="p-sign-section">'
+  +     '<div class="p-sign-col"><div class="p-sign-k">Contact Us</div><div class="p-sign-n">B L BHATIA</div><div class="p-sign-p">\uD83D\uDCDE 9826050648</div></div>'
+  +     '<div class="p-terms">Prices inclusive of all taxes<br>Subject to availability &nbsp;\u00B7&nbsp; Valid for 15 days &nbsp;\u00B7&nbsp; E &amp; OE</div>'
+  +     '<div class="p-sign-col"><div class="p-sign-k">&nbsp;</div><div class="p-sign-n">RUSHIL BHATIA</div><div class="p-sign-p">\uD83D\uDCDE 8109683955</div></div>'
+  +   '</div>'
+  +   '<div class="p-footer-strip">'
+  +     '<div class="p-footer-terms">Thank you for choosing Grace Bath World \u00B7 We bring luxury to every living space</div>'
+  +     '<div class="p-footer-brand">Grace Bath World</div>'
+  +   '</div>'
+  +   '<div class="p-gold-bottom"></div>'
+  + '</div>'
+  + '<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script>'
+  + '</body></html>';
+
+  var blob = new Blob([html], {type:'text/html'});
+  var url  = URL.createObjectURL(blob);
+  var win  = window.open(url, '_blank');
+  if(!win) setTimeout(function(){ window.print(); }, 300);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 
 // ── PLAIN PDF EXPORT (simple bordered table — matches the plain-quote layout) ──
