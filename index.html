@@ -724,13 +724,20 @@ html, body{
 
 <style id="final-item-code-width-adjustment">
 
-/* Further increase ITEM CODE width */
+/* ITEM CODE width */
 .td-code{
-    width:28% !important;
+    width:22% !important;
+}
+
+/* Image cell must be wide enough for the 90px product image, otherwise the
+   image spills over the description column. 14% of 194mm = ~103px. */
+.td-img{
+    width:14% !important;
+    overflow:hidden !important;
 }
 
 .td-name{
-    width:12% !important;
+    width:15% !important;
 }
 
 /* Keep price columns equal */
@@ -2740,8 +2747,8 @@ function renderPreview(){
   if(GST_COLS){ const G=gstTotals(); tot.best=G.gross; tot.save=tot.mrp-G.gross; }
   const pth=$('p-thead');
   if(pth) pth.innerHTML = GST_COLS
-    ? '<tr><th style="width:34px">Sr</th><th style="width:96px">Code</th><th style="width:50px">Qty</th>'
-      +'<th style="width:78px">Image</th><th>Description</th><th class="td-mrp">MRP</th>'
+    ? '<tr><th class="td-sr">Sr</th><th class="td-code">Code</th><th class="td-qty">Qty</th>'
+      +'<th class="td-img">Image</th><th class="td-name">Description</th><th class="td-mrp">MRP</th>'
       +'<th class="td-rate">Rate</th><th class="td-gst">GST %</th>'
       +'<th class="td-bp">Best Price</th><th class="td-total">Total</th></tr>'
     : '<tr><th style="width:40px">Sr</th><th style="width:110px">Code</th><th style="width:60px">Qty</th>'
@@ -2779,8 +2786,8 @@ function renderPreview(){
       : '';
     const url=IMAGE_MAP[item.code]||'';
     const img=url
-      ?`<div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"/></div>`
-      :`<div style="width:85px;height:85px;background:#FFFFFF;margin:auto"></div>`;
+      ?`<div style="width:90px;max-width:100%;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:100%;max-width:90px;height:90px;object-fit:contain;display:block"/></div>`
+      :`<div style="width:85px;max-width:100%;height:85px;background:#FFFFFF;margin:auto"></div>`;
     return `<tr>
       <td class="td-sr">${i}</td>
       <td class="td-code"><div class="td-code-val">${esc(item.code)}</div></td>
@@ -3225,13 +3232,20 @@ html, body{
 
 <style id="final-item-code-width-adjustment">
 
-/* Further increase ITEM CODE width */
+/* ITEM CODE width */
 .td-code{
-    width:28% !important;
+    width:22% !important;
+}
+
+/* Image cell must be wide enough for the 90px product image, otherwise the
+   image spills over the description column. 14% of 194mm = ~103px. */
+.td-img{
+    width:14% !important;
+    overflow:hidden !important;
 }
 
 .td-name{
-    width:12% !important;
+    width:15% !important;
 }
 
 /* Keep price columns equal */
@@ -3722,18 +3736,30 @@ function doPlainPrint(){
 // Column widths for the 10-column layout. Appended after the standard
 // stylesheet so these win over the 8-column width overrides.
 const GST_COL_CSS = '\n<style id="gst-column-widths">\n'
+  // Ten columns across 194mm of printable A4 (733px). Must total 100%.
   + '.td-sr{width:4% !important}\n'
-  + '.td-code{width:15% !important}\n'
-  + '.td-qty{width:6% !important}\n'
-  + '.td-img{width:10% !important}\n'
-  + '.td-name{width:11% !important}\n'
-  + '.td-mrp{width:10% !important}\n'
-  + '.td-rate{width:10% !important}\n'
+  + '.td-code{width:12% !important}\n'
+  + '.td-qty{width:5% !important}\n'
+  + '.td-img{width:13% !important}\n'
+  + '.td-name{width:17% !important}\n'
+  + '.td-mrp{width:9% !important}\n'
+  + '.td-rate{width:9% !important}\n'
   + '.td-gst{width:6% !important}\n'
-  + '.td-bp{width:13% !important}\n'
-  + '.td-total{width:15% !important}\n'
+  + '.td-bp{width:12% !important}\n'
+  + '.td-total{width:13% !important}\n'
+  // The image box is a fixed 90px in the 8-column layout, which is wider than
+  // the narrower GST image cell — it would spill over the description. Clamp it
+  // to the cell and clip anything that still tries to escape.
+  + '.td-img{overflow:hidden !important;padding-left:2px !important;padding-right:2px !important}\n'
+  + '.td-img > div{width:82px !important;height:82px !important;max-width:100% !important;margin:0 auto !important}\n'
+  + '.td-img > div > img{width:82px !important;height:82px !important;max-width:100% !important;object-fit:contain !important}\n'
   + '.td-rate,.td-gst{text-align:center !important;background:#FFFFFF}\n'
-  + '.p-table th,.p-table td{padding-left:5px !important;padding-right:5px !important}\n'
+  + '.td-name{overflow:hidden !important}\n'
+  + '.td-name-val{word-break:break-word !important;overflow-wrap:anywhere !important;hyphens:auto !important}\n'
+  + '.p-table th,.p-table td{padding-left:4px !important;padding-right:4px !important}\n'
+  // Header letter-spacing is tuned for 8 columns; tighten it so the narrower
+  // headings ("GST %") don't run into their neighbours.
+  + '.p-table th{letter-spacing:1px !important;font-size:8px !important;overflow:hidden !important;white-space:nowrap !important}\n'
   + '.td-mrp-val,.td-bp-val,.td-total-val{font-size:13px !important}\n'
   + '.td-code-val{font-size:11px !important}\n'
   + '</style>\n';
