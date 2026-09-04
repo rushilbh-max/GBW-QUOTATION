@@ -1270,7 +1270,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
       <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPrintMRP()">💎 MRP Only</button>
-      <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain PDF</button>
+      <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain GST</button>
       <button class="btn-print-alt" onclick="doPrintGST()">🧾 GST Format</button>
       <button class="btn-print" onclick="doPrint()">🖨 Export PDF</button>
     </div>
@@ -3593,11 +3593,13 @@ function doPrintMRP(){
 function doPlainPrint(){
   if(!S.items.length){ alert('Add some products to the quotation first.'); return; }
   const tot   = totals();
+  const GT    = gstTotals();
   const totQty= S.items.reduce((a,i)=>a+i.qty,0);
   const inBath = S.bathrooms && S.bathrooms.length>0;
 
+  // GST format: RATE is the pre-tax unit price, BEST PRICE is RATE + GST.
   function itemRow(item, sr){
-    const price = bp(item);
+    const price = grossUnit(item);
     const url   = IMAGE_MAP[item.code] || '';
     const imgCell = url
       ? `<div class="imgbox"><img src="${url}" onerror="this.parentNode.innerHTML=''" alt=""/></div>`
@@ -3608,9 +3610,11 @@ function doPlainPrint(){
       <td class="c-qty">${item.qty} PCS</td>
       <td class="c-img">${imgCell}</td>
       <td class="c-name">${esc(item.desc||item.code)}</td>
-      <td class="c-num">${fmtN(item.mrp)}</td>
-      <td class="c-num">${fmtN(price)}</td>
-      <td class="c-num">${fmtN(price*item.qty)}</td>
+      <td class="c-num">${fmtG(item.mrp)}</td>
+      <td class="c-num">${fmtG(basicUnit(item))}</td>
+      <td class="c-gst">${fmtN(gstOf(item))}%</td>
+      <td class="c-num">${fmtG(price)}</td>
+      <td class="c-num c-tot">${fmtG(price*item.qty)}</td>
     </tr>`;
   }
 
@@ -3621,22 +3625,24 @@ function doPlainPrint(){
     let summaryBody='';
     S.bathrooms.forEach(bath=>{
       let bMRP=0,bBest=0,bQty=0;
-      bath.items.forEach(i=>{ bMRP+=i.mrp*i.qty; bBest+=bp(i)*i.qty; bQty+=i.qty; });
+      bath.items.forEach(i=>{ bMRP+=i.mrp*i.qty; bBest+=grossUnit(i)*i.qty; bQty+=i.qty; });
       grandMRP+=bMRP; grandBest+=bBest; grandItems+=bQty;
-      rows += `<tr class="bath-hd"><td colspan="8">${esc(bath.name)} &nbsp;·&nbsp; ${bath.items.length} product(s) &nbsp;·&nbsp; ${bQty} PCS</td></tr>`;
+      rows += `<tr class="bath-hd"><td colspan="10">${esc(bath.name)} &nbsp;&middot;&nbsp; ${bath.items.length} product(s) &nbsp;&middot;&nbsp; ${bQty} PCS</td></tr>`;
       bath.items.forEach(item=>{ sr++; rows += itemRow(item, sr); });
       rows += `<tr class="bath-sub">
         <td colspan="5">${esc(bath.name)} — SUBTOTAL</td>
-        <td class="c-num">${fmtN(bMRP)}</td>
+        <td class="c-num">${fmtG(bMRP)}</td>
         <td></td>
-        <td class="c-num">${fmtN(bBest)}</td>
+        <td></td>
+        <td></td>
+        <td class="c-num">${fmtG(bBest)}</td>
       </tr>`;
-      summaryBody += `<tr><td>${esc(bath.name)}</td><td>${bQty} PCS</td><td>${fmtN(bMRP)}</td><td>${fmtN(bBest)}</td></tr>`;
+      summaryBody += `<tr><td>${esc(bath.name)}</td><td>${bQty} PCS</td><td>${fmtG(bMRP)}</td><td>${fmtG(bBest)}</td></tr>`;
     });
     bsum = `<table class="bsum">
       <thead><tr><th>BATHROOM</th><th>ITEMS</th><th>MRP TOTAL</th><th>BEST PRICE</th></tr></thead>
       <tbody>${summaryBody}
-        <tr class="grand"><td>TOTAL</td><td>${grandItems} PCS</td><td>${fmtN(grandMRP)}</td><td>${fmtN(grandBest)}</td></tr>
+        <tr class="grand"><td>TOTAL</td><td>${grandItems} PCS</td><td>${fmtG(grandMRP)}</td><td>${fmtG(grandBest)}</td></tr>
       </tbody></table>`;
   } else {
     rows = S.items.map((item,idx)=>itemRow(item, idx+1)).join('');
@@ -3646,9 +3652,9 @@ function doPlainPrint(){
       <td></td>
       <td></td>
       <td class="c-qty foot-strong">${totQty} PCS</td>
-      <td colspan="3" class="foot-mrp">TOTAL MRP= RS.${fmtN(tot.mrp)}/-</td>
+      <td colspan="5" class="foot-mrp">TOTAL MRP= RS.${fmtG(tot.mrp)}/-</td>
       <td class="foot-grand-lbl">GRAND TOTAL</td>
-      <td class="c-num foot-grand-val">${fmtN(tot.best)}</td>
+      <td class="c-num foot-grand-val">${fmtG(GT.gross)}</td>
     </tr>`;
 
   const html = `<!DOCTYPE html><html><head>
@@ -3660,20 +3666,24 @@ function doPlainPrint(){
   *{ box-sizing:border-box }
   body{ font-family:Arial,Helvetica,sans-serif; color:#000; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact }
   table{ width:100%; border-collapse:collapse; table-layout:fixed }
-  th,td{ border:1px solid #000; padding:6px 6px; font-size:11px; vertical-align:middle; word-wrap:break-word; text-align:center }
-  thead th{ background:#fff; font-weight:700; font-size:11px; text-align:center; letter-spacing:.3px }
+  th,td{ border:1px solid #000; padding:5px 4px; font-size:10px; vertical-align:middle; word-wrap:break-word; overflow-wrap:anywhere; text-align:center }
+  thead th{ background:#fff; font-weight:700; font-size:10px; text-align:center; letter-spacing:.2px }
+  thead{ display:table-header-group }
   tbody tr{ page-break-inside:avoid; break-inside:avoid }
-  .c-sr{ width:34px; text-align:center; font-weight:700 }
-  .c-code{ width:120px; font-weight:700; font-size:11px }
-  .c-qty{ width:58px; text-align:center; font-weight:700 }
-  .c-img{ width:96px; text-align:center; padding:4px }
-  .c-name{ font-size:11px; font-weight:600 }
-  .c-num{ width:78px; text-align:center; font-weight:700; font-variant-numeric:tabular-nums }
-  .imgbox{ width:90px; height:90px; background:#fff; margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden }
-  .imgbox img{ width:90px; height:90px; object-fit:contain; display:block }
-  /* column widths via colgroup */
-  col.w-sr{width:34px} col.w-code{width:120px} col.w-qty{width:58px} col.w-img{width:96px}
-  col.w-mrp{width:78px} col.w-bp{width:84px} col.w-tot{width:84px}
+  .c-sr{ text-align:center; font-weight:700 }
+  .c-code{ font-weight:700; font-size:10px }
+  .c-qty{ text-align:center; font-weight:700 }
+  .c-img{ text-align:center; padding:3px; overflow:hidden }
+  .c-name{ font-size:10px; font-weight:600 }
+  .c-num{ text-align:center; font-weight:700; font-variant-numeric:tabular-nums }
+  .c-gst{ text-align:center; font-weight:700 }
+  .c-tot{ font-size:11px }
+  .imgbox{ width:72px; max-width:100%; height:72px; background:#fff; margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden }
+  .imgbox img{ width:100%; max-width:72px; height:72px; object-fit:contain; display:block }
+  /* column widths via colgroup - 10 columns across 190mm of A4 (~718px) */
+  col.w-sr{width:28px} col.w-code{width:96px} col.w-qty{width:46px} col.w-img{width:86px}
+  col.w-mrp{width:62px} col.w-rate{width:62px} col.w-gst{width:40px}
+  col.w-bp{width:70px} col.w-tot{width:74px}
   /* bathroom-wise rows */
   tr.bath-hd td{ background:#e9e9e9; color:#000; font-weight:700; font-size:12px; letter-spacing:.5px; text-transform:uppercase; text-align:left; padding:9px 10px }
   tr.bath-hd{ page-break-after:avoid; break-after:avoid }
@@ -3696,12 +3706,14 @@ function doPlainPrint(){
   <table>
     <colgroup>
       <col class="w-sr"><col class="w-code"><col class="w-qty"><col class="w-img">
-      <col><col class="w-mrp"><col class="w-bp"><col class="w-tot">
+      <col><col class="w-mrp"><col class="w-rate"><col class="w-gst">
+      <col class="w-bp"><col class="w-tot">
     </colgroup>
     <thead>
       <tr>
         <th>SR#</th><th>CODE</th><th>QTY</th><th>PRODUCT IMAGE</th>
-        <th>ITEM NAME</th><th>MRP</th><th>BEST PRICE</th><th>TOTAL</th>
+        <th>ITEM NAME</th><th>MRP</th><th>RATE</th><th>GST %</th>
+        <th>BEST PRICE</th><th>TOTAL</th>
       </tr>
     </thead>
     <tbody>
