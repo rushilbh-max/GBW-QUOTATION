@@ -1322,7 +1322,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <!-- Products table -->
     <div class="p-table-section">
       <table class="p-table">
-        <thead>
+        <thead id="p-thead">
           <tr>
             <th style="width:40px">Sr</th>
             <th style="width:110px">Code</th>
@@ -1494,6 +1494,10 @@ const grossUnit=item=>basicUnit(item)*(1+gstOf(item)/100);
 const _rndINR=n=>Math.round((Number(n)||0)+1e-9);
 const fmtG=n=>fmtN(_rndINR(n));
 const fmtGr=n=>fmt(_rndINR(n));
+// When true, renderPreview() emits the 10-column GST layout (Rate + GST %)
+// instead of the standard 8-column one. Only doPrintGST() turns it on.
+let GST_COLS=false;
+const unitBest=item=>GST_COLS?grossUnit(item):bp(item);
 function gstTotals(){
   let basic=0, gross=0, mrp=0, qty=0;
   S.items.forEach(i=>{ basic+=basicUnit(i)*i.qty; gross+=grossUnit(i)*i.qty; mrp+=i.mrp*i.qty; qty+=i.qty; });
@@ -2732,6 +2736,17 @@ function refreshList(){
 // ── RENDER PREVIEW ──
 function renderPreview(){
   const tot=totals();
+  const NCOL=GST_COLS?10:8;
+  if(GST_COLS){ const G=gstTotals(); tot.best=G.gross; tot.save=tot.mrp-G.gross; }
+  const pth=$('p-thead');
+  if(pth) pth.innerHTML = GST_COLS
+    ? '<tr><th style="width:34px">Sr</th><th style="width:96px">Code</th><th style="width:50px">Qty</th>'
+      +'<th style="width:78px">Image</th><th>Description</th><th class="td-mrp">MRP</th>'
+      +'<th class="td-rate">Rate</th><th class="td-gst">GST %</th>'
+      +'<th class="td-bp">Best Price</th><th class="td-total">Total</th></tr>'
+    : '<tr><th style="width:40px">Sr</th><th style="width:110px">Code</th><th style="width:60px">Qty</th>'
+      +'<th style="width:90px">Image</th><th>Description</th><th class="td-mrp">MRP</th>'
+      +'<th class="td-bp">Best Price</th><th class="td-total">Total</th></tr>';
   const now=new Date();
   const hh=now.getHours().toString().padStart(2,'0');
   const mm=now.getMinutes().toString().padStart(2,'0');
@@ -2757,7 +2772,11 @@ function renderPreview(){
 
   // Table body — bathroom mode or flat mode
   function makeItemRow(item, i){
-    const price=bp(item);
+    const price=unitBest(item);
+    const gstCells = GST_COLS
+      ? '<td class="td-rate"><div class="td-mrp-label">Rate</div><div class="td-mrp-val">'+fmtG(basicUnit(item))+'</div></td>'
+        +'<td class="td-gst"><div class="td-mrp-label">GST</div><div class="td-mrp-val">'+fmtN(gstOf(item))+'%</div></td>'
+      : '';
     const url=IMAGE_MAP[item.code]||'';
     const img=url
       ?`<div style="width:90px;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:90px;height:90px;object-fit:contain;display:block"/></div>`
@@ -2769,6 +2788,7 @@ function renderPreview(){
       <td class="td-img">${img}</td>
       <td class="td-name"><div class="td-name-val">${esc(item.desc||item.code)}</div></td>
       <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">${fmtN(item.mrp)}</div></td>
+      ${gstCells}
       <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">${fmtN(price)}</div></td>
       <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">${fmtN(price*item.qty)}</div></td>
     </tr>`;
@@ -2781,11 +2801,11 @@ function renderPreview(){
     S.bathrooms.forEach(bath=>{
       // Calculate bathroom totals
       let bMRP=0,bBest=0,bQty=0;
-      bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=bp(i)*i.qty;bQty+=i.qty;});
+      bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=unitBest(i)*i.qty;bQty+=i.qty;});
 
       // Bathroom header row — luxury cream band with deep-navy-blue name (prints clearly & high-contrast)
       allRows+=`<tr style="background:linear-gradient(135deg,#FBF6EA,#F4EAD2,#FBF6EA);page-break-inside:avoid;break-inside:avoid;border-top:3px solid #C9A84C;border-bottom:2px solid #D8C898;-webkit-print-color-adjust:exact;print-color-adjust:exact">
-        <td colspan="8" style="padding:13px 20px">
+        <td colspan="${NCOL}" style="padding:13px 20px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:12px">
               <span style="font-family:'Cinzel',serif;font-size:16px;color:#C9A84C;line-height:1">✦</span>
@@ -2812,6 +2832,7 @@ function renderPreview(){
           <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:500;color:#888">MRP</div>
           <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:600;color:#555">₹${fmtN(bMRP)}</div>
         </td>
+        ${GST_COLS?'<td style="padding:10px 8px;text-align:center"></td><td style="padding:10px 8px;text-align:center"></td>':''}
         <td style="padding:10px 8px;text-align:center"></td>
         <td style="padding:10px 10px;text-align:center">
           <div style="background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:80px">
@@ -2830,7 +2851,7 @@ function renderPreview(){
     let grandMRP=0,grandBest=0,grandItems=0;
     S.bathrooms.forEach(bath=>{
       let bMRP=0,bBest=0,bItems=0;
-      bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=bp(i)*i.qty;bItems+=i.qty;});
+      bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=unitBest(i)*i.qty;bItems+=i.qty;});
       grandMRP+=bMRP;grandBest+=bBest;grandItems+=bItems;
       summaryRows+=`<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${bItems} pcs</td><td>₹${fmtN(bMRP)}</td><td style="font-weight:700;color:#1A2535">₹${fmtN(bBest)}</td></tr>`;
     });
@@ -2840,7 +2861,7 @@ function renderPreview(){
     // FLAT MODE
     $('p-bathroom-summary').style.display='none';
     $('p-tbody').innerHTML=S.items.length===0
-      ?`<tr><td colspan="8" style="padding:30px;text-align:center;font-family:'Cormorant',serif;font-style:italic;color:#666;font-size:14px">No items added to this quotation</td></tr>`
+      ?`<tr><td colspan="${NCOL}" style="padding:30px;text-align:center;font-family:'Cormorant',serif;font-style:italic;color:#666;font-size:14px">No items added to this quotation</td></tr>`
       :S.items.map((item,i)=>makeItemRow(item,i+1)).join('');
   }
 
@@ -2864,12 +2885,13 @@ function renderPreview(){
             <span style="font-family:'Jost',sans-serif;font-size:15px;font-weight:500;color:#333;letter-spacing:.3px">₹${fmtN(tot.mrp)}</span>
           </div>
         </td>
+        ${GST_COLS?'<td style="padding:12px 10px;text-align:center"></td><td style="padding:12px 10px;text-align:center"></td>':''}
         <td style="padding:12px 10px;width:92px;text-align:center"></td>
         <td style="padding:12px 10px;width:98px;text-align:center">
           <div style="display:inline-flex;flex-direction:column;align-items:center;background:#1A2535;border-radius:5px;padding:6px 10px;width:100%;position:relative;overflow:hidden">
             <span style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,transparent)"></span>
             <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:3px">Best Price</span>
-            <span style="font-family:'Jost',sans-serif;font-size:16px;font-weight:700;color:#1A2535;letter-spacing:.5px">₹${fmtN(tot.best)}</span>
+            <span style="font-family:'Jost',sans-serif;font-size:16px;font-weight:700;color:#E8D08A;letter-spacing:.5px">₹${fmtN(tot.best)}</span>
           </div>
         </td>
       </tr>
@@ -2881,8 +2903,10 @@ function renderPreview(){
 }
 
 // ── PDF EXPORT ──
-function doPrint(){
-  renderPreview();
+// Builds the full branded print document from the live preview DOM.
+// Shared by the standard Export PDF and the GST-format export so both
+// documents are byte-for-byte the same design.
+function buildBrandedPrintHTML(){
   // Extract cover image src separately
   const coverImg = document.querySelector('.p-cover-img');
   const coverSrc = coverImg ? coverImg.src : '';
@@ -3223,11 +3247,22 @@ html, body{
 <body>${coverSrc ? `<div class="cover-wrapper"><img src="${coverSrc}" alt="Cover"/></div>` : ''}${quotationHTML}
 <script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script>
 </body></html>`;
-  const blob=new Blob([printHTML],{type:'text/html'});
+  return printHTML;
+}
+
+
+function openPrintDoc(html){
+  const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const win=window.open(url,'_blank');
   if(!win)setTimeout(()=>window.print(),300);
   setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+// ── PDF EXPORT ──
+function doPrint(){
+  renderPreview();
+  openPrintDoc(buildBrandedPrintHTML());
 }
 
 // ── MRP-ONLY PDF EXPORT ─────────────────────────────────────────────
@@ -3674,249 +3709,46 @@ function doPlainPrint(){
 
 /* ════════════════════════════════════════════════════════════════════════
    GST FORMAT EXPORT
-   Same plain-document styling as the Plain PDF; column set taken from the
-   GST quotation format:
-     SR# · CODE · QTY · PRODUCT IMAGE · ITEM NAME · MRP · RATE · GST % ·
-     BEST PRICE · TOTAL
+   Identical to the branded Export PDF — same cover page, same luxury
+   document, same styling. The ONLY difference is two extra columns:
+     Sr · Code · Qty · Image · Description · MRP · RATE · GST % ·
+     Best Price · Total
    RATE       = pre-tax unit price (NRP BASIC / SDP BASIC after disc/margin)
-   BEST PRICE = RATE + GST      TOTAL = BEST PRICE x QTY
-   Line totals and the grand total are summed UNROUNDED, then rounded once.
+   Best Price = RATE + GST
+   It works by rendering the preview in 10-column mode, reusing
+   buildBrandedPrintHTML(), then restoring the preview to normal.
    ════════════════════════════════════════════════════════════════════════ */
+
+// Column widths for the 10-column layout. Appended after the standard
+// stylesheet so these win over the 8-column width overrides.
+const GST_COL_CSS = '\n<style id="gst-column-widths">\n'
+  + '.td-sr{width:4% !important}\n'
+  + '.td-code{width:15% !important}\n'
+  + '.td-qty{width:6% !important}\n'
+  + '.td-img{width:10% !important}\n'
+  + '.td-name{width:11% !important}\n'
+  + '.td-mrp{width:10% !important}\n'
+  + '.td-rate{width:10% !important}\n'
+  + '.td-gst{width:6% !important}\n'
+  + '.td-bp{width:13% !important}\n'
+  + '.td-total{width:15% !important}\n'
+  + '.td-rate,.td-gst{text-align:center !important;background:#FFFFFF}\n'
+  + '.p-table th,.p-table td{padding-left:5px !important;padding-right:5px !important}\n'
+  + '.td-mrp-val,.td-bp-val,.td-total-val{font-size:13px !important}\n'
+  + '.td-code-val{font-size:11px !important}\n'
+  + '</style>\n';
+
 function doPrintGST(){
   if(!S.items || !S.items.length){ alert('Add some products to the quotation first.'); return; }
-
-  var T      = gstTotals();
-  var inBath = S.bathrooms && S.bathrooms.length > 0;
-
-  // ---- branded assets straight off the live preview DOM ----
-  var gbwEl = document.querySelector('.p-logo-l');
-  var jqEl  = document.querySelector('.p-logo-r');
-  var gbwSrc = gbwEl ? gbwEl.src : '';
-  var jqSrc  = jqEl  ? jqEl.src  : '';
-
-  // ---- date / time stamp ----
-  var now  = new Date();
-  var mins = now.getMinutes().toString().padStart(2,'0');
-  var ampm = now.getHours() >= 12 ? 'PM' : 'AM';
-  var h12  = (now.getHours() % 12 || 12).toString().padStart(2,'0');
-  var MON  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var dv   = $('f-date').value;
-  var dObj = dv ? new Date(dv) : now;
-  var dateStr = dObj.getDate() + '-' + MON[dObj.getMonth()] + '-' + dObj.getFullYear();
-  var stamp = dateStr + ', ' + h12 + ':' + mins + ' ' + ampm;
-
-  // ---- optional customer strip (hidden when no name is entered) ----
-  var cName=$('f-name').value, cPhone=$('f-phone').value, cAddr=$('f-addr').value, cGst=$('f-gst').value;
-  var custHTML = '';
-  if(cName){
-    custHTML = '<table class="cust"><tr>'
-             +   '<td><b>CUSTOMER:</b> ' + esc(cName)
-             +     (cPhone ? ' &nbsp;&middot;&nbsp; ' + esc(cPhone) : '')
-             +     (cGst   ? ' &nbsp;&middot;&nbsp; GSTIN: ' + esc(cGst) : '')
-             +     (cAddr  ? '<br><b>SITE:</b> ' + esc(cAddr) : '')
-             +   '</td>'
-             +   '<td class="cust-r"><b>QUOTATION NO:</b> ' + esc($('f-qno').value || '\u2014') + '</td>'
-             + '</tr></table>';
+  GST_COLS = true;
+  try{
+    renderPreview();
+    var html = buildBrandedPrintHTML().replace('</head>', GST_COL_CSS + '</head>');
+    openPrintDoc(html);
+  } finally {
+    GST_COLS = false;
+    renderPreview();          // put the on-screen preview back to 8 columns
   }
-
-  // ---- one product row ----
-  function gstRow(item, sr){
-    var basic = basicUnit(item);
-    var gross = grossUnit(item);
-    var url   = IMAGE_MAP[item.code] || '';
-    var img   = url
-      ? '<div class="imgbox"><img src="' + url + '" onerror="this.parentNode.innerHTML=&quot;&quot;" alt=""/></div>'
-      : '<div class="imgbox"></div>';
-    return '<tr>'
-      +  '<td class="c-sr">' + sr + '</td>'
-      +  '<td class="c-code">' + esc(item.code) + '</td>'
-      +  '<td class="c-qty">' + item.qty + ' PCS</td>'
-      +  '<td class="c-img">' + img + '</td>'
-      +  '<td class="c-name">' + esc(item.desc || item.code) + '</td>'
-      +  '<td class="c-num">' + fmtG(item.mrp) + '</td>'
-      +  '<td class="c-num">' + fmtG(basic) + '</td>'
-      +  '<td class="c-gst">' + fmtN(gstOf(item)) + '</td>'
-      +  '<td class="c-num">' + fmtG(gross) + '</td>'
-      +  '<td class="c-num c-tot">' + fmtG(gross * item.qty) + '</td>'
-      + '</tr>';
-  }
-
-  // ---- body: bathroom-wise or flat ----
-  var rows = '', bsum = '';
-  if(inBath){
-    var sr = 0, sumBody = '', gMRP = 0, gBasic = 0, gGross = 0, gQty = 0;
-    S.bathrooms.forEach(function(bath){
-      var bMRP = 0, bBasic = 0, bGross = 0, bQty = 0;
-      bath.items.forEach(function(i){
-        bMRP   += i.mrp * i.qty;
-        bBasic += basicUnit(i) * i.qty;
-        bGross += grossUnit(i) * i.qty;
-        bQty   += i.qty;
-      });
-      gMRP += bMRP; gBasic += bBasic; gGross += bGross; gQty += bQty;
-
-      rows += '<tr class="bath-hd"><td colspan="10">' + esc(bath.name)
-           +  ' &nbsp;&middot;&nbsp; ' + bath.items.length + ' product(s) &nbsp;&middot;&nbsp; ' + bQty + ' PCS</td></tr>';
-
-      bath.items.forEach(function(item){ sr++; rows += gstRow(item, sr); });
-
-      rows += '<tr class="bath-sub">'
-           +    '<td colspan="5">' + esc(bath.name) + ' \u2014 SUBTOTAL</td>'
-           +    '<td class="c-num">' + fmtG(bMRP) + '</td>'
-           +    '<td class="c-num">' + fmtG(bBasic) + '</td>'
-           +    '<td></td>'
-           +    '<td></td>'
-           +    '<td class="c-num c-tot">' + fmtG(bGross) + '</td>'
-           + '</tr>';
-
-      sumBody += '<tr><td>' + esc(bath.name) + '</td><td>' + bQty + ' PCS</td><td>' + fmtG(bMRP)
-              +  '</td><td>' + fmtG(bBasic) + '</td><td>' + fmtG(bGross - bBasic) + '</td><td>' + fmtG(bGross) + '</td></tr>';
-    });
-    bsum = '<table class="bsum">'
-         +   '<thead><tr><th>BATHROOM</th><th>ITEMS</th><th>MRP TOTAL</th><th>TAXABLE VALUE</th><th>GST</th><th>TOTAL</th></tr></thead>'
-         +   '<tbody>' + sumBody
-         +     '<tr class="grand"><td>TOTAL</td><td>' + gQty + ' PCS</td><td>' + fmtG(gMRP) + '</td><td>'
-         +       fmtG(gBasic) + '</td><td>' + fmtG(gGross - gBasic) + '</td><td>' + fmtG(gGross) + '</td></tr>'
-         +   '</tbody></table>';
-  } else {
-    rows = S.items.map(function(item, idx){ return gstRow(item, idx + 1); }).join('');
-  }
-
-  // ---- foot row: pcs · TOTAL MRP · GRAND TOTAL ----
-  var footRow = '<tr class="foot">'
-    +  '<td></td><td></td>'
-    +  '<td class="c-qty foot-strong">' + T.qty + ' PCS</td>'
-    +  '<td colspan="5" class="foot-mrp">TOTAL MRP= RS.' + fmtG(T.mrp) + '/-</td>'
-    +  '<td class="foot-grand-lbl" style="white-space:nowrap">GRAND TOTAL</td>'
-    +  '<td class="c-num foot-grand-val">' + fmtG(T.gross) + '</td>'
-    + '</tr>';
-
-  // ---- tax recap strip ----
-  var taxStrip = '<table class="tax">'
-    +  '<tr>'
-    +    '<td>TAXABLE VALUE<span>' + fmtGr(T.basic) + '</span></td>'
-    +    '<td>GST<span>' + fmtGr(T.tax) + '</span></td>'
-    +    '<td class="tax-grand">GRAND TOTAL<span>' + fmtGr(T.gross) + '</span></td>'
-    +  '</tr>'
-    + '</table>';
-
-  var html = '<!DOCTYPE html><html><head>'
-+ '<meta charset="UTF-8"/>'
-+ '<meta name="viewport" content="width=device-width,initial-scale=1.0"/>'
-+ '<title>Quotation ' + esc($('f-qno').value || '') + ' - GST Format</title>'
-+ '<style>'
-+ '  @page{ size:A4 portrait; margin:10mm 8mm; }'
-+ '  *{ box-sizing:border-box }'
-+ '  body{ font-family:Arial,Helvetica,sans-serif; color:#000; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact }'
-+ '  table{ width:100%; border-collapse:collapse; table-layout:fixed }'
-+ '  th,td{ border:1px solid #000; padding:5px 4px; font-size:10px; vertical-align:middle; word-wrap:break-word; text-align:center }'
-+ '  thead th{ background:#fff; font-weight:700; letter-spacing:.2px }'
-+ '  thead{ display:table-header-group }'
-+ '  tbody tr{ page-break-inside:avoid; break-inside:avoid }'
-/* letterhead */
-+ '  .lh{ margin-bottom:8px }'
-+ '  .lh-stamp{ font-size:10px; margin-bottom:4px }'
-+ '  .lh-row,.lh-row td{ border:none; padding:0 }'
-+ '  .lh-side{ width:110px; text-align:center }'
-+ '  .lh-side img{ max-width:100px; max-height:62px; object-fit:contain }'
-+ '  .lh-mid img{ max-width:290px; max-height:66px; object-fit:contain }'
-+ '  .lh-addr{ text-align:center; font-size:12px; font-weight:700; margin-top:6px; letter-spacing:.4px }'
-+ '  .lh-meta,.lh-meta td{ border:none; padding:0 }'
-+ '  .lh-meta{ margin-top:3px; font-size:11px; font-weight:700 }'
-+ '  .lh-meta .l{ text-align:left } .lh-meta .r{ text-align:right }'
-/* customer strip */
-+ '  .cust{ margin-bottom:6px } .cust td{ font-size:10px; text-align:left; padding:5px 7px }'
-+ '  .cust .cust-r{ width:190px; text-align:right }'
-/* main table columns */
-+ '  .c-sr{ font-weight:700 }'
-+ '  th.nw{ white-space:nowrap }'
-+ '  .c-code{ font-weight:700; font-size:10px }'
-+ '  .c-qty{ font-weight:700 }'
-+ '  .c-img{ padding:3px }'
-+ '  .c-name{ font-size:9.5px; font-weight:700; line-height:1.25 }'
-+ '  .c-num{ font-weight:700; font-variant-numeric:tabular-nums }'
-+ '  .c-gst{ font-weight:700 }'
-+ '  .c-tot{ font-size:11px }'
-+ '  .imgbox{ width:92px; height:92px; background:#fff; margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden }'
-+ '  .imgbox img{ width:92px; height:92px; object-fit:contain; display:block }'
-+ '  col.w-sr{width:32px} col.w-code{width:108px} col.w-qty{width:46px} col.w-img{width:100px}'
-+ '  col.w-mrp{width:58px} col.w-rate{width:58px} col.w-gst{width:42px} col.w-bp{width:80px} col.w-tot{width:68px}'
-/* bathroom-wise */
-+ '  tr.bath-hd td{ background:#e9e9e9; font-weight:700; font-size:11px; letter-spacing:.5px; text-transform:uppercase; text-align:left; padding:8px 9px }'
-+ '  tr.bath-hd{ page-break-after:avoid; break-after:avoid }'
-+ '  tr.bath-sub td{ background:#f5f5f5; font-weight:700 }'
-+ '  tr.bath-sub td:first-child{ text-align:right; font-style:italic; padding-right:9px }'
-+ '  tr.bath-sub{ page-break-before:avoid; break-before:avoid }'
-+ '  .bsum{ table-layout:auto; margin-top:14px; page-break-inside:avoid; break-inside:avoid }'
-+ '  .bsum th,.bsum td{ padding:6px 10px; font-size:10px }'
-+ '  .bsum td:first-child{ text-align:left; font-weight:700 }'
-+ '  .bsum tr.grand td{ background:#e6e6e6; font-weight:700; font-size:11px }'
-/* foot row */
-+ '  tr.foot td{ font-size:12px }'
-+ '  .foot-strong{ font-weight:700 }'
-+ '  .foot-mrp{ font-style:italic; font-weight:700; font-size:12px }'
-+ '  .foot-grand-lbl{ font-weight:700; font-size:9px; letter-spacing:-.2px }'
-+ '  .foot-grand-val{ font-weight:700; font-size:13px }'
-/* tax recap + payment panel */
-+ '  .tax{ margin-top:10px; page-break-inside:avoid; break-inside:avoid }'
-+ '  .tax td{ padding:7px 10px; font-size:10px; font-weight:700; letter-spacing:.4px }'
-+ '  .tax td span{ display:block; font-size:13px; margin-top:2px }'
-+ '  .tax .tax-grand{ background:#e6e6e6 }'
-+ '  .pay{ margin-top:10px; page-break-inside:avoid; break-inside:avoid }'
-+ '  .pay td{ font-size:9.5px; text-align:left; vertical-align:top; padding:7px 9px; line-height:1.5 }'
-+ '  .pay .pay-m{ text-align:center; font-style:italic; font-weight:700; font-size:10px; vertical-align:middle }'
-+ '  .pay b{ font-size:9.5px }'
-+ '</style>'
-+ '</head><body>'
-+ '<div class="lh">'
-+   '<div class="lh-stamp">' + esc(stamp) + '</div>'
-+   '<table class="lh-row"><tr>'
-+     '<td class="lh-side">' + (jqSrc  ? '<img src="' + jqSrc  + '" alt=""/>' : '') + '</td>'
-+     '<td class="lh-mid">'  + (gbwSrc ? '<img src="' + gbwSrc + '" alt=""/>' : '') + '</td>'
-+     '<td class="lh-side">' + (jqSrc  ? '<img src="' + jqSrc  + '" alt=""/>' : '') + '</td>'
-+   '</tr></table>'
-+   '<div class="lh-addr">57, ZONE-II, M.P NAGAR BHOPAL</div>'
-+   '<table class="lh-meta"><tr>'
-+     '<td class="l">(M) 9826050648, 8109683955</td>'
-+     '<td class="r">GSTIN:- 23AAPFG4819C1ZK</td>'
-+   '</tr></table>'
-+ '</div>'
-+ custHTML
-+ '<table>'
-+   '<colgroup>'
-+     '<col class="w-sr"><col class="w-code"><col class="w-qty"><col class="w-img">'
-+     '<col><col class="w-mrp"><col class="w-rate"><col class="w-gst"><col class="w-bp"><col class="w-tot">'
-+   '</colgroup>'
-+   '<thead><tr>'
-+     '<th class="nw">SR#</th><th>CODE</th><th class="nw">QTY</th><th>PRODUCT IMAGE</th><th>ITEM NAME</th>'
-+     '<th class="nw">MRP</th><th class="nw">RATE</th><th class="nw">GST %</th><th>BEST PRICE</th><th class="nw">TOTAL</th>'
-+   '</tr></thead>'
-+   '<tbody>' + rows + footRow + '</tbody>'
-+ '</table>'
-+ bsum
-+ taxStrip
-+ '<table class="pay"><tr>'
-+   '<td style="width:34%">BANK DETAILS:-<br>'
-+     'A/C NAME- GRACE BATH WORLD<br>'
-+     'BANK NAME- KOTAK MAHINDRA BANK<br>'
-+     'A/c No.- 8711749089<br>'
-+     'IFSC code:- KKBK0005886<br>'
-+     'GOOGLE PAY / PHONEPE -9826050648<br>'
-+     'UPI ID:- 9826050648@ybl</td>'
-+   '<td class="pay-m">Let\'s get started! Have questions or need guidance? '
-+     'We\'re here to help. Ask us anything, and we\'ll do our best to support you.</td>'
-+   '<td style="width:29%">CONTACT DETAILS<br>'
-+     'MR. B.L BHATIA- 9826050648<br>'
-+     'MR. RUSHIL BHATIA- 8109683955</td>'
-+ '</tr></table>'
-+ '<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script>'
-+ '</body></html>';
-
-  var blob = new Blob([html],{type:'text/html'});
-  var url  = URL.createObjectURL(blob);
-  var win  = window.open(url,'_blank');
-  if(!win) setTimeout(function(){ window.print(); },300);
-  setTimeout(function(){ URL.revokeObjectURL(url); },60000);
 }
 
 // ── PRODUCT EDITOR (BAKE-IN APPROACH) ──
