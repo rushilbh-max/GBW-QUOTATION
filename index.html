@@ -844,9 +844,23 @@ html, body{
 .se-loaded-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .se-loaded-h .t{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#4ADF90}
 .se-loaded-item{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--ink3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:9px 12px}
-.se-loaded-item .li-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l)}
+.se-loaded-item .li-l{min-width:0;flex:1}
+.se-loaded-item .li-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);word-break:break-word}
+.se-loaded-item .li-name .li-tag{font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--gold);vertical-align:middle}
 .se-loaded-item .li-meta{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2)}
-.se-loaded-item .li-x{background:transparent;border:none;color:#E06060;font-size:15px;font-weight:700;cursor:pointer}
+.se-loaded-item .li-acts{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.se-loaded-item .li-e{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);border-radius:5px;padding:6px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .15s}
+.se-loaded-item .li-e:active,.se-loaded-item .li-e:hover{background:rgba(201,168,76,0.14);border-color:rgba(201,168,76,0.7)}
+.se-loaded-item .li-x{background:transparent;border:none;color:#E06060;font-size:15px;font-weight:700;cursor:pointer;padding:0 2px}
+.se-loaded-item.editing{border-color:rgba(201,168,76,0.75);background:rgba(201,168,76,0.10)}
+.se-loaded-item.editing .li-e{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-color:transparent}
+
+/* ── RE-EDIT MODE BANNER (editor) ── */
+#se-ed-mode{display:none;align-items:center;justify-content:space-between;gap:10px;background:rgba(201,168,76,0.13);border:1px solid rgba(201,168,76,0.45);border-radius:6px;padding:9px 12px}
+#se-ed-mode .em-t{font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);line-height:1.4;min-width:0}
+#se-ed-mode .em-t i{display:block;font-family:'Cormorant',serif;font-style:italic;font-weight:700;font-size:15px;letter-spacing:0;text-transform:none;color:#fff;margin-top:1px;word-break:break-word}
+#se-ed-mode .em-t small{display:block;font-size:9px;font-weight:600;letter-spacing:.3px;color:var(--muted2);text-transform:none;margin-top:2px}
+#se-ed-mode .em-b{flex-shrink:0}
 
 /* ── TOAST ── */
 #se-toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translateX(-50%) translateY(20px);background:#0D1520;border:1px solid rgba(201,168,76,0.5);color:var(--gold-l);font-family:'Jost',sans-serif;font-size:13px;font-weight:600;padding:12px 20px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:all .3s;z-index:10000;max-width:90vw;text-align:center}
@@ -1064,7 +1078,8 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <!-- EDITOR -->
     <div id="se-editor">
       <div class="se-ed-head">
-        <div class="se-head" style="border:none;padding:0;text-align:left">Editing Quotation</div>
+        <div class="se-head" id="se-ed-title" style="border:none;padding:0;text-align:left">Editing Quotation</div>
+        <div id="se-ed-mode"></div>
         <div class="se-ed-namewrap">
           <label>Bathroom name (for this quote)</label>
           <input id="se-bath-name" placeholder="e.g. Master Bathroom" autocomplete="off">
@@ -1089,7 +1104,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <div class="se-ed-actions">
         <button class="se-btn" onclick="addEditRow()">+ Add row</button>
         <button class="se-btn red" onclick="closeEditor()">Cancel</button>
-        <button class="se-btn gold" style="flex:1" onclick="loadBathroomToQuotation()">➕ Add this bathroom to Quotation</button>
+        <button class="se-btn gold" id="se-ed-save" style="flex:1" onclick="loadBathroomToQuotation()">➕ Add this bathroom to Quotation</button>
       </div>
     </div>
 
@@ -4046,6 +4061,12 @@ function saveTabState(){ try{ localStorage.setItem(CACHE_QTABS,JSON.stringify({t
 const CACHE_QUOTES= 'gbw_quotes_v1';
 let   QUOTES = [];     // [{name, tab, items:[{code,qty}]}]  (areas flattened per quotation)
 let   EDIT   = null;   // working copy in the editor: {name, rows:[{code,qty}]}
+/* When re-editing a bathroom that is already loaded into the quotation we keep a
+   REFERENCE to that bathroom object (not its index) — the index can shift when
+   other bathrooms are removed, and the whole array can be rebuilt by the builder
+   or a bathroom-wise import. indexOf() then tells us safely whether the target
+   still exists; if it doesn't, saving falls back to "add as new". */
+let   EDIT_REF = null;
 let   _quotesSyncing = false;
 
 function cacheGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -4441,7 +4462,7 @@ function quoteMRP(q){ let m=0; q.items.forEach(it=>{ const p=PMAP[it.code]; if(p
 function quotePcs(q){ let n=0; q.items.forEach(it=>n+=it.qty); return n; }
 
 /* ── search page render ── */
-function renderSearchPage(){ renderSearchResults(); renderLoadedPanel(); closeQuoteDD(); }
+function renderSearchPage(){ syncEditorMode(); renderSearchResults(); renderLoadedPanel(); closeQuoteDD(); }
 
 // Build the scrollable quotation dropdown (does not force it open).
 function renderSearchResults(){
@@ -4467,19 +4488,85 @@ function openQuoteDD(){ const dd=$('se-quote-dd'); if(dd){ renderSearchResults()
 function closeQuoteDD(){ const dd=$('se-quote-dd'); if(dd) dd.classList.remove('open'); }
 
 /* ── editor ── */
+/* Index of the loaded bathroom currently being re-edited, or -1 for "add new". */
+function editTargetIndex(){
+  if(!EDIT_REF || !S.bathrooms || !S.bathrooms.length) return -1;
+  return S.bathrooms.indexOf(EDIT_REF);
+}
+
+/* Repaint the editor chrome (title / banner / save button) for the current mode. */
+function syncEditorMode(){
+  const ti=editTargetIndex(), editing=ti>=0;
+  if(!editing) EDIT_REF=null;                       // drop a stale reference
+  const box=$('se-ed-mode');
+  if(box){
+    if(editing){
+      box.style.display='flex';
+      box.innerHTML='<div class="em-t">✎ Re-editing bathroom '+(ti+1)+'<i>'+esc(S.bathrooms[ti].name)+'</i>'+
+        '<small>Saving replaces it in place, keeping its position.</small></div>'+
+        '<button class="se-btn em-b" style="padding:6px 10px" onclick="stopReEdit()">Add as new</button>';
+    }else{
+      box.style.display='none'; box.innerHTML='';
+    }
+  }
+  const t=$('se-ed-title'); if(t) t.textContent = editing ? 'Re-editing Loaded Bathroom' : 'Editing Quotation';
+  const b=$('se-ed-save'); if(b) b.innerHTML = editing ? '💾 Save changes' : '➕ Add this bathroom to Quotation';
+}
+
+/* Leave re-edit mode but keep everything typed — the next save appends instead. */
+function stopReEdit(){
+  if(editTargetIndex()<0) return;
+  EDIT_REF=null;
+  syncEditorMode(); renderLoadedPanel();
+  toast('This will now be added as a NEW bathroom');
+}
+
+/* Pull an already-loaded bathroom back into the editor. */
+function editLoadedBathroom(i){
+  const b=(S.bathrooms||[])[i];
+  if(!b){ toast('That bathroom is no longer in the quotation'); renderLoadedPanel(); return; }
+  EDIT_REF=b;
+  EDIT={ name:b.name, rows:b.items.map(it=>({code:it.code, qty:Math.max(0,parseInt(it.qty)||0)})) };
+  const nm=$('se-bath-name'); if(nm) nm.value=b.name;
+  const sb=$('se-search-box'); if(sb) sb.value='';
+  closeQuoteDD(); hideEdCodeDrop();
+  const ed=$('se-editor'); if(ed) ed.style.display='flex';
+  renderQuoteEditor();
+  syncEditorMode();
+  renderLoadedPanel();
+  if(ed) ed.scrollIntoView({behavior:'smooth',block:'start'});
+  toast('Editing “'+b.name+'” — '+b.items.length+' products');
+}
+
 function loadQuoteIntoEditor(idx){
   const q=QUOTES[idx]; if(!q) return;
-  EDIT={ name:q.name, rows:q.items.map(it=>({code:it.code,qty:it.qty})) };
-  const nm=$('se-bath-name'); if(nm) nm.value=q.name;
+  let ti=editTargetIndex();
+  if(ti>=0){
+    const bn=S.bathrooms[ti].name;
+    const replace=confirm('You are re-editing the loaded bathroom “'+bn+'”.\n\n'+
+      'OK — replace its contents with “'+q.name+'” (keeps its position and name)\n'+
+      'Cancel — add “'+q.name+'” as a NEW bathroom instead');
+    if(!replace){ EDIT_REF=null; ti=-1; }
+  }
+  const nameToUse = ti>=0 ? S.bathrooms[ti].name : q.name;   // re-edit keeps the bathroom's own name
+  EDIT={ name:nameToUse, rows:q.items.map(it=>({code:it.code,qty:it.qty})) };
+  const nm=$('se-bath-name'); if(nm) nm.value=nameToUse;
   const sb=$('se-search-box'); if(sb) sb.value='';
   closeQuoteDD();
   $('se-editor').style.display='flex';
   renderQuoteEditor();
+  syncEditorMode();
+  renderLoadedPanel();
   $('se-editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function closeEditor(){ EDIT=null; hideEdCodeDrop(); $('se-editor').style.display='none'; }
+function closeEditor(){
+  EDIT=null; EDIT_REF=null;
+  hideEdCodeDrop();
+  $('se-editor').style.display='none';
+  syncEditorMode(); renderLoadedPanel();
+}
 function addEditRow(){
-  if(!EDIT){ EDIT={name:($('se-bath-name')&&$('se-bath-name').value)||'New bathroom', rows:[]}; $('se-editor').style.display='flex'; }
+  if(!EDIT){ EDIT_REF=null; EDIT={name:($('se-bath-name')&&$('se-bath-name').value)||'New bathroom', rows:[]}; $('se-editor').style.display='flex'; syncEditorMode(); }
   EDIT.rows.push({code:'',qty:1});
   renderQuoteEditor();
 }
@@ -4610,23 +4697,39 @@ function rebuildItemsFromBathrooms(){
   }));
   S.items=order;
 }
+/* Manual stock overrides are keyed by code — keep the ones still in the quote,
+   drop the rest, instead of wiping every override on each add/edit. */
+function pruneStockOverrides(){
+  const keep={};
+  (S.items||[]).forEach(it=>{ if(S.stockOverrides[it.code]) keep[it.code]=S.stockOverrides[it.code]; });
+  S.stockOverrides=keep;
+}
 function loadBathroomToQuotation(){
   if(!EDIT){ toast('Nothing to load'); return; }
   const items=editorResolvedItems();
   if(!items.length){ toast('Add at least one valid product first'); return; }
-  let name=(($('se-bath-name')&&$('se-bath-name').value)||'').trim();
-  if(!name) name='Bathroom '+(((S.bathrooms&&S.bathrooms.length)||0)+1);
   if(!S.bathrooms) S.bathrooms=[];
-  S.bathrooms.push({name, items});
+  const ti=editTargetIndex();
+  const lost = (EDIT_REF && ti<0);                 // target vanished (builder reset / re-import)
+  let name=(($('se-bath-name')&&$('se-bath-name').value)||'').trim();
+  if(!name) name = ti>=0 ? S.bathrooms[ti].name : ('Bathroom '+(S.bathrooms.length+1));
+  if(ti>=0){
+    S.bathrooms[ti].name=name;                     // mutate in place: keeps position + reference
+    S.bathrooms[ti].items=items;
+  }else{
+    S.bathrooms.push({name, items});
+  }
   rebuildItemsFromBathrooms();
-  S.stockOverrides={};
+  pruneStockOverrides();
   cancelInsert();
   showBathroomModeBar();
   refreshAll();
-  renderLoadedPanel();
-  EDIT=null;
+  EDIT=null; EDIT_REF=null;
   $('se-editor').style.display='none';
-  toast('“'+name+'” added — '+items.length+' products');
+  syncEditorMode();
+  renderLoadedPanel();
+  if(lost) toast('Original bathroom was gone — added “'+name+'” as new');
+  else toast('“'+name+'” '+(ti>=0?'updated':'added')+' — '+items.length+' products');
 }
 
 /* ── loaded-bathrooms panel ── */
@@ -4636,25 +4739,42 @@ function renderLoadedPanel(){
   if(!S.bathrooms||!S.bathrooms.length){ panel.style.display='none'; return; }
   panel.style.display='flex';
   const t=$('se-loaded-t'); if(t) t.textContent='Loaded into quotation · '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s');
+  const ei=editTargetIndex();
   list.innerHTML=S.bathrooms.map((b,i)=>{
     let pcs=0,mrp=0; b.items.forEach(it=>{pcs+=it.qty;mrp+=it.mrp*it.qty;});
-    return '<div class="se-loaded-item"><div><div class="li-name">'+esc(b.name)+'</div>'+
-      '<div class="li-meta">'+b.items.length+' products · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
-      '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button></div>';
+    const on=(i===ei);
+    return '<div class="se-loaded-item'+(on?' editing':'')+'">'+
+      '<div class="li-l"><div class="li-name">'+esc(b.name)+(on?' <span class="li-tag">• EDITING</span>':'')+'</div>'+
+      '<div class="li-meta">'+b.items.length+' product'+(b.items.length===1?'':'s')+' · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
+      '<div class="li-acts">'+
+        '<button class="li-e" onclick="editLoadedBathroom('+i+')" title="Re-edit this bathroom">✎ '+(on?'Editing':'Edit')+'</button>'+
+        '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button>'+
+      '</div></div>';
   }).join('');
 }
 function removeLoadedBathroom(i){
   if(!S.bathrooms||!S.bathrooms[i]) return;
+  const b=S.bathrooms[i];
+  if(!confirm('Remove “'+b.name+'” from the quotation?')) return;
+  const wasEditing=(EDIT_REF===b);
   S.bathrooms.splice(i,1);
+  if(wasEditing){ EDIT=null; EDIT_REF=null; hideEdCodeDrop(); const ed=$('se-editor'); if(ed) ed.style.display='none'; }
   if(S.bathrooms.length) rebuildItemsFromBathrooms(); else S.items=[];
+  pruneStockOverrides();
   showBathroomModeBar();
   refreshAll();
+  syncEditorMode();
   renderLoadedPanel();
+  toast('“'+b.name+'” removed');
 }
 function clearLoadedQuotation(){
+  if(S.bathrooms && S.bathrooms.length && !confirm('Clear all '+S.bathrooms.length+' loaded bathroom(s) from the quotation?')) return;
   S.bathrooms=[]; S.items=[]; S.stockOverrides={};
+  EDIT=null; EDIT_REF=null; hideEdCodeDrop();
+  const ed=$('se-editor'); if(ed) ed.style.display='none';
   showBathroomModeBar();
   refreshAll();
+  syncEditorMode();
   renderLoadedPanel();
   toast('Cleared loaded quotation');
 }
