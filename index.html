@@ -181,6 +181,49 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .p-del-btn{width:34px;height:34px;background:rgba(180,40,30,0.1);border:1px solid rgba(180,40,30,0.2);border-radius:var(--r-sm);color:#C05050;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
 .p-del-btn:active{background:rgba(180,40,30,0.2)}
 
+/* ══ COMPACT ROW VIEW (Products) — one slim line per item ══ */
+.pl-viewbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 8px}
+.pl-viewbar .plv-info{font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.4px;color:var(--muted2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-viewtog{display:flex;border:1px solid rgba(201,168,76,0.3);border-radius:5px;overflow:hidden;flex-shrink:0}
+.pl-viewtog button{background:transparent;border:none;color:var(--muted2);font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:6px 11px;cursor:pointer;transition:all .15s}
+.pl-viewtog button.on{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink)}
+
+.pl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--ink2);border:1px solid rgba(255,255,255,0.05);border-radius:var(--r)}
+.pl-tbl{width:100%;border-collapse:collapse;min-width:580px}
+.pl-tbl th{background:var(--ink3);font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2);text-align:left;padding:7px 6px;border-bottom:1px solid rgba(201,168,76,0.2);white-space:nowrap}
+.pl-tbl td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;white-space:nowrap}
+.pl-tbl tbody tr:last-child td{border-bottom:none}
+.pl-tbl tbody tr:hover{background:rgba(201,168,76,0.05)}
+.pl-tbl tbody tr.ins-here td{background:rgba(201,168,76,0.10)}
+.pl-sr{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted);text-align:center}
+.pl-img{width:32px;height:32px;object-fit:contain;background:#fff;border-radius:4px;display:block}
+.pl-img-ph{width:32px;height:32px;background:var(--ink5);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted)}
+.pl-prod{min-width:170px;max-width:280px}
+.pl-code{font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-l);letter-spacing:.4px;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.pl-name{font-family:'Jost',sans-serif;font-size:10px;color:#93AABD;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-mrp{font-family:'Jost',sans-serif;font-size:11px;color:#8FA8BC;text-align:right}
+.pl-best{font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:var(--gold-l);text-align:right}
+.pl-tot{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#D8E4EC;text-align:right}
+.pl-ctrl{padding:4px 6px !important}
+.pl-ctrl-inner{display:flex;align-items:center;justify-content:flex-end;gap:7px}
+.pl-qty{display:flex;align-items:center;background:var(--ink3);border:1px solid rgba(255,255,255,0.08);border-radius:5px;overflow:hidden;width:74px;flex-shrink:0}
+.pl-qty button{width:26px;height:28px;background:transparent;border:none;color:var(--gold);font-size:15px;font-weight:400;line-height:1;cursor:pointer;flex-shrink:0;padding:0}
+.pl-qty button:active{background:rgba(201,168,76,0.16)}
+.pl-qty input{width:30px;height:28px;text-align:center;background:transparent;border:none;color:#D8E4EC;font-family:'Jost',sans-serif;font-size:12px;font-weight:700;outline:none;-moz-appearance:textfield}
+.pl-qty input::-webkit-outer-spin-button,.pl-qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.pl-acts{white-space:nowrap;text-align:right}
+/* Qty + ↑ ↓ ✕ live in ONE cell pinned to the right edge, so the controls stay
+   at the corner while the information columns scroll sideways on a phone.
+   Sticky cells sit above the row, so they need their own opaque background. */
+.pl-tbl th.pl-ctrl-h,.pl-tbl td.pl-ctrl{position:sticky;right:0;z-index:3;border-left:1px solid rgba(255,255,255,0.07);box-shadow:-9px 0 12px -7px rgba(0,0,0,0.65)}
+.pl-tbl th.pl-ctrl-h{background:var(--ink3);z-index:4;text-align:right}
+.pl-tbl td.pl-ctrl{background:var(--ink2)}
+.pl-tbl tbody tr:hover td.pl-ctrl{background:#18222F}
+.pl-tbl tbody tr.ins-here td.pl-ctrl{background:#1D2636}
+.pl-acts button{background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:4px;width:26px;height:28px;font-size:12px;font-weight:700;cursor:pointer;margin-left:3px;color:var(--gold);padding:0}
+.pl-acts button.del{color:#E06060;border-color:rgba(224,96,96,0.4)}
+.pl-acts button:active{background:rgba(201,168,76,0.12)}
+
 /* ══ TOTAL BAR ══ */
 #total-bar{
   flex-shrink:0;background:var(--ink2);
@@ -1930,6 +1973,7 @@ sD.addEventListener('touchend',e=>{e.preventDefault();const b=e.target.closest('
 //     adding/editing on the builder collapses any grouping (flat wins); loading a
 //     bathroom in Search & Edit (re)builds the grouping (bathroom-wise wins).
 let insertAt = null;   // builder insert position (index in S.items) or null
+let insertFrom = null; // {code,pos} — the row the insert was started from (row highlight)
 
 function toast(msg){
   const t=$('se-toast'); if(!t) return;
@@ -1965,15 +2009,19 @@ function beginInsert(code,pos){
   const idx=S.items.findIndex(i=>i.code===code);
   if(idx<0)return;
   insertAt = pos==='above' ? idx : idx+1;
+  insertFrom = {code:code, pos:pos};
   const bn=$('insert-banner'); const bt=$('insert-banner-txt');
   if(bt) bt.textContent='Inserting '+pos+' '+code+' — search a product to place it here';
   if(bn) bn.style.display='flex';
+  refreshList();
   if(typeof sI!=='undefined'){ sI.focus(); }
   $('search-zone').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function cancelInsert(){
-  insertAt=null;
+  const had = insertAt!==null;
+  insertAt=null; insertFrom=null;
   const bn=$('insert-banner'); if(bn) bn.style.display='none';
+  if(had) refreshList();
 }
 
 function setQty(code,n){
@@ -2709,13 +2757,80 @@ function refreshTotalBar(){
   $('t-best').textContent=fmt(tot.best);
 }
 
+/* ── Products list view: 'rows' = slim single-line table (default), 'cards' = the
+      original large product cards. Choice is remembered between sessions. ── */
+const PLIST_VIEW_KEY='gbw_plist_view_v1';
+let PLIST_VIEW='rows';
+try{ const _v=localStorage.getItem(PLIST_VIEW_KEY); if(_v==='cards'||_v==='rows') PLIST_VIEW=_v; }catch(e){}
+function setListView(v){
+  PLIST_VIEW=(v==='cards')?'cards':'rows';
+  try{ localStorage.setItem(PLIST_VIEW_KEY,PLIST_VIEW); }catch(e){}
+  refreshList();
+  const l=$('items-list'); if(l) l.scrollTop=0;
+}
+
+function plistViewBar(){
+  let pcs=0; S.items.forEach(i=>pcs+=i.qty);
+  return '<div class="pl-viewbar">'+
+    '<span class="plv-info">'+S.items.length+' product'+(S.items.length===1?'':'s')+' · '+pcs+' pcs</span>'+
+    '<span class="pl-viewtog">'+
+      '<button class="'+(PLIST_VIEW==='rows'?'on':'')+'" onclick="setListView(\'rows\')">▤ Rows</button>'+
+      '<button class="'+(PLIST_VIEW==='cards'?'on':'')+'" onclick="setListView(\'cards\')">▦ Cards</button>'+
+    '</span></div>';
+}
+
+/* Slim one-line-per-item table — same shape as the Search & Edit editor. */
+function plistRowsHTML(){
+  let html='<div class="pl-wrap"><table class="pl-tbl"><thead><tr>'+
+    '<th style="width:22px;text-align:center">#</th>'+
+    '<th style="width:40px">Img</th>'+
+    '<th>Product</th>'+
+    '<th style="width:58px;text-align:right">MRP</th>'+
+    '<th style="width:64px;text-align:right">Best</th>'+
+    '<th style="width:70px;text-align:right">Total</th>'+
+    '<th class="pl-ctrl-h" style="width:178px">Qty &nbsp;·&nbsp; Row</th>'+
+    '</tr></thead><tbody>';
+  html+=S.items.map((item,i)=>{
+    const price=bp(item);
+    const url=IMAGE_MAP[item.code]||'';
+    const c=esc(item.code);
+    const img=url
+      ? '<img class="pl-img" src="'+url+'" onerror="this.style.display=\'none\'" alt="">'
+      : '<div class="pl-img-ph">—</div>';
+    const hot=!!(insertFrom && insertFrom.code===item.code);
+    const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
+    return '<tr'+(hot?' class="ins-here"':'')+'>'+
+      '<td class="pl-sr">'+(hot?'<span style="color:var(--gold)">'+mark+'</span>':(i+1))+'</td>'+
+      '<td>'+img+'</td>'+
+      '<td class="pl-prod"><div class="pl-code">'+c+'</div>'+
+        '<div class="pl-name" title="'+esc(item.desc)+'">'+esc(item.desc)+'</div></td>'+
+      '<td class="pl-mrp">'+fmtN(item.mrp)+'</td>'+
+      '<td class="pl-best">'+fmtN(price)+'</td>'+
+      '<td class="pl-tot">'+fmtN(price*item.qty)+'</td>'+
+      '<td class="pl-ctrl"><div class="pl-ctrl-inner">'+
+        '<span class="pl-qty">'+
+          '<button onclick="setQty(\''+c+'\','+(item.qty-1)+')" title="Less">−</button>'+
+          '<input type="number" min="0" inputmode="numeric" value="'+item.qty+'" onchange="setQty(\''+c+'\',this.value)">'+
+          '<button onclick="setQty(\''+c+'\','+(item.qty+1)+')" title="More">+</button>'+
+        '</span>'+
+        '<span class="pl-acts">'+
+          '<button onclick="beginInsert(\''+c+'\',\'above\')" title="Add a product above this row">↑</button>'+
+          '<button onclick="beginInsert(\''+c+'\',\'below\')" title="Add a product below this row">↓</button>'+
+          '<button class="del" onclick="delItem(\''+c+'\')" title="Remove">✕</button>'+
+        '</span>'+
+      '</div></td></tr>';
+  }).join('');
+  return html+'</tbody></table></div>';
+}
+
 function refreshList(){
   const list=$('items-list');
   if(!S.items.length){
     list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Search above to add products</div></div>';
     return;
   }
-  list.innerHTML=S.items.map(item=>{
+  if(PLIST_VIEW==='rows'){ list.innerHTML=plistViewBar()+plistRowsHTML(); return; }
+  list.innerHTML=plistViewBar()+S.items.map(item=>{
     const price=bp(item);
     const url=IMAGE_MAP[item.code]||'';
     const img=url
