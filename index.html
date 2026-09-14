@@ -1207,7 +1207,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     </div>
 
     <div class="se-toolbar">
-      <span class="se-status" id="fq-status">Not set up yet.</span>
+      <span class="se-status" id="fq-status">—</span>
       <button class="se-btn" onclick="syncSavedQuotes(true)">↻ Refresh</button>
       <button class="se-btn" onclick="toggleQuoteApiSetup()">⚙</button>
     </div>
@@ -5103,7 +5103,8 @@ function hydrateSavedQuotes(){
 }
 async function syncSavedQuotes(manual){
   if(!qapiReady()){ setFqStatus('Not set up yet — tap ⚙ to paste your web app URL.'); renderQuoteResults(); return; }
-  setFqStatus('⏳ Loading saved quotations…');
+  setFqStatus(SAVED.length ? ('⏳ Refreshing… showing '+SAVED.length+' cached')
+                           : '⏳ Loading saved quotations…');
   const r=await qapiGet('list');
   if(r && r.ok && Array.isArray(r.quotes)){
     SAVED=r.quotes;
@@ -5131,7 +5132,8 @@ function renderQuotesPage(){
   fillQuoteApiPanel();
   renderOpenBanner();
   renderQuoteResults();
-  if(qapiReady() && !SAVED.length) syncSavedQuotes(false);
+  if(qapiReady()) syncSavedQuotes(false);
+  else setFqStatus('Not set up yet — tap ⚙ to paste your web app URL.');
 }
 function renderOpenBanner(){
   const b=$('fq-open'), t=$('fq-open-t');
