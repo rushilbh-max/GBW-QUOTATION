@@ -905,6 +905,26 @@ html, body{
 #se-ed-mode .em-t small{display:block;font-size:9px;font-weight:600;letter-spacing:.3px;color:var(--muted2);text-transform:none;margin-top:2px}
 #se-ed-mode .em-b{flex-shrink:0}
 
+/* ── FIND QUOTES SCREEN ── */
+#screen-quotes>.fq-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+20px);display:flex;flex-direction:column;gap:14px}
+.fq-setup{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.35);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.fq-setup .t{font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold)}
+.fq-setup .d{font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2);line-height:1.5}
+.fq-setup input{background:var(--ink4);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:10px 12px;color:#fff;font-size:13px;font-family:'Jost',sans-serif;outline:none;width:100%}
+.fq-setup input:focus{border-color:rgba(201,168,76,0.6)}
+.fq-setup label{font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:4px}
+.fq-card{background:var(--ink3);border:1px solid rgba(201,168,76,0.2);border-radius:9px;padding:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fq-card:active,.fq-card:hover{border-color:rgba(201,168,76,0.55);background:var(--ink4)}
+.fq-card .fq-l{min-width:0;flex:1}
+.fq-card .fq-n{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);letter-spacing:.3px;word-break:break-word}
+.fq-card .fq-q{font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--gold);margin-top:2px}
+.fq-card .fq-m{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px;line-height:1.5}
+.fq-card .fq-r{text-align:right;flex-shrink:0}
+.fq-card .fq-mrp{font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:#D8E4EC}
+.fq-card .fq-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer;padding:4px 2px;margin-top:2px}
+.fq-list{display:flex;flex-direction:column;gap:8px}
+.fq-open{background:rgba(42,157,96,0.08);border:1px solid rgba(42,157,96,0.35);border-radius:8px;padding:9px 12px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:#4ADF90;display:none;align-items:center;justify-content:space-between;gap:8px}
+
 /* ── TOAST ── */
 #se-toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translateX(-50%) translateY(20px);background:#0D1520;border:1px solid rgba(201,168,76,0.5);color:var(--gold-l);font-family:'Jost',sans-serif;font-size:13px;font-weight:600;padding:12px 20px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:all .3s;z-index:10000;max-width:90vw;text-align:center}
 #se-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -940,6 +960,7 @@ html, body{
 <div id="tabs">
   <button class="tab on" onclick="showScreen('builder')">Products</button>
   <button class="tab" onclick="showScreen('search')">Search&nbsp;&amp;&nbsp;Edit</button>
+  <button class="tab" onclick="showScreen('quotes')">Find&nbsp;Quotes</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
   <button class="tab" onclick="showScreen('stock')">Stock</button>
@@ -1163,6 +1184,43 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   </div>
 </div>
 
+<!-- FIND QUOTES -->
+<div id="screen-quotes" class="screen">
+  <div class="fq-scroll">
+    <div class="se-head">Find Saved Quotations</div>
+    <div class="se-sub">Search by customer name, mobile number or quotation number, then open it back into the app.</div>
+
+    <div id="fq-setup" class="fq-setup" style="display:none">
+      <div class="t">⚙ Connection</div>
+      <div class="d" id="fq-setup-note">Paste the Web App URL and secret from your GBW QUOTES DB script, then tap Save settings.</div>
+      <div><label>Web app URL (ends with /exec)</label>
+        <input id="fq-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></div>
+      <div><label>Secret</label>
+        <input id="fq-secret" placeholder="the SECRET from your script" autocomplete="off" spellcheck="false"></div>
+      <button class="se-btn gold" onclick="saveQuoteApiSettings()">Save settings &amp; test</button>
+      <button class="se-btn" id="fq-reset" style="display:none" onclick="clearQuoteApiOverride()">Use the built-in connection instead</button>
+    </div>
+
+    <div class="se-searchbar">
+      <span class="ic">⌕</span>
+      <input id="fq-search" placeholder="Name, mobile number or quote no…" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="se-toolbar">
+      <span class="se-status" id="fq-status">Not set up yet.</span>
+      <button class="se-btn" onclick="syncSavedQuotes(true)">↻ Refresh</button>
+      <button class="se-btn" onclick="toggleQuoteApiSetup()">⚙</button>
+    </div>
+
+    <div class="fq-open" id="fq-open">
+      <span id="fq-open-t">—</span>
+      <button class="se-btn" style="padding:6px 10px" onclick="detachSavedQuote()">Detach</button>
+    </div>
+
+    <div class="fq-list" id="fq-list"></div>
+  </div>
+</div>
+
 <!-- CUSTOMER -->
 <div id="screen-customer" class="screen">
   <div class="c-section-title">Customer Information</div>
@@ -1326,6 +1384,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   <div class="prev-bar">
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn-print-alt" onclick="saveQuoteToCloud()">💾 Save Quote</button>
       <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPrint()">🖨 Export PDF</button>
       <button class="btn-print-alt" onclick="doPrintMRP()">💎 MRP Only</button>
@@ -1584,17 +1643,15 @@ function setMode(m){
 }
 
 // ── SCREENS ──
+const SCREEN_ORDER=['builder','search','quotes','customer','summary','stock','editor','preview'];
 function showScreen(id){
-  ['builder','search','customer','summary','stock','editor','preview'].forEach(s=>{
-    $('screen-'+s).classList.toggle('active',s===id);
-  });
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('on',['builder','search','customer','summary','stock','editor','preview'][i]===id);
-  });
+  SCREEN_ORDER.forEach(s=>{ const el=$('screen-'+s); if(el) el.classList.toggle('active',s===id); });
+  document.querySelectorAll('.tab').forEach((t,i)=>{ t.classList.toggle('on',SCREEN_ORDER[i]===id); });
   if(id==='summary') renderSummary();
   if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
   if(id==='search') renderSearchPage();
+  if(id==='quotes') renderQuotesPage();
 }
 
 function renderSummary(){
@@ -4167,6 +4224,17 @@ let   GQUOTE_TABS = ['CHR','GBP','BGP','BCH'];   // seed only — the real list 
 let   QTABS_MANUAL = [];    // tab names added by hand (for non-standard names)
 let   TAB_METHOD   = '';
 const CACHE_QTABS  = 'gbw_qtabs_v2';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ▼▼▼  SAVED QUOTATIONS BACKEND  —  PASTE YOUR TWO VALUES ON THE NEXT 2 LINES
+   ══════════════════════════════════════════════════════════════════════════
+   These come from the Apps Script bound to your GBW QUOTES DB sheet.
+   Once filled in, every device that opens this page can save and search
+   quotations with no per-device setup. Leave them blank to fall back to
+   pasting them by hand in the Find Quotes tab.                             */
+const QAPI_URL_BAKED    = 'https://script.google.com/macros/s/AKfycbyQdLQmYwZBbXznS2-eOZDGGH18wJs8ItIYS_HPacKIRKnj_RXYzJx1y6ADTJ6dVB8N/exec';
+const QAPI_SECRET_BAKED = 'gbw-quotes-7k92mxq4';   // must match var SECRET on line 28 of the Apps Script
+/* ══════════════════════════════════════════════════════════════════════════ */
 /* Fallback finish codes, used only if the catalog hasn't loaded yet. */
 const FINISH_SEED = ['CHR','GMP','GBP','BGP','BCH','SSF','ANT','BLM','GLD','RSG','WHM','BLK','DGM','CGM','PCG','ABR','NKL','MBL','SCR','GRF'];
 (function(){ try{ const t=JSON.parse(localStorage.getItem(CACHE_QTABS)||'null');
@@ -4895,6 +4963,278 @@ function clearLoadedQuotation(){
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   SAVED QUOTATIONS  —  save to / search in the GBW QUOTES DB sheet
+   ────────────────────────────────────────────────────────────────────────
+   Writes go through a Google Apps Script web app bound to that ONE sheet;
+   the catalogue sheet and the GQUOTE sheet are never named here. Only code
+   and qty are stored, so reopening a quote rebuilds it at today's prices.
+   ════════════════════════════════════════════════════════════════════════ */
+const QAPI_URL_KEY = 'gbw_qapi_url_v1';
+const QAPI_SEC_KEY = 'gbw_qapi_secret_v1';
+const QAPI_CACHE   = 'gbw_saved_quotes_v1';
+let   SAVED    = [];      // [{quoteNo, customer, phone, phoneKey, mrpTotal, ...}]
+let   CUR_QNO  = '';      // quote number currently open in the app, '' if none
+let   _qapiBusy = false;
+
+/* Baked-in values ship with the file so no device needs setting up. A value
+   pasted in the Find Quotes tab overrides them on that device only. */
+function qapiUrl(){
+  try{ const o=localStorage.getItem(QAPI_URL_KEY); if(o) return o; }catch(e){}
+  return QAPI_URL_BAKED||'';
+}
+function qapiSecret(){
+  try{ const o=localStorage.getItem(QAPI_SEC_KEY); if(o) return o; }catch(e){}
+  return QAPI_SECRET_BAKED||'';
+}
+function qapiIsBaked(){
+  let o=''; try{ o=localStorage.getItem(QAPI_URL_KEY)||''; }catch(e){}
+  return !o && !!QAPI_URL_BAKED;
+}
+function qapiReady(){  return !!(qapiUrl() && qapiSecret()); }
+function setFqStatus(m){ const el=$('fq-status'); if(el) el.textContent=m; }
+
+function fillQuoteApiPanel(){
+  const u=$('fq-url'), s=$('fq-secret'), n=$('fq-setup-note'), rb=$('fq-reset');
+  if(u) u.value=qapiUrl();
+  if(s) s.value=qapiSecret();
+  const baked=qapiIsBaked();
+  if(n) n.textContent = baked
+    ? 'This device is using the connection built into the app. You only need to change anything here if you are pointing it at a different sheet.'
+    : 'Paste the Web App URL and secret from your GBW QUOTES DB script, then tap Save settings.';
+  if(rb) rb.style.display = (!baked && QAPI_URL_BAKED) ? 'block' : 'none';
+}
+function toggleQuoteApiSetup(){
+  const b=$('fq-setup'); if(!b) return;
+  const open = b.style.display!=='none';
+  b.style.display = open ? 'none' : 'flex';
+  if(!open) fillQuoteApiPanel();
+}
+function clearQuoteApiOverride(){
+  try{ localStorage.removeItem(QAPI_URL_KEY); localStorage.removeItem(QAPI_SEC_KEY); }catch(e){}
+  fillQuoteApiPanel();
+  toast('Back to the built-in connection');
+  syncSavedQuotes(true);
+}
+async function saveQuoteApiSettings(){
+  const u=(($('fq-url')&&$('fq-url').value)||'').trim();
+  const s=(($('fq-secret')&&$('fq-secret').value)||'').trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u)){
+    toast('That does not look like a /exec web app URL'); return;
+  }
+  if(!s){ toast('Enter the secret from your script'); return; }
+  try{ localStorage.setItem(QAPI_URL_KEY,u); localStorage.setItem(QAPI_SEC_KEY,s); }catch(e){}
+  setFqStatus('⏳ Testing connection…');
+  const r=await qapiGet('ping');
+  if(r && r.ok){ toast('Connected ✓'); fillQuoteApiPanel(); $('fq-setup').style.display='none'; syncSavedQuotes(true); }
+  else setFqStatus('⚠ Could not reach the script — check the URL, the secret, and that access is set to “Anyone”.');
+}
+
+/* GET helper — Apps Script answers simple GETs with Access-Control-Allow-Origin:* */
+async function qapiGet(action, extra){
+  if(!qapiReady()) return {ok:false,error:'not configured'};
+  let url = qapiUrl()+'?secret='+encodeURIComponent(qapiSecret())+'&action='+encodeURIComponent(action)+'&_cb='+Date.now();
+  if(extra) for(const k in extra) url += '&'+k+'='+encodeURIComponent(extra[k]);
+  try{
+    const r=await fetch(url,{method:'GET',cache:'no-store',redirect:'follow'});
+    if(!r.ok) return {ok:false,error:'HTTP '+r.status};
+    return await r.json();
+  }catch(e){ return {ok:false,error:'blocked (offline/CORS)'}; }
+}
+
+/* POST helper — text/plain keeps it a simple request, so no CORS preflight */
+async function qapiPost(payload){
+  if(!qapiReady()) return {ok:false,error:'not configured'};
+  try{
+    const r=await fetch(qapiUrl(),{
+      method:'POST', redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    if(!r.ok) return {ok:false,error:'HTTP '+r.status};
+    return await r.json();
+  }catch(e){ return {ok:false,error:'blocked (offline/CORS)'}; }
+}
+
+/* ── SAVE ── */
+function quotePayload(quoteNo){
+  const baths = (S.bathrooms&&S.bathrooms.length)
+    ? S.bathrooms.map(b=>({name:b.name, items:b.items.map(i=>({code:i.code,qty:i.qty}))}))
+    : [];
+  const flat = (S.items||[]).map(i=>({code:i.code,qty:i.qty}));
+  let mrp=0; (S.items||[]).forEach(i=>{ mrp+=(i.mrp||0)*i.qty; });
+  return {
+    quoteNo: quoteNo||'',
+    customer: ($('f-name')&&$('f-name').value.trim())||'',
+    phone:    ($('f-phone')&&$('f-phone').value.trim())||'',
+    gst:      ($('f-gst')&&$('f-gst').value.trim())||'',
+    address:  ($('f-addr')&&$('f-addr').value.trim())||'',
+    mode: S.mode, disc: S.disc, mrpTotal: mrp,
+    bathrooms: baths, items: flat
+  };
+}
+async function saveQuoteToCloud(){
+  if(!qapiReady()){ showScreen('quotes'); toggleQuoteApiSetup(); toast('Set up saving first'); return; }
+  if(!S.items||!S.items.length){ toast('Nothing to save — add products first'); return; }
+  if(_qapiBusy){ toast('Still saving…'); return; }
+  const name=($('f-name')&&$('f-name').value.trim())||'';
+  if(!name && !confirm('No customer name entered.\n\nSave anyway? It will be harder to find later.')) return;
+
+  let qno='';
+  if(CUR_QNO){
+    qno = confirm('“'+CUR_QNO+'” is open.\n\nOK = update it\nCancel = save as a NEW quotation') ? CUR_QNO : '';
+  }
+  _qapiBusy=true; toast('Saving…');
+  const r=await qapiPost({secret:qapiSecret(), action:'save', quote:quotePayload(qno)});
+  _qapiBusy=false;
+  if(r && r.ok){
+    CUR_QNO=r.quoteNo;
+    const qn=$('f-qno'); if(qn) qn.value=r.quoteNo;   // printed no. == searchable no.
+    toast((r.updated?'Updated ':'Saved as ')+r.quoteNo+' — '+r.products+' products');
+    syncSavedQuotes(false);
+    renderOpenBanner();
+  }else{
+    toast('Save failed — '+((r&&r.error)||'unknown error'));
+  }
+}
+
+/* ── LIST + SEARCH ── */
+function hydrateSavedQuotes(){
+  try{ const c=JSON.parse(localStorage.getItem(QAPI_CACHE)||'null'); if(Array.isArray(c)) SAVED=c; }catch(e){}
+}
+async function syncSavedQuotes(manual){
+  if(!qapiReady()){ setFqStatus('Not set up yet — tap ⚙ to paste your web app URL.'); renderQuoteResults(); return; }
+  setFqStatus('⏳ Loading saved quotations…');
+  const r=await qapiGet('list');
+  if(r && r.ok && Array.isArray(r.quotes)){
+    SAVED=r.quotes;
+    try{ localStorage.setItem(QAPI_CACHE, JSON.stringify(SAVED)); }catch(e){}
+    setFqStatus('✓ '+SAVED.length+' saved quotation'+(SAVED.length===1?'':'s')+' · '+new Date().toLocaleTimeString());
+    if(manual) toast(SAVED.length+' quotations loaded');
+  }else if(SAVED.length){
+    setFqStatus('⚠ Refresh failed — showing '+SAVED.length+' cached.');
+    if(manual) toast('Could not refresh — showing cached list');
+  }else{
+    setFqStatus('⚠ '+((r&&r.error)||'Could not load')+'.');
+    if(manual) toast('Could not load saved quotations');
+  }
+  renderQuoteResults();
+}
+function phoneKeyOf(s){
+  let d=String(s||'').replace(/\D/g,'');
+  if(d.length>10 && d.slice(0,2)==='91') d=d.slice(2);
+  if(d.length>10 && d.charAt(0)==='0')   d=d.slice(1);
+  return d;
+}
+function renderQuotesPage(){
+  const su=$('fq-setup');
+  if(su) su.style.display = qapiReady() ? 'none' : 'flex';
+  fillQuoteApiPanel();
+  renderOpenBanner();
+  renderQuoteResults();
+  if(qapiReady() && !SAVED.length) syncSavedQuotes(false);
+}
+function renderOpenBanner(){
+  const b=$('fq-open'), t=$('fq-open-t');
+  if(!b) return;
+  if(CUR_QNO){ b.style.display='flex'; if(t) t.textContent='Open: '+CUR_QNO+' — saving will offer to update it'; }
+  else b.style.display='none';
+}
+function renderQuoteResults(){
+  const list=$('fq-list'); if(!list) return;
+  const raw=(($('fq-search')&&$('fq-search').value)||'').trim();
+  const term=raw.toUpperCase(), pk=phoneKeyOf(raw);
+  if(!SAVED.length){
+    list.innerHTML='<div class="se-empty">No saved quotations yet.<br>Build a quote, then tap 💾 Save Quote on the Quotation screen.</div>';
+    return;
+  }
+  const res=SAVED.filter(q=>{
+    if(!term) return true;
+    if(String(q.quoteNo||'').toUpperCase().includes(term)) return true;
+    if(String(q.customer||'').toUpperCase().includes(term)) return true;
+    if(pk && String(q.phoneKey||'').includes(pk)) return true;
+    return false;
+  }).slice(0,300);
+  if(!res.length){ list.innerHTML='<div class="se-empty">Nothing matches “'+esc(raw)+'”.</div>'; return; }
+  list.innerHTML=res.map(q=>{
+    let when='';
+    try{ when=new Date(q.savedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}); }catch(e){}
+    const meta=[q.products+' products', q.pcs+' pcs', (q.bathrooms?q.bathrooms+' bathrooms':'flat'), when].filter(Boolean).join(' · ');
+    return '<div class="fq-card" onclick="openSavedQuote(\''+esc(q.quoteNo)+'\')">'+
+      '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+'</div>'+
+      '<div class="fq-q">'+esc(q.quoteNo)+(q.phone?' · '+esc(q.phone):'')+'</div>'+
+      '<div class="fq-m">'+esc(meta)+'</div></div>'+
+      '<div class="fq-r"><div class="fq-mrp">₹'+fmtN(q.mrpTotal)+'</div>'+
+      '<button class="fq-x" onclick="event.stopPropagation();deleteSavedQuote(\''+esc(q.quoteNo)+'\')" title="Delete">✕</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+/* ── OPEN ── */
+async function openSavedQuote(quoteNo){
+  if(!quoteNo) return;
+  if(!ALL.length){ toast('Catalogue still loading — try again in a moment'); return; }
+  const head=SAVED.filter(q=>q.quoteNo===quoteNo)[0];
+  toast('Opening '+quoteNo+'…');
+  const r=await qapiGet('items',{q:quoteNo});
+  if(!r || !r.ok || !Array.isArray(r.items) || !r.items.length){
+    toast('Could not open — '+((r&&r.error)||'no line items')); return;
+  }
+
+  // group by bathroom, keeping sheet order; resolve every code against the LIVE catalogue
+  const order=[], byBath={}, missing=[];
+  r.items.forEach(it=>{
+    const bn=String(it.bathroom||'').trim();
+    if(!byBath[bn]){ byBath[bn]=[]; order.push(bn); }
+    const p=PMAP[it.code];
+    if(!p){ missing.push(it.code); return; }
+    byBath[bn].push({...p, qty:it.qty});
+  });
+  const named=order.filter(n=>n!=='');
+  if(named.length){
+    S.bathrooms=named.map(n=>({name:n, items:byBath[n]})).filter(b=>b.items.length);
+    rebuildItemsFromBathrooms();
+  }else{
+    S.bathrooms=[];
+    S.items=byBath['']||[];
+  }
+  S.stockOverrides={};
+
+  if(head){
+    if($('f-name'))  $('f-name').value  = head.customer||'';
+    if($('f-phone')) $('f-phone').value = head.phone||'';
+    if($('f-gst'))   $('f-gst').value   = head.gst||'';
+    if($('f-addr'))  $('f-addr').value  = head.address||'';
+    if($('f-qno'))   $('f-qno').value   = head.quoteNo||'';
+    if(head.mode && head.mode!==S.mode) setMode(head.mode);
+    S.disc = Number(head.disc)||0;
+    if($('f-disc')) $('f-disc').value = S.disc;
+  }
+
+  CUR_QNO=quoteNo;
+  cancelInsert();
+  showBathroomModeBar();
+  refreshAll();
+  renderLoadedPanel();
+  renderOpenBanner();
+  toast(quoteNo+' opened'+(missing.length?' — '+missing.length+' code(s) no longer in catalogue':''));
+  goPreview();
+}
+function detachSavedQuote(){
+  CUR_QNO='';
+  renderOpenBanner();
+  toast('Detached — the next save creates a new quotation');
+}
+async function deleteSavedQuote(quoteNo){
+  if(!confirm('Remove “'+quoteNo+'” from the saved quotations list?\n\nThe row stays in the sheet with a DELETED date, so it can be brought back.')) return;
+  const r=await qapiGet('delete',{q:quoteNo});
+  if(r && r.ok){
+    if(CUR_QNO===quoteNo){ CUR_QNO=''; renderOpenBanner(); }
+    toast(quoteNo+' deleted');
+    syncSavedQuotes(false);
+  }else toast('Delete failed — '+((r&&r.error)||'unknown error'));
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    EXCEL EXPORT  —  Quotation page (code + qty, bathroom-wise when grouped)
    ════════════════════════════════════════════════════════════════════════ */
 function exportQuotationExcel(){
@@ -4930,6 +5270,14 @@ function repositionEdCodeDrop(){
   dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
   dd.style.top=(r.bottom+4)+'px';
 }
+(function wireFindQuotes(){
+  const fb=$('fq-search');
+  if(fb){
+    fb.addEventListener('input',renderQuoteResults);
+    fb.addEventListener('search',renderQuoteResults);
+  }
+  hydrateSavedQuotes();
+})();
 (function wireSearchEdit(){
   const sb=$('se-search-box');
   if(sb){
