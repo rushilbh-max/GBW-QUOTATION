@@ -150,43 +150,9 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .empty-title{font-family:'Cinzel',serif;font-size:13px;font-weight:400;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
 .empty-sub{font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--slate);margin-top:6px}
 
-/* ══ PRODUCT CARD ══ */
-.p-card{
-  background:var(--ink2);border:1px solid rgba(255,255,255,0.05);
-  border-radius:var(--r);margin-bottom:8px;overflow:hidden;
-  transition:border-color .2s;
-}
-.p-card:active{border-color:rgba(201,168,76,0.25)}
-.p-card-top{display:flex;gap:12px;padding:12px}
-.p-card-img{width:70px;height:70px;object-fit:contain;border-radius:5px;background:#fff;flex-shrink:0}
-.p-card-img-ph{width:70px;height:70px;border-radius:5px;background:var(--ink3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--slate);letter-spacing:.5px}
-.p-card-code{font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-l);letter-spacing:.8px}
-.p-card-name{font-family:'Jost',sans-serif;font-size:13px;font-weight:500;color:#E8F0F8;line-height:1.35;margin-top:3px}
-.p-card-bottom{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  padding:9px 12px;background:rgba(0,0,0,0.2);
-  border-top:1px solid rgba(255,255,255,0.04);
-}
-.p-price-block{flex:1;min-width:120px}
-.p-row{display:flex;align-items:baseline;gap:7px;margin-bottom:3px}
-.p-label{font-family:'Cinzel',serif;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);min-width:26px;font-weight:600}
-.p-mrp-val{font-size:14px;font-weight:600;color:#B0C8D8}
-.p-bp-val{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold-l);line-height:1}
-
-/* Qty controls */
-.p-qty-wrap{display:flex;align-items:center;background:var(--ink3);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r-sm);overflow:hidden;flex-shrink:0}
-.p-qty-btn{width:34px;height:34px;background:transparent;border:none;color:var(--gold);font-size:17px;font-weight:300;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s}
-.p-qty-btn:active{background:rgba(201,168,76,0.12)}
-.p-qty-val{width:34px;text-align:center;background:transparent;border:none;color:#D8E4EC;font-size:13px;font-weight:600;outline:none}
-.p-del-btn{width:34px;height:34px;background:rgba(180,40,30,0.1);border:1px solid rgba(180,40,30,0.2);border-radius:var(--r-sm);color:#C05050;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
-.p-del-btn:active{background:rgba(180,40,30,0.2)}
-
 /* ══ COMPACT ROW VIEW (Products) — one slim line per item ══ */
-.pl-viewbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 8px}
+.pl-viewbar{display:flex;align-items:center;gap:8px;padding:0 2px 8px}
 .pl-viewbar .plv-info{font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.4px;color:var(--muted2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl-viewtog{display:flex;border:1px solid rgba(201,168,76,0.3);border-radius:5px;overflow:hidden;flex-shrink:0}
-.pl-viewtog button{background:transparent;border:none;color:var(--muted2);font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:6px 11px;cursor:pointer;transition:all .15s}
-.pl-viewtog button.on{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink)}
 
 .pl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--ink2);border:1px solid rgba(255,255,255,0.05);border-radius:var(--r)}
 .pl-tbl{width:100%;border-collapse:collapse;min-width:580px}
@@ -232,6 +198,50 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .pl-acts button{background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:4px;width:26px;height:28px;font-size:12px;font-weight:700;cursor:pointer;margin-left:3px;color:var(--gold);padding:0}
 .pl-acts button.del{color:#E06060;border-color:rgba(224,96,96,0.4)}
 .pl-acts button:active{background:rgba(201,168,76,0.12)}
+
+/* ══ WIDE SCREENS (desktop / counter PC) ══
+   Everything above is sized for a phone, where the table has to scroll
+   sideways and the controls are pinned to stay reachable. On a wide screen
+   nothing overflows, so the pinning is dead weight: unpin it, drop the
+   scroll shadow, and hand the slack to the product name. Guarded by a media
+   query so the phone layout is untouched. */
+@media (min-width:1024px){
+  .pl-tbl{min-width:0}
+  .pl-tbl th,.pl-tbl td{padding:6px 10px}
+  /* unpin — there is no sideways scroll to escape from */
+  .pl-tbl th.pl-ctrl-h,.pl-tbl td.pl-ctrl{position:static;box-shadow:none;border-left:1px solid rgba(255,255,255,0.05)}
+  .pl-tbl tbody tr:hover td.pl-ctrl{background:transparent}
+  .pl-tbl tbody tr.blank td.pl-ctrl{background:rgba(201,168,76,0.045)}
+  .pl-tbl td.pl-ctrl{background:transparent}
+  /* column shares — the name column absorbs whatever is left over */
+  .pl-tbl th:nth-child(1){width:46px!important}
+  .pl-tbl th:nth-child(2){width:62px!important}
+  .pl-tbl th:nth-child(3){width:44%!important}
+  .pl-tbl th:nth-child(4),.pl-tbl th:nth-child(5){width:104px!important}
+  .pl-tbl th:nth-child(6){width:116px!important}
+  .pl-tbl th.pl-ctrl-h{width:212px!important}
+  .pl-prod{min-width:0;max-width:none}
+  .pl-code-inp{max-width:260px;font-size:12px}
+  .pl-name{font-size:11.5px;color:#9FB6C9}
+  /* a little more room to breathe, without losing rows off the screen */
+  .pl-img,.pl-img-ph{width:40px;height:40px}
+  .pl-sr{font-size:11px}
+  .pl-code{font-size:12px}
+  .pl-mrp,.pl-dash{font-size:12px}
+  .pl-best,.pl-tot{font-size:13px}
+  .pl-qty{width:92px}
+  .pl-qty button{width:30px;height:30px;font-size:16px}
+  .pl-qty input{width:32px;height:30px;font-size:13px}
+  .pl-acts button{width:30px;height:30px;font-size:13px;margin-left:4px}
+  .pl-ctrl-inner{gap:10px}
+  .pl-viewbar{padding:0 2px 10px}
+  .pl-viewbar .plv-info{font-size:11px}
+}
+/* On a very wide monitor give the extra room to the product name, so the
+   prices don't drift away from the controls with a dead band between them. */
+@media (min-width:1600px){
+  .pl-tbl th:nth-child(3){width:57%!important}
+}
 
 /* ══ TOTAL BAR ══ */
 #total-bar{
@@ -803,9 +813,6 @@ html, body{
 
 <style id="search-edit-styles">
 /* ── INSERT-ROW MINI BUTTONS (builder cards) ── */
-.ins-row{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(201,168,76,0.18)}
-.ins-mini{flex:1;background:transparent;border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:5px;padding:6px 4px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
-.ins-mini:active,.ins-mini:hover{background:rgba(201,168,76,0.12)}
 #insert-banner{display:none;align-items:center;justify-content:space-between;gap:8px;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.45);border-radius:6px;padding:8px 12px;margin-top:6px}
 #insert-banner .ib-txt{font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold-l)}
 #insert-banner .ib-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer}
@@ -2130,7 +2137,6 @@ function insertBlankAt(idx,pos){
   const at=Math.max(0,Math.min(pos==='above'?idx:idx+1,S.items.length));
   S.items.splice(at,0,blankRow());
   cancelInsert();
-  if(PLIST_VIEW!=='rows') setListView('rows');   // blanks are only fillable in rows view
   refreshAll();
   focusPlistRow(at);
 }
@@ -2882,28 +2888,16 @@ function refreshTotalBar(){
   $('t-best').textContent=fmt(tot.best);
 }
 
-/* ── Products list view: 'rows' = slim single-line table (default), 'cards' = the
-      original large product cards. Choice is remembered between sessions. ── */
-const PLIST_VIEW_KEY='gbw_plist_view_v1';
-let PLIST_VIEW='rows';
-try{ const _v=localStorage.getItem(PLIST_VIEW_KEY); if(_v==='cards'||_v==='rows') PLIST_VIEW=_v; }catch(e){}
-function setListView(v){
-  PLIST_VIEW=(v==='cards')?'cards':'rows';
-  try{ localStorage.setItem(PLIST_VIEW_KEY,PLIST_VIEW); }catch(e){}
-  refreshList();
-  const l=$('items-list'); if(l) l.scrollTop=0;
-}
+/* The Products list is a single slim-row table. The old large-card view was
+   removed, along with the view toggle and the remembered preference. */
+try{ localStorage.removeItem('gbw_plist_view_v1'); }catch(e){}
 
 function plistViewBar(){
   let pcs=0; S.items.forEach(i=>{ if(!isBlankRow(i)) pcs+=i.qty; });
   const n=liveItemCount(), blanks=S.items.length-n;
   return '<div class="pl-viewbar">'+
     '<span class="plv-info">'+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs'+
-      (blanks?' · '+blanks+' empty':'')+'</span>'+
-    '<span class="pl-viewtog">'+
-      '<button class="'+(PLIST_VIEW==='rows'?'on':'')+'" onclick="setListView(\'rows\')">▤ Rows</button>'+
-      '<button class="'+(PLIST_VIEW==='cards'?'on':'')+'" onclick="setListView(\'cards\')">▦ Cards</button>'+
-    '</span></div>';
+      (blanks?' · '+blanks+' empty':'')+'</span></div>';
 }
 
 /* Slim one-line-per-item table — same shape as the Search & Edit editor. */
@@ -3004,49 +2998,8 @@ function refreshList(){
     list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Search above to add products</div></div>';
     return;
   }
-  if(PLIST_VIEW==='rows'){
-    list.innerHTML=plistViewBar()+plistRowsHTML();
-    wirePlistCodeInputs();
-    return;
-  }
-  list.innerHTML=plistViewBar()+S.items.map((item,i)=>{
-    const price=bp(item);
-    const url=IMAGE_MAP[item.code]||'';
-    const img=url
-      ?`<img class="p-card-img" src="${url}" onerror="this.style.display='none'" alt=""/>`
-      :`<div class="p-card-img-ph">NO IMAGE</div>`;
-    return `<div class="p-card">
-      <div class="p-card-top">
-        ${img}
-        <div style="flex:1;min-width:0">
-          <div class="p-card-code">${esc(item.code)}</div>
-          <div class="p-card-name">${esc(item.desc)}</div>
-        </div>
-      </div>
-      <div class="p-card-bottom">
-        <div class="p-price-block">
-          <div class="p-row">
-            <span class="p-label">MRP</span>
-            <span class="p-mrp-val">${fmt(item.mrp)}</span>
-          </div>
-          <div class="p-row">
-            <span class="p-label">Best</span>
-            <span class="p-bp-val">${fmt(price)}</span>
-          </div>
-        </div>
-        <div class="p-qty-wrap">
-          <button class="p-qty-btn" onclick="setQtyAt(${i},${item.qty-1})">−</button>
-          <input class="p-qty-val" type="number" value="${item.qty}" min="1" onchange="setQtyAt(${i},this.value)" inputmode="numeric"/>
-          <button class="p-qty-btn" onclick="setQtyAt(${i},${item.qty+1})">+</button>
-        </div>
-        <button class="p-del-btn" onclick="delItemAt(${i})">✕</button>
-      </div>
-      <div class="ins-row">
-        <button class="ins-mini" onclick="insertBlankAt(${i},'above')">↑ Insert above</button>
-        <button class="ins-mini" onclick="insertBlankAt(${i},'below')">↓ Insert below</button>
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML=plistViewBar()+plistRowsHTML();
+  wirePlistCodeInputs();
 }
 
 // ── RENDER PREVIEW ──
