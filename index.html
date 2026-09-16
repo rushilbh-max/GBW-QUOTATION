@@ -3627,14 +3627,130 @@ function dispatchFileName(){
   return base.replace(/[\\/:*?"<>|]+/g,'-').slice(0,80)+'.pdf';
 }
 
-/* Built as a real PDF in the browser and saved straight to the device — no
-   print dialog, no browser header, nothing that leaks the site address. */
-function doPrintDispatch(){
-  const rows=dispatchRows();
-  if(!rows.length){ alert('Add some products to the quotation first.'); return; }
+/* ── PDF library, loaded on demand ──
+   The two <script> tags at the top are only a head start. If they were slow,
+   blocked, or the button was tapped before they finished, this fetches the
+   library at click time and works through several CDNs before giving up. And
+   if every one of them fails — no internet at the counter, say — the dispatch
+   list still comes out through the printable page below, which needs no
+   library at all. The button never dead-ends. */
+const PDFLIB_SETS=[
+  ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js'],
+  ['https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+   'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js'],
+  ['https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+   'https://unpkg.com/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js']
+];
+let _pdfLibTry=null;
+function jsPDFCtor(){ return (window.jspdf&&window.jspdf.jsPDF)||window.jsPDF||null; }
+function pdfLibReady(){
+  const J=jsPDFCtor();
+  if(!J) return false;
+  try{ return typeof (new J()).autoTable==='function'; }catch(e){ return false; }
+}
+function loadScriptOnce(src,ms){
+  return new Promise(function(res,rej){
+    const s=document.createElement('script');
+    let done=false;
+    const t=setTimeout(function(){ if(!done){ done=true; try{s.remove();}catch(e){} rej(new Error('timeout')); } }, ms||9000);
+    s.src=src; s.async=true;
+    s.onload=function(){ if(!done){ done=true; clearTimeout(t); res(); } };
+    s.onerror=function(){ if(!done){ done=true; clearTimeout(t); try{s.remove();}catch(e){} rej(new Error('failed')); } };
+    document.head.appendChild(s);
+  });
+}
+function ensurePdfLib(){
+  if(pdfLibReady()) return Promise.resolve(true);
+  if(_pdfLibTry) return _pdfLibTry;
+  _pdfLibTry=(async function(){
+    for(let i=0;i<PDFLIB_SETS.length;i++){
+      const pair=PDFLIB_SETS[i];
+      try{
+        if(!jsPDFCtor()) await loadScriptOnce(pair[0],9000);
+        if(jsPDFCtor() && !pdfLibReady()) await loadScriptOnce(pair[1],9000);
+        if(pdfLibReady()) return true;
+      }catch(e){ /* try the next CDN */ }
+    }
+    return false;
+  })();
+  _pdfLibTry.then(function(ok){ if(!ok) _pdfLibTry=null; });   // allow a later retry
+  return _pdfLibTry;
+}
 
-  const J=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
-  if(!J){ toast('PDF library still loading — try again in a moment'); return; }
+/* Printable dispatch list — the no-library fallback. Same columns as the PDF. */
+function dispatchPrintHTML(rows){
+  let lines=0,pcs=0,amt=0;
+  rows.forEach(function(r){ lines++; pcs+=r.qty; amt+=(r.mrp||0)*r.qty; });
+  const qno=(($('f-qno')&&$('f-qno').value)||'').trim();
+  const cName=(($('f-name')&&$('f-name').value)||'').trim();
+  const cPhone=(($('f-phone')&&$('f-phone').value)||'').trim();
+  const dv=$('f-date')?$('f-date').value:'';
+  const dateStr=(dv?new Date(dv):new Date())
+    .toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const baths=(S.bathrooms||[]).map(function(b){return b.name;}).filter(Boolean);
+
+  let body='';
+  rows.forEach(function(r,i){
+    body+='<tr><td class="c">'+(i+1)+'</td>'+
+      '<td class="code">'+esc(r.code)+'</td>'+
+      '<td class="desc">'+esc(r.desc||'—')+'</td>'+
+      '<td class="n">'+(r.mrp?fmtN(r.mrp):'—')+'</td>'+
+      '<td class="q">'+r.qty+'</td>'+
+      '<td class="n b">'+(r.mrp?fmtN(r.mrp*r.qty):'—')+'</td>'+
+      '<td class="w g"></td><td class="w p"></td></tr>';
+  });
+
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dispatch List '+esc(qno)+'</title><style>'+
+  '@page{size:A4;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0}'+
+  'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}'+
+  '.hd{text-align:center;border-bottom:2px solid #C9A84C;padding-bottom:8px;margin-bottom:10px}'+
+  '.hd h1{font-size:15px;letter-spacing:2px;color:#8B6914}'+
+  '.hd .s{font-size:9px;letter-spacing:3px;color:#666;margin-top:2px;text-transform:uppercase}'+
+  '.meta{display:flex;justify-content:space-between;gap:14px;font-size:10px;margin-bottom:9px}'+
+  '.meta .bx{border:1px solid #ddd;border-radius:3px;padding:6px 8px;flex:1}'+
+  '.meta b{display:block;font-size:8px;letter-spacing:1px;color:#888;text-transform:uppercase;margin-bottom:2px}'+
+  '.note{background:#FFF8E5;border:1px solid #E8D08A;border-radius:3px;padding:5px 8px;font-size:9px;color:#6b5a20;margin-bottom:8px}'+
+  'table{width:100%;border-collapse:collapse}'+
+  'th{background:#F2EAD8;border:1px solid #d8cba8;font-size:7px;letter-spacing:.6px;text-transform:uppercase;padding:5px 4px;text-align:left;color:#5a4a15}'+
+  'td{border:1px solid #ddd;padding:6px 4px;vertical-align:middle}'+
+  '.c{text-align:center;width:22px;color:#888}'+
+  '.code{font-family:"Courier New",monospace;font-weight:bold;white-space:nowrap}'+
+  '.desc{font-size:10px;color:#333}'+
+  '.n{text-align:right;width:60px;white-space:nowrap}.b{font-weight:bold}'+
+  '.q{text-align:center;width:34px;font-size:14px;font-weight:bold}'+
+  '.w{width:60px}.g{background:#F7FAF7}.p{background:#FDF8F6}'+
+  '.tot{margin-top:9px;display:flex;justify-content:flex-end;gap:22px;font-size:12px;font-weight:bold;border-top:2px solid #C9A84C;padding-top:7px}'+
+  '.conf{margin-top:7px;font-size:9px;color:#555}'+
+  '.conf span{display:inline-block;width:11px;height:11px;border:1.3px solid #999;border-radius:2px;vertical-align:-2px;margin-right:5px}'+
+  '.sig{margin-top:26px;display:flex;gap:26px}'+
+  '.sig div{flex:1;border-top:1px solid #999;padding-top:4px;font-size:9px;color:#666;text-align:center}'+
+  '@media print{tr{page-break-inside:avoid}thead{display:table-header-group}}'+
+  '</style></head><body>'+
+  '<div class="hd"><h1>DISPATCH LIST</h1><div class="s">Grace Bath World &middot; Godown Picking Slip</div></div>'+
+  '<div class="meta"><div class="bx"><b>Customer</b>'+esc(cName||'—')+(cPhone?' &middot; '+esc(cPhone):'')+'</div>'+
+  '<div class="bx"><b>Quotation No.</b>'+esc(qno||'—')+'</div>'+
+  '<div class="bx"><b>Date</b>'+esc(dateStr)+'</div></div>'+
+  (baths.length
+    ? '<div class="note">Covers '+baths.length+' bathroom(s): '+baths.map(esc).join(' &middot; ')+
+      ' &mdash; quantities are the TOTAL across all of them.</div>'
+    : '<div class="note">Repeated codes have been added together into a single line each.</div>')+
+  '<table><thead><tr><th class="c">#</th><th>Code</th><th>Description</th>'+
+  '<th style="text-align:right">MRP</th><th style="text-align:center">Qty</th>'+
+  '<th style="text-align:right">Amount</th><th>Received</th><th>Short</th>'+
+  '</tr></thead><tbody>'+body+'</tbody></table>'+
+  '<div class="tot"><span>'+lines+' item'+(lines===1?'':'s')+'</span><span>'+pcs+' pcs total</span>'+
+  '<span>MRP &#8377;'+fmtN(amt)+'</span></div>'+
+  '<div class="conf"><span></span>All items received in full &nbsp;&nbsp;&nbsp;<span></span>Shortfall noted above</div>'+
+  '<div class="sig"><div>Packed by</div><div>Checked by</div><div>Received by</div></div>'+
+  '<script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>'+
+  '</body></html>';
+}
+
+/* Saved straight to the device — no print dialog, no browser header, nothing
+   that leaks the site address. */
+function buildDispatchPDF(rows){
+  const J=jsPDFCtor();
 
   let lines=0, pcs=0, amt=0;
   rows.forEach(r=>{ lines++; pcs+=r.qty; amt+=(r.mrp||0)*r.qty; });
@@ -3702,6 +3818,7 @@ function doPrintDispatch(){
   }
 
   // ── table ──
+  // RECEIVED and SHORT are left blank — the godown writes them in by hand
   const body=rows.map((r,i)=>[
     String(i+1),
     r.code,
@@ -3709,32 +3826,41 @@ function doPrintDispatch(){
     r.mrp?fmtN(r.mrp):'—',
     String(r.qty),
     r.mrp?fmtN(r.mrp*r.qty):'—',
+    '',
     ''
   ]);
   doc.autoTable({
     startY:y+4,
-    head:[['#','CODE','DESCRIPTION','MRP','QTY','AMOUNT','OK']],
+    head:[['#','CODE','DESCRIPTION','MRP','QTY','AMOUNT','RECEIVED','SHORT']],
     body:body,
     theme:'grid',
     margin:{left:M,right:M},
-    styles:{font:'helvetica',fontSize:8,cellPadding:1.6,textColor:[35,35,35],
+    styles:{font:'helvetica',fontSize:8,cellPadding:2.3,textColor:[35,35,35],
             lineColor:[220,220,220],lineWidth:0.15,valign:'middle'},
     headStyles:{fillColor:[242,234,216],textColor:[90,74,21],fontStyle:'bold',
                 fontSize:7,halign:'left',lineColor:[216,203,168]},
     alternateRowStyles:{fillColor:[250,250,247]},
     columnStyles:{
-      0:{cellWidth:7,halign:'center',textColor:[140,140,140]},
-      1:{cellWidth:36,font:'courier',fontStyle:'bold',fontSize:8},
+      0:{cellWidth:9,halign:'center',textColor:[140,140,140]},
+      1:{cellWidth:33,font:'courier',fontStyle:'bold',fontSize:8},
       2:{cellWidth:'auto',fontSize:7.5,textColor:[70,70,70]},
-      3:{cellWidth:18,halign:'right'},
-      4:{cellWidth:12,halign:'center',fontStyle:'bold',fontSize:10},
-      5:{cellWidth:22,halign:'right',fontStyle:'bold'},
-      6:{cellWidth:10,halign:'center'}
+      3:{cellWidth:16,halign:'right'},
+      4:{cellWidth:11,halign:'center',fontStyle:'bold',fontSize:10},
+      5:{cellWidth:20,halign:'right',fontStyle:'bold'},
+      6:{cellWidth:17,fillColor:[247,250,247]},
+      7:{cellWidth:16,fillColor:[253,248,246]}
+    },
+    didParseCell:function(d){
+      if(d.section==='head' && d.column.index>=6) d.cell.styles.fontSize=6;
+      // the two write-in columns keep their tint on alternate rows too
+      if(d.section==='body' && d.column.index===6) d.cell.styles.fillColor=[247,250,247];
+      if(d.section==='body' && d.column.index===7) d.cell.styles.fillColor=[253,248,246];
     },
     didDrawCell:function(d){
-      if(d.section==='body' && d.column.index===6){        // empty tick box
-        const s=3.4, x=d.cell.x+d.cell.width/2-s/2, yy=d.cell.y+d.cell.height/2-s/2;
-        doc.setDrawColor(150); doc.setLineWidth(0.25); doc.rect(x,yy,s,s);
+      if(d.section==='body' && d.column.index>=6){         // faint writing line
+        const pad=2.4, yy=d.cell.y+d.cell.height-2.2;
+        doc.setDrawColor(200); doc.setLineWidth(0.2);
+        doc.line(d.cell.x+pad, yy, d.cell.x+d.cell.width-pad, yy);
       }
     }
   });
@@ -3744,12 +3870,24 @@ function doPrintDispatch(){
   const PH=doc.internal.pageSize.getHeight();
   if(ey>PH-34){ doc.addPage(); ey=20; }
   doc.setDrawColor(201,168,76); doc.setLineWidth(0.6); doc.line(M, ey-4, W-M, ey-4);
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40);
-  doc.text(lines+' items', W-M-74, ey);
-  doc.text(pcs+' pcs total', W-M-44, ey);
-  doc.text('MRP  Rs '+fmtN(amt), W-M, ey, {align:'right'});
 
-  const sy=Math.min(ey+26, PH-14);
+  // lay the totals out from the right by measured width, so a long MRP figure
+  // can never run into the piece count
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40);
+  let tx=W-M;
+  [ 'MRP  Rs '+fmtN(amt), pcs+' pcs total', lines+' item'+(lines===1?'':'s') ]
+    .forEach(function(t){ doc.text(t, tx, ey, {align:'right'}); tx-=doc.getTextWidth(t)+9; });
+
+  // godown confirmation on its own line, so it never collides either
+  const cy=ey+7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90);
+  doc.setDrawColor(150); doc.setLineWidth(0.3);
+  doc.rect(M, cy-2.8, 3.6, 3.6);
+  doc.text('All items received in full', M+6, cy);
+  doc.rect(M+48, cy-2.8, 3.6, 3.6);
+  doc.text('Shortfall noted above', M+54, cy);
+
+  const sy=Math.min(cy+22, PH-14);
   doc.setDrawColor(150); doc.setLineWidth(0.25);
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120);
   ['Packed by','Checked by','Received by'].forEach(function(lab,i){
@@ -3760,6 +3898,23 @@ function doPrintDispatch(){
 
   doc.save(dispatchFileName());
   toast('Dispatch PDF saved — '+lines+' items, '+pcs+' pcs');
+}
+
+async function doPrintDispatch(){
+  const rows=dispatchRows();
+  if(!rows.length){ alert('Add some products to the quotation first.'); return; }
+
+  if(!pdfLibReady()) toast('Preparing dispatch PDF…');
+  let ok=false;
+  try{ ok=await ensurePdfLib(); }catch(e){ ok=false; }
+
+  if(ok){
+    try{ buildDispatchPDF(rows); return; }
+    catch(e){ console.error('dispatch pdf failed',e); }
+  }
+  // no library reachable (or it threw) — still give them the list
+  openPrintDoc(dispatchPrintHTML(rows));
+  toast('Opened a printable dispatch list — use Save as PDF');
 }
 
 // ── PDF EXPORT ──
@@ -5657,10 +5812,10 @@ function exportQuotationExcel(){
   // second sheet: the dispatch view — one row per code, quantities added up
   const dr=dispatchRows();
   if(dr.length){
-    const d=[['Code','Description','MRP','Qty','Amount']];
-    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, (r.mrp||0)*r.qty]));
+    const d=[['Code','Description','MRP','Qty','Amount','Received','Short']];
+    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, (r.mrp||0)*r.qty, '', '']));
     const wsd=XLSX.utils.aoa_to_sheet(d);
-    wsd['!cols']=[{wch:20},{wch:46},{wch:10},{wch:7},{wch:12}];
+    wsd['!cols']=[{wch:20},{wch:44},{wch:10},{wch:7},{wch:12},{wch:10},{wch:8}];
     XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
   }
 
