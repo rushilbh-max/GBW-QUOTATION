@@ -7,6 +7,8 @@
 <title>Grace Bath World</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&amp;family=Cinzel:wght@400;600;700&amp;family=Jost:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --gold:       #C9A84C;
@@ -3563,11 +3565,25 @@ html, body{
 }
 
 
+/* A blob: URL carries the site's own address (blob:https://your-site/uuid…),
+   and the browser prints that in the page header, so it ends up on every PDF
+   you send out. Writing into a blank window instead keeps the address as
+   about:blank, which reveals nothing. Falls back to the old blob route only
+   if a popup blocker refuses the window. */
 function openPrintDoc(html){
+  let win=null;
+  try{ win=window.open('','_blank'); }catch(e){}
+  if(win && win.document){
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    try{ win.focus(); }catch(e){}
+    return;
+  }
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
-  const win=window.open(url,'_blank');
-  if(!win)setTimeout(()=>window.print(),300);
+  const w2=window.open(url,'_blank');
+  if(!w2) setTimeout(()=>window.print(),300);
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
@@ -3599,100 +3615,151 @@ function dispatchRows(){
   return order.map(c=>{
     const r=map[c], p=PMAP[c];
     if(!r.desc && p) r.desc=p.desc;
+    r.mrp = p ? (p.mrp||0) : 0;
     return r;
   });
 }
 
+function dispatchFileName(){
+  const qno=(($('f-qno')&&$('f-qno').value)||'').trim();
+  const nm=(($('f-name')&&$('f-name').value)||'').trim();
+  const base='Dispatch '+(qno||nm||new Date().toISOString().slice(0,10));
+  return base.replace(/[\\/:*?"<>|]+/g,'-').slice(0,80)+'.pdf';
+}
+
+/* Built as a real PDF in the browser and saved straight to the device — no
+   print dialog, no browser header, nothing that leaks the site address. */
 function doPrintDispatch(){
   const rows=dispatchRows();
   if(!rows.length){ alert('Add some products to the quotation first.'); return; }
 
-  let lines=0, pcs=0;
-  rows.forEach(r=>{ lines++; pcs+=r.qty; });
-  const anyArea=rows.some(r=>r.areas.length);
+  const J=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+  if(!J){ toast('PDF library still loading — try again in a moment'); return; }
 
-  const logoLEl=document.querySelector('.p-logo-l');
-  const logoREl=document.querySelector('.p-logo-r');
-  const logoL=logoLEl?logoLEl.src:'';
-  const logoR=logoREl?logoREl.src:'';
+  let lines=0, pcs=0, amt=0;
+  rows.forEach(r=>{ lines++; pcs+=r.qty; amt+=(r.mrp||0)*r.qty; });
 
+  const qno=(($('f-qno')&&$('f-qno').value)||'').trim();
+  const cName=(($('f-name')&&$('f-name').value)||'').trim();
+  const cPhone=(($('f-phone')&&$('f-phone').value)||'').trim();
   const dv=$('f-date')?$('f-date').value:'';
-  const dateStr=dv?new Date(dv).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'})
-                  :new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
-  const qno=($('f-qno')&&$('f-qno').value)||'';
-  const cName=($('f-name')&&$('f-name').value)||'';
-  const cPhone=($('f-phone')&&$('f-phone').value)||'';
-  const cAddr=($('f-addr')&&$('f-addr').value)||'';
-  const bathNames=(S.bathrooms||[]).map(b=>b.name).filter(Boolean);
+  const dateStr=(dv?new Date(dv):new Date())
+    .toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const baths=(S.bathrooms||[]).map(b=>b.name).filter(Boolean);
 
-  let body='';
-  rows.forEach((r,i)=>{
-    body+='<tr>'+
-      '<td class="c">'+(i+1)+'</td>'+
-      '<td class="code">'+esc(r.code)+'</td>'+
-      '<td class="desc">'+esc(r.desc||'—')+'</td>'+
-      (anyArea?'<td class="area">'+esc(r.areas.join(', ')||'—')+'</td>':'')+
-      '<td class="qty">'+r.qty+'</td>'+
-      '<td class="box"></td>'+
-    '</tr>';
+  const doc=new J({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth();
+  const M=10;
+
+  // ── header ──
+  /* Scale each logo into its box from the image's own dimensions, so neither
+     mark comes out stretched. */
+  function placeLogo(sel, boxX, boxW, boxH, topY, alignRight){
+    const el=document.querySelector(sel);
+    if(!el || !/^data:image\//.test(el.src||'')) return;
+    const nw=el.naturalWidth||boxW, nh=el.naturalHeight||boxH;
+    const k=Math.min(boxW/nw, boxH/nh);
+    const w=nw*k, h=nh*k;
+    const x=alignRight ? (boxX+boxW-w) : boxX;
+    try{ doc.addImage(el.src,'PNG',x, topY+(boxH-h)/2, w, h, undefined, 'FAST'); }catch(e){}
+  }
+  placeLogo('.p-logo-l', M, 30, 13, 6, false);
+  placeLogo('.p-logo-r', W-M-24, 24, 13, 6, true);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(139,105,20);
+  doc.text('DISPATCH LIST', W/2, 14, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+  doc.text('GRACE BATH WORLD  ·  GODOWN PICKING SLIP', W/2, 19, {align:'center'});
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.6);
+  doc.line(M, 22, W-M, 22);
+
+  // ── meta ──
+  let y=28;
+  doc.setFontSize(8.5); doc.setTextColor(60);
+  doc.setFont('helvetica','bold'); doc.text('Customer:', M, y);
+  doc.setFont('helvetica','normal');
+  doc.text((cName||'—')+(cPhone?'   ·   '+cPhone:''), M+19, y);
+  doc.setFont('helvetica','bold'); doc.text('Quotation No:', W-M-58, y);
+  doc.setFont('helvetica','normal'); doc.text(qno||'—', W-M-33, y);
+  y+=5;
+  doc.setFont('helvetica','bold'); doc.text('Date:', M, y);
+  doc.setFont('helvetica','normal'); doc.text(dateStr, M+19, y);
+
+  if(baths.length){
+    y+=6;
+    doc.setFillColor(255,248,229); doc.setDrawColor(232,208,138); doc.setLineWidth(0.2);
+    const note='Covers '+baths.length+' bathroom(s): '+baths.join('  ·  ')+
+               '   —   quantities are the TOTAL across all of them.';
+    const wrapped=doc.splitTextToSize(note, W-2*M-6);
+    const h=wrapped.length*3.6+4;
+    doc.rect(M, y-3.5, W-2*M, h, 'FD');
+    doc.setFontSize(7.5); doc.setTextColor(107,90,32);
+    doc.text(wrapped, M+3, y);
+    y+=h-1;
+  }else{
+    y+=6;
+    doc.setFontSize(7.5); doc.setTextColor(130);
+    doc.text('Repeated codes have been added together into a single line each.', M, y);
+  }
+
+  // ── table ──
+  const body=rows.map((r,i)=>[
+    String(i+1),
+    r.code,
+    r.desc||'—',
+    r.mrp?fmtN(r.mrp):'—',
+    String(r.qty),
+    r.mrp?fmtN(r.mrp*r.qty):'—',
+    ''
+  ]);
+  doc.autoTable({
+    startY:y+4,
+    head:[['#','CODE','DESCRIPTION','MRP','QTY','AMOUNT','OK']],
+    body:body,
+    theme:'grid',
+    margin:{left:M,right:M},
+    styles:{font:'helvetica',fontSize:8,cellPadding:1.6,textColor:[35,35,35],
+            lineColor:[220,220,220],lineWidth:0.15,valign:'middle'},
+    headStyles:{fillColor:[242,234,216],textColor:[90,74,21],fontStyle:'bold',
+                fontSize:7,halign:'left',lineColor:[216,203,168]},
+    alternateRowStyles:{fillColor:[250,250,247]},
+    columnStyles:{
+      0:{cellWidth:7,halign:'center',textColor:[140,140,140]},
+      1:{cellWidth:36,font:'courier',fontStyle:'bold',fontSize:8},
+      2:{cellWidth:'auto',fontSize:7.5,textColor:[70,70,70]},
+      3:{cellWidth:18,halign:'right'},
+      4:{cellWidth:12,halign:'center',fontStyle:'bold',fontSize:10},
+      5:{cellWidth:22,halign:'right',fontStyle:'bold'},
+      6:{cellWidth:10,halign:'center'}
+    },
+    didDrawCell:function(d){
+      if(d.section==='body' && d.column.index===6){        // empty tick box
+        const s=3.4, x=d.cell.x+d.cell.width/2-s/2, yy=d.cell.y+d.cell.height/2-s/2;
+        doc.setDrawColor(150); doc.setLineWidth(0.25); doc.rect(x,yy,s,s);
+      }
+    }
   });
 
-  const html='<!DOCTYPE html><html><head><meta charset="utf-8">'+
-  '<title>Dispatch List '+esc(qno)+'</title>'+
-  '<style>'+
-  '@page{size:A4;margin:12mm 10mm}'+
-  '*{box-sizing:border-box;margin:0;padding:0}'+
-  'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}'+
-  '.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #C9A84C;padding-bottom:8px;margin-bottom:10px}'+
-  '.hd img{height:42px;object-fit:contain}'+
-  '.hd .t{text-align:center;flex:1}'+
-  '.hd .t h1{font-size:15px;letter-spacing:2px;color:#8B6914}'+
-  '.hd .t .s{font-size:9px;letter-spacing:3px;color:#666;margin-top:2px;text-transform:uppercase}'+
-  '.meta{display:flex;justify-content:space-between;gap:14px;font-size:10px;margin-bottom:10px}'+
-  '.meta .bx{border:1px solid #ddd;border-radius:3px;padding:6px 8px;flex:1}'+
-  '.meta b{display:block;font-size:8px;letter-spacing:1px;color:#888;text-transform:uppercase;margin-bottom:2px}'+
-  '.note{background:#FFF8E5;border:1px solid #E8D08A;border-radius:3px;padding:5px 8px;font-size:9px;color:#6b5a20;margin-bottom:8px}'+
-  'table{width:100%;border-collapse:collapse}'+
-  'th{background:#F2EAD8;border:1px solid #d8cba8;font-size:8px;letter-spacing:.8px;text-transform:uppercase;padding:5px 4px;text-align:left;color:#5a4a15}'+
-  'td{border:1px solid #ddd;padding:5px 4px;vertical-align:middle}'+
-  'tr:nth-child(even) td{background:#FAFAF7}'+
-  '.c{text-align:center;width:26px;color:#888}'+
-  '.code{font-family:"Courier New",monospace;font-weight:bold;font-size:11px;white-space:nowrap}'+
-  '.desc{font-size:10px;color:#333}'+
-  '.area{font-size:9px;color:#666;width:22%}'+
-  '.qty{text-align:center;width:44px;font-size:14px;font-weight:bold}'+
-  '.box{width:34px;text-align:center}'+
-  '.box:after{content:"";display:inline-block;width:13px;height:13px;border:1.4px solid #999;border-radius:2px}'+
-  '.tot{margin-top:10px;display:flex;justify-content:flex-end;gap:22px;font-size:12px;font-weight:bold;border-top:2px solid #C9A84C;padding-top:7px}'+
-  '.sig{margin-top:26px;display:flex;gap:26px}'+
-  '.sig div{flex:1;border-top:1px solid #999;padding-top:4px;font-size:9px;color:#666;text-align:center}'+
-  '@media print{tr{page-break-inside:avoid}thead{display:table-header-group}}'+
-  '</style></head><body>'+
-  '<div class="hd">'+(logoL?'<img src="'+logoL+'">':'<span></span>')+
-    '<div class="t"><h1>DISPATCH LIST</h1><div class="s">Grace Bath World &middot; Godown Picking Slip</div></div>'+
-    (logoR?'<img src="'+logoR+'">':'<span></span>')+'</div>'+
-  '<div class="meta">'+
-    '<div class="bx"><b>Customer</b>'+esc(cName||'—')+(cPhone?' &middot; '+esc(cPhone):'')+
-      (cAddr?'<br>'+esc(cAddr):'')+'</div>'+
-    '<div class="bx"><b>Quotation No.</b>'+esc(qno||'—')+'</div>'+
-    '<div class="bx"><b>Date</b>'+esc(dateStr)+'</div>'+
-  '</div>'+
-  (bathNames.length
-    ? '<div class="note"><b style="display:inline">Covers '+bathNames.length+' bathroom(s):</b> '+bathNames.map(esc).join(' &middot; ')+
-      ' &mdash; quantities below are the TOTAL across all of them.</div>'
-    : '<div class="note">Quantities below are the total for the whole quotation, with repeated codes added together.</div>')+
-  '<table><thead><tr>'+
-    '<th class="c">#</th><th>Code</th><th>Description</th>'+
-    (anyArea?'<th>Used in</th>':'')+
-    '<th style="text-align:center">Qty</th><th style="text-align:center">✓</th>'+
-  '</tr></thead><tbody>'+body+'</tbody></table>'+
-  '<div class="tot"><span>'+lines+' items</span><span>'+pcs+' pcs total</span></div>'+
-  '<div class="sig"><div>Packed by</div><div>Checked by</div><div>Received by</div></div>'+
-  '<script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>'+
-  '</body></html>';
+  // ── totals + sign-off ──
+  let ey=doc.lastAutoTable.finalY+7;
+  const PH=doc.internal.pageSize.getHeight();
+  if(ey>PH-34){ doc.addPage(); ey=20; }
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.6); doc.line(M, ey-4, W-M, ey-4);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40);
+  doc.text(lines+' items', W-M-74, ey);
+  doc.text(pcs+' pcs total', W-M-44, ey);
+  doc.text('MRP  Rs '+fmtN(amt), W-M, ey, {align:'right'});
 
-  openPrintDoc(html);
-  toast('Dispatch list — '+lines+' items, '+pcs+' pcs');
+  const sy=Math.min(ey+26, PH-14);
+  doc.setDrawColor(150); doc.setLineWidth(0.25);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+  ['Packed by','Checked by','Received by'].forEach(function(lab,i){
+    const w=(W-2*M-16)/3, x=M+i*(w+8);
+    doc.line(x, sy, x+w, sy);
+    doc.text(lab, x+w/2, sy+4, {align:'center'});
+  });
+
+  doc.save(dispatchFileName());
+  toast('Dispatch PDF saved — '+lines+' items, '+pcs+' pcs');
 }
 
 // ── PDF EXPORT ──
@@ -5590,11 +5657,10 @@ function exportQuotationExcel(){
   // second sheet: the dispatch view — one row per code, quantities added up
   const dr=dispatchRows();
   if(dr.length){
-    const anyArea=dr.some(r=>r.areas.length);
-    const d=[anyArea?['Code','Description','Used in','Qty']:['Code','Description','Qty']];
-    dr.forEach(r=>d.push(anyArea?[r.code,r.desc||'',r.areas.join(', '),r.qty]:[r.code,r.desc||'',r.qty]));
+    const d=[['Code','Description','MRP','Qty','Amount']];
+    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, (r.mrp||0)*r.qty]));
     const wsd=XLSX.utils.aoa_to_sheet(d);
-    wsd['!cols']= anyArea ? [{wch:20},{wch:44},{wch:28},{wch:8}] : [{wch:20},{wch:44},{wch:8}];
+    wsd['!cols']=[{wch:20},{wch:46},{wch:10},{wch:7},{wch:12}];
     XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
   }
 
