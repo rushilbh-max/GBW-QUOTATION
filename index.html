@@ -3697,13 +3697,12 @@ function dispatchPrintHTML(rows){
       '<td class="desc">'+esc(r.desc||'—')+'</td>'+
       '<td class="n">'+(r.mrp?fmtN(r.mrp):'—')+'</td>'+
       '<td class="q">'+r.qty+'</td>'+
-      '<td class="n b">'+(r.mrp?fmtN(r.mrp*r.qty):'—')+'</td>'+
-      '<td class="w g"></td><td class="w p"></td></tr>';
+      '<td class="tick"></td><td class="blank"></td></tr>';
   });
 
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dispatch List '+esc(qno)+'</title><style>'+
   '@page{size:A4;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0}'+
-  'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}'+
+  'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:10px}'+
   '.hd{text-align:center;border-bottom:2px solid #C9A84C;padding-bottom:8px;margin-bottom:10px}'+
   '.hd h1{font-size:15px;letter-spacing:2px;color:#8B6914}'+
   '.hd .s{font-size:9px;letter-spacing:3px;color:#666;margin-top:2px;text-transform:uppercase}'+
@@ -3713,13 +3712,15 @@ function dispatchPrintHTML(rows){
   '.note{background:#FFF8E5;border:1px solid #E8D08A;border-radius:3px;padding:5px 8px;font-size:9px;color:#6b5a20;margin-bottom:8px}'+
   'table{width:100%;border-collapse:collapse}'+
   'th{background:#F2EAD8;border:1px solid #d8cba8;font-size:7px;letter-spacing:.6px;text-transform:uppercase;padding:5px 4px;text-align:left;color:#5a4a15}'+
-  'td{border:1px solid #ddd;padding:6px 4px;vertical-align:middle}'+
-  '.c{text-align:center;width:22px;color:#888}'+
-  '.code{font-family:"Courier New",monospace;font-weight:bold;white-space:nowrap}'+
-  '.desc{font-size:10px;color:#333}'+
-  '.n{text-align:right;width:60px;white-space:nowrap}.b{font-weight:bold}'+
-  '.q{text-align:center;width:34px;font-size:14px;font-weight:bold}'+
-  '.w{width:60px}.g{background:#F7FAF7}.p{background:#FDF8F6}'+
+  'td{border:1px solid #ddd;padding:2.4px 4px;vertical-align:middle}'+
+  '.c{text-align:center;width:20px;color:#999;font-size:8px}'+
+  '.code{font-family:"Courier New",monospace;font-weight:bold;font-size:10px;white-space:nowrap;width:25%}'+
+  '.desc{font-size:8px;color:#444}'+
+  '.n{text-align:right;width:50px;white-space:nowrap;font-size:9px}'+
+  '.q{text-align:center;width:28px;font-size:12px;font-weight:bold}'+
+  '.tick{width:40px;text-align:center;background:#F6FAF6}'+
+  '.tick:after{content:"";display:inline-block;width:10px;height:10px;border:1.2px solid #8c8c8c;border-radius:2px}'+
+  '.blank{width:72px;background:#FDF8F6}'+
   '.tot{margin-top:9px;display:flex;justify-content:flex-end;gap:22px;font-size:12px;font-weight:bold;border-top:2px solid #C9A84C;padding-top:7px}'+
   '.conf{margin-top:7px;font-size:9px;color:#555}'+
   '.conf span{display:inline-block;width:11px;height:11px;border:1.3px solid #999;border-radius:2px;vertical-align:-2px;margin-right:5px}'+
@@ -3737,23 +3738,37 @@ function dispatchPrintHTML(rows){
     : '<div class="note">Repeated codes have been added together into a single line each.</div>')+
   '<table><thead><tr><th class="c">#</th><th>Code</th><th>Description</th>'+
   '<th style="text-align:right">MRP</th><th style="text-align:center">Qty</th>'+
-  '<th style="text-align:right">Amount</th><th>Received</th><th>Short</th>'+
+  '<th style="text-align:center">Recd</th><th>Short</th>'+
   '</tr></thead><tbody>'+body+'</tbody></table>'+
-  '<div class="tot"><span>'+lines+' item'+(lines===1?'':'s')+'</span><span>'+pcs+' pcs total</span>'+
-  '<span>MRP &#8377;'+fmtN(amt)+'</span></div>'+
-  '<div class="conf"><span></span>All items received in full &nbsp;&nbsp;&nbsp;<span></span>Shortfall noted above</div>'+
+  '<div class="tot"><span>'+lines+' item'+(lines===1?'':'s')+'</span><span>'+pcs+' pcs total</span></div>'+
+  '<div class="conf"><span></span>All items received in full</div>'+
   '<div class="sig"><div>Packed by</div><div>Checked by</div><div>Received by</div></div>'+
   '<script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>'+
   '</body></html>';
 }
 
 /* Saved straight to the device — no print dialog, no browser header, nothing
-   that leaks the site address. */
-function buildDispatchPDF(rows){
-  const J=jsPDFCtor();
+   that leaks the site address.
 
-  let lines=0, pcs=0, amt=0;
-  rows.forEach(r=>{ lines++; pcs+=r.qty; amt+=(r.mrp||0)*r.qty; });
+   The slip should fit on ONE page. Rather than guess a font size, the table is
+   drawn at a comfortable density first and redrawn progressively tighter until
+   it fits a single page. Only a genuinely long quote spills over, and then at
+   the tightest setting rather than sprawling across four pages. */
+const DISPATCH_DENSITIES=[
+  {fs:7.6, cp:2.10, hs:6.4, desc:6.6, code:8.0},
+  {fs:7.2, cp:1.60, hs:6.2, desc:6.2, code:7.6},
+  {fs:6.8, cp:1.20, hs:6.0, desc:5.9, code:7.2},
+  {fs:6.4, cp:0.85, hs:5.8, desc:5.5, code:6.8}
+];
+
+function dispatchDrawDoc(J, rows, d){
+  const doc=new J({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth();
+  const PH=doc.internal.pageSize.getHeight();
+  const M=10;
+
+  let lines=0, pcs=0;
+  rows.forEach(function(r){ lines++; pcs+=r.qty; });
 
   const qno=(($('f-qno')&&$('f-qno').value)||'').trim();
   const cName=(($('f-name')&&$('f-name').value)||'').trim();
@@ -3761,13 +3776,8 @@ function buildDispatchPDF(rows){
   const dv=$('f-date')?$('f-date').value:'';
   const dateStr=(dv?new Date(dv):new Date())
     .toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-  const baths=(S.bathrooms||[]).map(b=>b.name).filter(Boolean);
+  const baths=(S.bathrooms||[]).map(function(b){return b.name;}).filter(Boolean);
 
-  const doc=new J({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=doc.internal.pageSize.getWidth();
-  const M=10;
-
-  // ── header ──
   /* Scale each logo into its box from the image's own dimensions, so neither
      mark comes out stretched. */
   function placeLogo(sel, boxX, boxW, boxH, topY, alignRight){
@@ -3779,125 +3789,126 @@ function buildDispatchPDF(rows){
     const x=alignRight ? (boxX+boxW-w) : boxX;
     try{ doc.addImage(el.src,'PNG',x, topY+(boxH-h)/2, w, h, undefined, 'FAST'); }catch(e){}
   }
-  placeLogo('.p-logo-l', M, 30, 13, 6, false);
-  placeLogo('.p-logo-r', W-M-24, 24, 13, 6, true);
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(139,105,20);
-  doc.text('DISPATCH LIST', W/2, 14, {align:'center'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120);
-  doc.text('GRACE BATH WORLD  ·  GODOWN PICKING SLIP', W/2, 19, {align:'center'});
-  doc.setDrawColor(201,168,76); doc.setLineWidth(0.6);
-  doc.line(M, 22, W-M, 22);
 
-  // ── meta ──
-  let y=28;
-  doc.setFontSize(8.5); doc.setTextColor(60);
+  // ── compact header ──
+  placeLogo('.p-logo-l', M, 26, 10, 5, false);
+  placeLogo('.p-logo-r', W-M-20, 20, 10, 5, true);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(139,105,20);
+  doc.text('DISPATCH LIST', W/2, 11.5, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(120);
+  doc.text('GRACE BATH WORLD  \u00b7  GODOWN PICKING SLIP', W/2, 15.5, {align:'center'});
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.5);
+  doc.line(M, 18, W-M, 18);
+
+  // ── meta on one line, to leave the page for rows ──
+  let y=22.5;
+  doc.setFontSize(7.5); doc.setTextColor(60);
   doc.setFont('helvetica','bold'); doc.text('Customer:', M, y);
   doc.setFont('helvetica','normal');
-  doc.text((cName||'—')+(cPhone?'   ·   '+cPhone:''), M+19, y);
-  doc.setFont('helvetica','bold'); doc.text('Quotation No:', W-M-58, y);
-  doc.setFont('helvetica','normal'); doc.text(qno||'—', W-M-33, y);
-  y+=5;
-  doc.setFont('helvetica','bold'); doc.text('Date:', M, y);
-  doc.setFont('helvetica','normal'); doc.text(dateStr, M+19, y);
-
-  if(baths.length){
-    y+=6;
-    doc.setFillColor(255,248,229); doc.setDrawColor(232,208,138); doc.setLineWidth(0.2);
-    const note='Covers '+baths.length+' bathroom(s): '+baths.join('  ·  ')+
-               '   —   quantities are the TOTAL across all of them.';
-    const wrapped=doc.splitTextToSize(note, W-2*M-6);
-    const h=wrapped.length*3.6+4;
-    doc.rect(M, y-3.5, W-2*M, h, 'FD');
-    doc.setFontSize(7.5); doc.setTextColor(107,90,32);
-    doc.text(wrapped, M+3, y);
-    y+=h-1;
-  }else{
-    y+=6;
-    doc.setFontSize(7.5); doc.setTextColor(130);
-    doc.text('Repeated codes have been added together into a single line each.', M, y);
+  doc.text((cName||'\u2014')+(cPhone?'   \u00b7   '+cPhone:''), M+16, y);
+  // lay the right-hand pair out by measured width so they can never collide
+  let rx=W-M;
+  function rt(txt,bold,gap){
+    doc.setFont('helvetica',bold?'bold':'normal');
+    doc.text(txt, rx, y, {align:'right'});
+    rx-=doc.getTextWidth(txt)+(gap||1.6);
   }
+  rt(dateStr,false,1.6); rt('Date:',true,6);
+  rt(qno||'\u2014',false,1.6); rt('Quote No:',true,0);
 
-  // ── table ──
-  // RECEIVED and SHORT are left blank — the godown writes them in by hand
-  const body=rows.map((r,i)=>[
-    String(i+1),
-    r.code,
-    r.desc||'—',
-    r.mrp?fmtN(r.mrp):'—',
-    String(r.qty),
-    r.mrp?fmtN(r.mrp*r.qty):'—',
-    '',
-    ''
-  ]);
+  y+=4;
+  doc.setFontSize(6.5); doc.setTextColor(130);
+  doc.text(baths.length
+    ? 'Covers '+baths.length+' bathroom(s): '+baths.join('  \u00b7  ')+
+      '   \u2014   quantities are the TOTAL across all of them.'
+    : 'Repeated codes have been added together into a single line each.',
+    M, y, {maxWidth:W-2*M});
+
+  // ── table: RECD is a tick box, SHORT is a blank space ──
+  const body=rows.map(function(r,i){
+    return [String(i+1), r.code, r.desc||'\u2014', r.mrp?fmtN(r.mrp):'\u2014', String(r.qty), '', ''];
+  });
+
   doc.autoTable({
-    startY:y+4,
-    head:[['#','CODE','DESCRIPTION','MRP','QTY','AMOUNT','RECEIVED','SHORT']],
+    startY:y+3,
+    head:[['#','CODE','DESCRIPTION','MRP','QTY','RECD','SHORT']],
     body:body,
     theme:'grid',
-    margin:{left:M,right:M},
-    styles:{font:'helvetica',fontSize:8,cellPadding:2.3,textColor:[35,35,35],
-            lineColor:[220,220,220],lineWidth:0.15,valign:'middle'},
+    margin:{left:M,right:M,bottom:16},
+    styles:{font:'helvetica',fontSize:d.fs,cellPadding:d.cp,textColor:[35,35,35],
+            lineColor:[220,220,220],lineWidth:0.15,valign:'middle',overflow:'ellipsize'},
     headStyles:{fillColor:[242,234,216],textColor:[90,74,21],fontStyle:'bold',
-                fontSize:7,halign:'left',lineColor:[216,203,168]},
+                fontSize:d.hs,halign:'left',lineColor:[216,203,168],cellPadding:1.5},
     alternateRowStyles:{fillColor:[250,250,247]},
     columnStyles:{
-      0:{cellWidth:9,halign:'center',textColor:[140,140,140]},
-      1:{cellWidth:33,font:'courier',fontStyle:'bold',fontSize:8},
-      2:{cellWidth:'auto',fontSize:7.5,textColor:[70,70,70]},
-      3:{cellWidth:16,halign:'right'},
-      4:{cellWidth:11,halign:'center',fontStyle:'bold',fontSize:10},
-      5:{cellWidth:20,halign:'right',fontStyle:'bold'},
-      6:{cellWidth:17,fillColor:[247,250,247]},
-      7:{cellWidth:16,fillColor:[253,248,246]}
+      0:{cellWidth:7,halign:'center',textColor:[150,150,150],fontSize:d.hs},
+      1:{cellWidth:46,font:'courier',fontStyle:'bold',fontSize:d.code,overflow:'visible'},
+      2:{cellWidth:'auto',fontSize:d.desc,textColor:[80,80,80]},
+      3:{cellWidth:15,halign:'right'},
+      4:{cellWidth:10,halign:'center',fontStyle:'bold',fontSize:d.fs+1.4},
+      5:{cellWidth:12},
+      6:{cellWidth:22}
     },
-    didParseCell:function(d){
-      if(d.section==='head' && d.column.index>=6) d.cell.styles.fontSize=6;
-      // the two write-in columns keep their tint on alternate rows too
-      if(d.section==='body' && d.column.index===6) d.cell.styles.fillColor=[247,250,247];
-      if(d.section==='body' && d.column.index===7) d.cell.styles.fillColor=[253,248,246];
+    didParseCell:function(c){
+      if(c.section==='body' && c.column.index===5) c.cell.styles.fillColor=[246,250,246];
+      if(c.section==='body' && c.column.index===6) c.cell.styles.fillColor=[253,248,246];
     },
-    didDrawCell:function(d){
-      if(d.section==='body' && d.column.index>=6){         // faint writing line
-        const pad=2.4, yy=d.cell.y+d.cell.height-2.2;
-        doc.setDrawColor(200); doc.setLineWidth(0.2);
-        doc.line(d.cell.x+pad, yy, d.cell.x+d.cell.width-pad, yy);
+    didDrawCell:function(c){
+      if(c.section!=='body') return;
+      if(c.column.index===5){                       // RECD — tick box
+        const s=Math.min(2.9, c.cell.height-1.2);
+        const x=c.cell.x+c.cell.width/2-s/2, yy=c.cell.y+c.cell.height/2-s/2;
+        doc.setDrawColor(140); doc.setLineWidth(0.22); doc.rect(x,yy,s,s);
+      }
+      if(c.column.index===6){                       // SHORT — blank space to write in
+        const pad=2, yy=c.cell.y+c.cell.height-1.2;
+        doc.setDrawColor(205); doc.setLineWidth(0.18);
+        doc.line(c.cell.x+pad, yy, c.cell.x+c.cell.width-pad, yy);
       }
     }
   });
 
-  // ── totals + sign-off ──
-  let ey=doc.lastAutoTable.finalY+7;
-  const PH=doc.internal.pageSize.getHeight();
-  if(ey>PH-34){ doc.addPage(); ey=20; }
-  doc.setDrawColor(201,168,76); doc.setLineWidth(0.6); doc.line(M, ey-4, W-M, ey-4);
+  // ── footer: counts only, no MRP total ──
+  let ey=doc.lastAutoTable.finalY+6;
+  if(ey>PH-24){ doc.addPage(); ey=18; }
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.5); doc.line(M, ey-3.5, W-M, ey-3.5);
 
-  // lay the totals out from the right by measured width, so a long MRP figure
-  // can never run into the piece count
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(40);
   let tx=W-M;
-  [ 'MRP  Rs '+fmtN(amt), pcs+' pcs total', lines+' item'+(lines===1?'':'s') ]
-    .forEach(function(t){ doc.text(t, tx, ey, {align:'right'}); tx-=doc.getTextWidth(t)+9; });
+  [ pcs+' pcs total', lines+' item'+(lines===1?'':'s') ].forEach(function(t){
+    doc.text(t, tx, ey, {align:'right'}); tx-=doc.getTextWidth(t)+9;
+  });
 
-  // godown confirmation on its own line, so it never collides either
-  const cy=ey+7;
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90);
-  doc.setDrawColor(150); doc.setLineWidth(0.3);
-  doc.rect(M, cy-2.8, 3.6, 3.6);
-  doc.text('All items received in full', M+6, cy);
-  doc.rect(M+48, cy-2.8, 3.6, 3.6);
-  doc.text('Shortfall noted above', M+54, cy);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(95);
+  doc.setDrawColor(150); doc.setLineWidth(0.28);
+  doc.rect(M, ey-2.6, 3.2, 3.2);
+  doc.text('All items received in full', M+5.2, ey);
 
-  const sy=Math.min(cy+22, PH-14);
+  const sy=Math.min(ey+15, PH-11);
   doc.setDrawColor(150); doc.setLineWidth(0.25);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(120);
   ['Packed by','Checked by','Received by'].forEach(function(lab,i){
     const w=(W-2*M-16)/3, x=M+i*(w+8);
     doc.line(x, sy, x+w, sy);
-    doc.text(lab, x+w/2, sy+4, {align:'center'});
+    doc.text(lab, x+w/2, sy+3.4, {align:'center'});
   });
 
+  return doc;
+}
+
+function buildDispatchPDF(rows){
+  const J=jsPDFCtor();
+  let doc=null;
+  for(let i=0;i<DISPATCH_DENSITIES.length;i++){
+    doc=dispatchDrawDoc(J, rows, DISPATCH_DENSITIES[i]);
+    let pages=1;
+    try{ pages=doc.internal.getNumberOfPages(); }catch(e){}
+    if(pages<=1) break;                    // fits on one page — stop tightening
+  }
   doc.save(dispatchFileName());
-  toast('Dispatch PDF saved — '+lines+' items, '+pcs+' pcs');
+  let pages=1; try{ pages=doc.internal.getNumberOfPages(); }catch(e){}
+  let n=0,p=0; rows.forEach(function(r){ n++; p+=r.qty; });
+  toast('Dispatch PDF saved — '+n+' items, '+p+' pcs'+(pages>1?' ('+pages+' pages)':''));
 }
 
 async function doPrintDispatch(){
@@ -5812,10 +5823,10 @@ function exportQuotationExcel(){
   // second sheet: the dispatch view — one row per code, quantities added up
   const dr=dispatchRows();
   if(dr.length){
-    const d=[['Code','Description','MRP','Qty','Amount','Received','Short']];
-    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, (r.mrp||0)*r.qty, '', '']));
+    const d=[['Code','Description','MRP','Qty','Received','Short']];
+    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, '', '']));
     const wsd=XLSX.utils.aoa_to_sheet(d);
-    wsd['!cols']=[{wch:20},{wch:44},{wch:10},{wch:7},{wch:12},{wch:10},{wch:8}];
+    wsd['!cols']=[{wch:22},{wch:42},{wch:10},{wch:7},{wch:10},{wch:9}];
     XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
   }
 
