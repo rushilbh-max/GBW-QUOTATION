@@ -1439,6 +1439,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
       <button class="btn-print-alt" onclick="saveQuoteToCloud()">💾 Save Quote</button>
+      <button class="btn-print-alt" onclick="doPrintDispatch()">📦 Dispatch List</button>
       <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPrint()">🖨 Export PDF</button>
       <button class="btn-print-alt" onclick="doPrintMRP()">💎 MRP Only</button>
@@ -3570,6 +3571,130 @@ function openPrintDoc(html){
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   DISPATCH LIST
+   ────────────────────────────────────────────────────────────────────────
+   The quotation deliberately keeps a repeated code on separate lines, one
+   per area. Dispatch is the opposite job: the godown needs ONE line per
+   code with every quantity added up, across duplicate lines and across all
+   bathrooms. So this is the one place that consolidates.
+   ════════════════════════════════════════════════════════════════════════ */
+function dispatchRows(){
+  const map={}, order=[];
+  function add(code,qty,area,desc){
+    const c=String(code||'').trim().toUpperCase();
+    const q=Math.max(0,parseInt(qty,10)||0);
+    if(!c||q<=0) return;
+    if(!map[c]){ map[c]={code:c,qty:0,areas:[],desc:desc||''}; order.push(c); }
+    map[c].qty+=q;
+    if(!map[c].desc && desc) map[c].desc=desc;
+    const a=String(area||'').trim();
+    if(a && map[c].areas.indexOf(a)<0) map[c].areas.push(a);
+  }
+  if(S.bathrooms && S.bathrooms.length){
+    S.bathrooms.forEach(b=>b.items.forEach(it=>add(it.code,it.qty,b.name,it.desc)));
+  }else{
+    (S.items||[]).forEach(it=>add(it.code,it.qty,'',it.desc));
+  }
+  return order.map(c=>{
+    const r=map[c], p=PMAP[c];
+    if(!r.desc && p) r.desc=p.desc;
+    return r;
+  });
+}
+
+function doPrintDispatch(){
+  const rows=dispatchRows();
+  if(!rows.length){ alert('Add some products to the quotation first.'); return; }
+
+  let lines=0, pcs=0;
+  rows.forEach(r=>{ lines++; pcs+=r.qty; });
+  const anyArea=rows.some(r=>r.areas.length);
+
+  const logoLEl=document.querySelector('.p-logo-l');
+  const logoREl=document.querySelector('.p-logo-r');
+  const logoL=logoLEl?logoLEl.src:'';
+  const logoR=logoREl?logoREl.src:'';
+
+  const dv=$('f-date')?$('f-date').value:'';
+  const dateStr=dv?new Date(dv).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'})
+                  :new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  const qno=($('f-qno')&&$('f-qno').value)||'';
+  const cName=($('f-name')&&$('f-name').value)||'';
+  const cPhone=($('f-phone')&&$('f-phone').value)||'';
+  const cAddr=($('f-addr')&&$('f-addr').value)||'';
+  const bathNames=(S.bathrooms||[]).map(b=>b.name).filter(Boolean);
+
+  let body='';
+  rows.forEach((r,i)=>{
+    body+='<tr>'+
+      '<td class="c">'+(i+1)+'</td>'+
+      '<td class="code">'+esc(r.code)+'</td>'+
+      '<td class="desc">'+esc(r.desc||'—')+'</td>'+
+      (anyArea?'<td class="area">'+esc(r.areas.join(', ')||'—')+'</td>':'')+
+      '<td class="qty">'+r.qty+'</td>'+
+      '<td class="box"></td>'+
+    '</tr>';
+  });
+
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8">'+
+  '<title>Dispatch List '+esc(qno)+'</title>'+
+  '<style>'+
+  '@page{size:A4;margin:12mm 10mm}'+
+  '*{box-sizing:border-box;margin:0;padding:0}'+
+  'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}'+
+  '.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #C9A84C;padding-bottom:8px;margin-bottom:10px}'+
+  '.hd img{height:42px;object-fit:contain}'+
+  '.hd .t{text-align:center;flex:1}'+
+  '.hd .t h1{font-size:15px;letter-spacing:2px;color:#8B6914}'+
+  '.hd .t .s{font-size:9px;letter-spacing:3px;color:#666;margin-top:2px;text-transform:uppercase}'+
+  '.meta{display:flex;justify-content:space-between;gap:14px;font-size:10px;margin-bottom:10px}'+
+  '.meta .bx{border:1px solid #ddd;border-radius:3px;padding:6px 8px;flex:1}'+
+  '.meta b{display:block;font-size:8px;letter-spacing:1px;color:#888;text-transform:uppercase;margin-bottom:2px}'+
+  '.note{background:#FFF8E5;border:1px solid #E8D08A;border-radius:3px;padding:5px 8px;font-size:9px;color:#6b5a20;margin-bottom:8px}'+
+  'table{width:100%;border-collapse:collapse}'+
+  'th{background:#F2EAD8;border:1px solid #d8cba8;font-size:8px;letter-spacing:.8px;text-transform:uppercase;padding:5px 4px;text-align:left;color:#5a4a15}'+
+  'td{border:1px solid #ddd;padding:5px 4px;vertical-align:middle}'+
+  'tr:nth-child(even) td{background:#FAFAF7}'+
+  '.c{text-align:center;width:26px;color:#888}'+
+  '.code{font-family:"Courier New",monospace;font-weight:bold;font-size:11px;white-space:nowrap}'+
+  '.desc{font-size:10px;color:#333}'+
+  '.area{font-size:9px;color:#666;width:22%}'+
+  '.qty{text-align:center;width:44px;font-size:14px;font-weight:bold}'+
+  '.box{width:34px;text-align:center}'+
+  '.box:after{content:"";display:inline-block;width:13px;height:13px;border:1.4px solid #999;border-radius:2px}'+
+  '.tot{margin-top:10px;display:flex;justify-content:flex-end;gap:22px;font-size:12px;font-weight:bold;border-top:2px solid #C9A84C;padding-top:7px}'+
+  '.sig{margin-top:26px;display:flex;gap:26px}'+
+  '.sig div{flex:1;border-top:1px solid #999;padding-top:4px;font-size:9px;color:#666;text-align:center}'+
+  '@media print{tr{page-break-inside:avoid}thead{display:table-header-group}}'+
+  '</style></head><body>'+
+  '<div class="hd">'+(logoL?'<img src="'+logoL+'">':'<span></span>')+
+    '<div class="t"><h1>DISPATCH LIST</h1><div class="s">Grace Bath World &middot; Godown Picking Slip</div></div>'+
+    (logoR?'<img src="'+logoR+'">':'<span></span>')+'</div>'+
+  '<div class="meta">'+
+    '<div class="bx"><b>Customer</b>'+esc(cName||'—')+(cPhone?' &middot; '+esc(cPhone):'')+
+      (cAddr?'<br>'+esc(cAddr):'')+'</div>'+
+    '<div class="bx"><b>Quotation No.</b>'+esc(qno||'—')+'</div>'+
+    '<div class="bx"><b>Date</b>'+esc(dateStr)+'</div>'+
+  '</div>'+
+  (bathNames.length
+    ? '<div class="note"><b style="display:inline">Covers '+bathNames.length+' bathroom(s):</b> '+bathNames.map(esc).join(' &middot; ')+
+      ' &mdash; quantities below are the TOTAL across all of them.</div>'
+    : '<div class="note">Quantities below are the total for the whole quotation, with repeated codes added together.</div>')+
+  '<table><thead><tr>'+
+    '<th class="c">#</th><th>Code</th><th>Description</th>'+
+    (anyArea?'<th>Used in</th>':'')+
+    '<th style="text-align:center">Qty</th><th style="text-align:center">✓</th>'+
+  '</tr></thead><tbody>'+body+'</tbody></table>'+
+  '<div class="tot"><span>'+lines+' items</span><span>'+pcs+' pcs total</span></div>'+
+  '<div class="sig"><div>Packed by</div><div>Checked by</div><div>Received by</div></div>'+
+  '<script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>'+
+  '</body></html>';
+
+  openPrintDoc(html);
+  toast('Dispatch list — '+lines+' items, '+pcs+' pcs');
+}
+
 // ── PDF EXPORT ──
 function doPrint(){
   renderPreview();
@@ -5461,8 +5586,20 @@ function exportQuotationExcel(){
   ws['!cols']= inBath ? [{wch:24},{wch:20},{wch:8}] : [{wch:20},{wch:8}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
+
+  // second sheet: the dispatch view — one row per code, quantities added up
+  const dr=dispatchRows();
+  if(dr.length){
+    const anyArea=dr.some(r=>r.areas.length);
+    const d=[anyArea?['Code','Description','Used in','Qty']:['Code','Description','Qty']];
+    dr.forEach(r=>d.push(anyArea?[r.code,r.desc||'',r.areas.join(', '),r.qty]:[r.code,r.desc||'',r.qty]));
+    const wsd=XLSX.utils.aoa_to_sheet(d);
+    wsd['!cols']= anyArea ? [{wch:20},{wch:44},{wch:28},{wch:8}] : [{wch:20},{wch:44},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
+  }
+
   XLSX.writeFile(wb, fname);
-  toast('Excel exported — '+(aoa.length-1)+' rows');
+  toast('Excel exported — '+(aoa.length-1)+' rows + dispatch sheet');
 }
 
 /* ── wire Search & Edit listeners (DOM already parsed at this point) ── */
