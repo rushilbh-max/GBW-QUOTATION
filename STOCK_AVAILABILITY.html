@@ -1557,15 +1557,313 @@ function exportRows(){
   const body=results.map(r=>[r.sr,r.code,r.qty,effStatus(r),r.found?r.name:"",r.brand||"",r.colour||"",r.gbw,r.disp,r.pend,r.net,r.mvp,r.msl]);
   return [head,...body];
 }
+/* ================= Styled Excel writer =================
+   Builds a real .xlsx (Office Open XML) by hand so the export can carry full formatting —
+   fills, fonts, borders, centred alignment, number formats, merged banner, logo, frozen panes,
+   filters, print setup — none of which the bundled SheetJS community build can write. */
+const XL=(()=>{
+  const enc=new TextEncoder();
+  const CRC=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+  const crc32=b=>{ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c=CRC[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; };
+  // minimal ZIP (stored entries) — an .xlsx is just a zip of XML parts
+  function zip(files){
+    const parts=[], central=[]; let off=0; const d=new Date();
+    const dosT=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF;
+    const dosD=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+    for(const f of files){
+      const nm=enc.encode(f.name), data=(typeof f.data==="string")?enc.encode(f.data):f.data, crc=crc32(data);
+      const lh=new DataView(new ArrayBuffer(30));
+      lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true); lh.setUint16(8,0,true);
+      lh.setUint16(10,dosT,true); lh.setUint16(12,dosD,true); lh.setUint32(14,crc,true);
+      lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true); lh.setUint16(26,nm.length,true); lh.setUint16(28,0,true);
+      parts.push(new Uint8Array(lh.buffer),nm,data);
+      const ch=new DataView(new ArrayBuffer(46));
+      ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true);
+      ch.setUint16(12,dosT,true); ch.setUint16(14,dosD,true); ch.setUint32(16,crc,true);
+      ch.setUint32(20,data.length,true); ch.setUint32(24,data.length,true); ch.setUint16(28,nm.length,true);
+      ch.setUint32(42,off,true);
+      central.push(new Uint8Array(ch.buffer),nm);
+      off+=30+nm.length+data.length;
+    }
+    const csz=central.reduce((s,a)=>s+a.length,0);
+    const end=new DataView(new ArrayBuffer(22));
+    end.setUint32(0,0x06054b50,true); end.setUint16(8,files.length,true); end.setUint16(10,files.length,true);
+    end.setUint32(12,csz,true); end.setUint32(16,off,true);
+    return new Blob([...parts,...central,new Uint8Array(end.buffer)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  }
+  const x=s=>String(s==null?"":s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const colL=c=>{ let s=""; while(c>0){ const m=(c-1)%26; s=String.fromCharCode(65+m)+s; c=Math.floor((c-1)/26); } return s; };
+  const ref=(r,c)=>colL(c)+r;
+
+  // ---------- style registry (dedupes fonts / fills / borders / number formats / xfs) ----------
+  function Styles(){
+    const fonts=[], fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'],
+          borders=['<border><left/><right/><top/><bottom/><diagonal/></border>'], numFmts=[], xfs=[];
+    const fI={}, flI={}, bI={}, nI={}, xI={};
+    const add=(arr,idx,key)=>{ if(!(key in idx)){ idx[key]=arr.length; arr.push(key); } return idx[key]; };
+    const font=f=>add(fonts,fI,`<font>${f.b?"<b/>":""}${f.i?"<i/>":""}<sz val="${f.sz||10}"/><color rgb="FF${f.c||"28322F"}"/><name val="${f.n||"Arial"}"/><family val="${f.n==="Consolas"?3:2}"/></font>`);
+    const fill=c=>c?add(fills,flI,`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`):0;
+    const side=(t,v)=>v?`<${t} style="${v[0]}"><color rgb="FF${v[1]}"/></${t}>`:`<${t}/>`;
+    const border=b=>b?add(borders,bI,`<border>${side("left",b.l)}${side("right",b.r)}${side("top",b.t)}${side("bottom",b.b)}<diagonal/></border>`):0;
+    const BUILTIN={"General":0,"0":1,"0.00":2,"#,##0":3,"#,##0.00":4,"0%":9,"0.00%":10};
+    const numFmt=code=>{ if(!code) return 0; if(code in BUILTIN) return BUILTIN[code]; if(!(code in nI)){ nI[code]=164+numFmts.length; numFmts.push(`<numFmt numFmtId="${nI[code]}" formatCode="${x(code)}"/>`); } return nI[code]; };
+    font({}); // default font = index 0
+    const xf=s=>{
+      const key=JSON.stringify(s);
+      if(key in xI) return xI[key];
+      const a=s.al||{};
+      const al=`<alignment horizontal="${a.h||"general"}" vertical="${a.v||"center"}"${a.wrap?' wrapText="1"':""}${a.indent?` indent="${a.indent}"`:""}/>`;
+      xI[key]=xfs.length;
+      xfs.push(`<xf numFmtId="${numFmt(s.nf)}" fontId="${font(s.f||{})}" fillId="${fill(s.fill)}" borderId="${border(s.bd)}" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">${al}</xf>`);
+      return xI[key];
+    };
+    xf({}); // style 0 = plain
+    const xml=()=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`+
+      (numFmts.length?`<numFmts count="${numFmts.length}">${numFmts.join("")}</numFmts>`:"")+
+      `<fonts count="${fonts.length}">${fonts.join("")}</fonts><fills count="${fills.length}">${fills.join("")}</fills>`+
+      `<borders count="${borders.length}">${borders.join("")}</borders>`+
+      `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`+
+      `<cellXfs count="${xfs.length}">${xfs.join("")}</cellXfs>`+
+      `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/>`+
+      `<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>`;
+    return {xf,xml};
+  }
+
+  // ---------- worksheet ----------
+  function Sheet(name){
+    const cells={}, heights={}, merges=[]; let cols=[], maxR=1, maxC=1;
+    const api={ name,
+      set(r,c,v,s,f){ (cells[r]||(cells[r]={}))[c]={v,s:s||0,f}; if(r>maxR)maxR=r; if(c>maxC)maxC=c; return api; },
+      fill(r1,c1,r2,c2,s){ for(let r=r1;r<=r2;r++) for(let c=c1;c<=c2;c++){ const e=cells[r]&&cells[r][c]; if(e) e.s=s; else api.set(r,c,null,s); } return api; },
+      merge(r1,c1,r2,c2,v,s,f){ api.fill(r1,c1,r2,c2,s); api.set(r1,c1,v,s,f); merges.push(ref(r1,c1)+":"+ref(r2,c2)); return api; },
+      height(r,h){ heights[r]=h; return api; },
+      widths(w){ cols=w; return api; },
+      opts:{},
+      xml(){
+        const o=api.opts;
+        let s=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`;
+        s+=`<sheetPr>${o.tab?`<tabColor rgb="FF${o.tab}"/>`:""}<pageSetUpPr fitToPage="1"/></sheetPr>`;
+        s+=`<dimension ref="A1:${ref(maxR,maxC)}"/>`;
+        s+=`<sheetViews><sheetView workbookViewId="0" showGridLines="0"${o.selected?' tabSelected="1"':""} zoomScale="100">`;
+        if(o.freeze){ const fr=o.freeze.row, fc=o.freeze.col||0, tl=ref(fr+1,fc+1);
+          const pane=fc&&fr?"bottomRight":fr?"bottomLeft":"topRight";
+          s+=`<pane${fc?` xSplit="${fc}"`:""}${fr?` ySplit="${fr}"`:""} topLeftCell="${tl}" activePane="${pane}" state="frozen"/>`;
+          if(fc&&fr) s+=`<selection pane="topRight"/><selection pane="bottomLeft"/>`;
+          s+=`<selection pane="${pane}" activeCell="${tl}" sqref="${tl}"/>`; }
+        s+=`</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>`;
+        if(cols.length) s+=`<cols>${cols.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols>`;
+        s+=`<sheetData>`;
+        for(let r=1;r<=maxR;r++){
+          const row=cells[r]; if(!row&&!heights[r]) continue;
+          s+=`<row r="${r}"${heights[r]?` ht="${heights[r]}" customHeight="1"`:""}>`;
+          if(row) Object.keys(row).map(Number).sort((a,b)=>a-b).forEach(c=>{
+            const e=row[c], R=ref(r,c), st=e.s?` s="${e.s}"`:"";
+            if(e.f){ const isStr=typeof e.v==="string"; s+=`<c r="${R}"${st}${isStr?' t="str"':""}><f>${x(e.f)}</f>${e.v==null?"":`<v>${x(e.v)}</v>`}</c>`; }
+            else if(typeof e.v==="number"&&isFinite(e.v)) s+=`<c r="${R}"${st}><v>${e.v}</v></c>`;
+            else if(e.v==null||e.v==="") s+=`<c r="${R}"${st}/>`;
+            else s+=`<c r="${R}"${st} t="inlineStr"><is><t xml:space="preserve">${x(e.v)}</t></is></c>`;
+          });
+          s+=`</row>`;
+        }
+        s+=`</sheetData>`;
+        if(o.filter) s+=`<autoFilter ref="${o.filter}"/>`;
+        if(merges.length) s+=`<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join("")}</mergeCells>`;
+        s+=`<printOptions horizontalCentered="1"/><pageMargins left="0.35" right="0.35" top="0.45" bottom="0.55" header="0.25" footer="0.25"/>`;
+        s+=`<pageSetup paperSize="9" orientation="${o.portrait?"portrait":"landscape"}" fitToWidth="1" fitToHeight="0"/>`;
+        if(o.footer) s+=`<headerFooter><oddFooter>${x(o.footer)}</oddFooter></headerFooter>`;
+        if(o.drawing) s+=`<drawing r:id="rId1"/>`;
+        return s+`</worksheet>`;
+      }
+    };
+    return api;
+  }
+
+  // ---------- workbook package ----------
+  function build({sheets, styles, title, creator, logo}){
+    const W="http://schemas.openxmlformats.org/", files=[];
+    const q=n=>"'"+n.replace(/'/g,"''")+"'";
+    const imgExt = logo ? (logo.mime==="image/png"?"png":"jpeg") : null;
+    files.push({name:"[Content_Types].xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="${W}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${logo?`<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`:""}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`});
+    files.push({name:"_rels/.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${W}package/2006/relationships"><Relationship Id="rId1" Type="${W}officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="${W}package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="${W}officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`});
+    const iso=new Date().toISOString().replace(/\.\d+Z$/,"Z");
+    files.push({name:"docProps/core.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="${W}package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${x(title)}</dc:title><dc:creator>${x(creator)}</dc:creator><cp:lastModifiedBy>${x(creator)}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${iso}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${iso}</dcterms:modified></cp:coreProperties>`});
+    files.push({name:"docProps/app.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="${W}officeDocument/2006/extended-properties"><Application>Microsoft Excel</Application><Company>${x(creator)}</Company></Properties>`});
+    const dn=[];
+    sheets.forEach((s,i)=>{ const o=s.opts;
+      if(o.filter) dn.push(`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">${q(s.name)}!${o.filter.replace(/([A-Z]+)(\d+)/g,"$$$1$$$2")}</definedName>`);
+      if(o.printTitleRow) dn.push(`<definedName name="_xlnm.Print_Titles" localSheetId="${i}">${q(s.name)}!$${o.printTitleRow}:$${o.printTitleRow}</definedName>`); });
+    files.push({name:"xl/workbook.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="${W}spreadsheetml/2006/main" xmlns:r="${W}officeDocument/2006/relationships"><workbookPr/><bookViews><workbookView activeTab="0"/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${x(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets>${dn.length?`<definedNames>${dn.join("")}</definedNames>`:""}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`});
+    files.push({name:"xl/_rels/workbook.xml.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${W}package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="${W}officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length+1}" Type="${W}officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`});
+    files.push({name:"xl/styles.xml", data:styles.xml()});
+    sheets.forEach((s,i)=>files.push({name:`xl/worksheets/sheet${i+1}.xml`, data:s.xml()}));
+    if(logo){
+      const E=9525; // EMU per pixel
+      files.push({name:"xl/worksheets/_rels/sheet1.xml.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${W}package/2006/relationships"><Relationship Id="rId1" Type="${W}officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`});
+      files.push({name:"xl/drawings/_rels/drawing1.xml.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${W}package/2006/relationships"><Relationship Id="rId1" Type="${W}officeDocument/2006/relationships/image" Target="../media/image1.${imgExt}"/></Relationships>`});
+      const cx=Math.round(logo.w*E), cy=Math.round(logo.h*E);
+      files.push({name:"xl/drawings/drawing1.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="${W}drawingml/2006/spreadsheetDrawing" xmlns:a="${W}drawingml/2006/main" xmlns:r="${W}officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>${6*E}</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>${(logo.top||8)*E}</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`});
+      files.push({name:`xl/media/image1.${imgExt}`, data:logo.bytes});
+    }
+    return zip(files);
+  }
+  // data:URL → bytes (for embedding the report logo)
+  function dataUrlBytes(u){ const m=/^data:(image\/(?:png|jpe?g));base64,(.*)$/i.exec(String(u||"")); if(!m) return null;
+    const bin=atob(m[2]); const b=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i);
+    return {mime:/png/i.test(m[1])?"image/png":"image/jpeg", bytes:b}; }
+  return {Styles, Sheet, build, colL, ref, dataUrlBytes};
+})();
+
+/* ---------- the formatted stock report workbook ---------- */
+function buildStockWorkbook(){
+  const S=XL.Styles(), R=XL.ref, L=XL.colL;
+  const C={teal:"0F5E57", tealD:"0A443F", tealBg:"E7F0EE", ink:"15201F", ink2:"3C4B49", muted:"7C857F", line:"E2DCCD",
+           paper:"F3EFE6", cream:"FAF7EF", white:"FFFFFF", green:"1C7A4C", greenBg:"E6F3EA", red:"B3261E", redBg:"FBEAE8", rose:"FDF3F1", copper:"B0673C"};
+  const thin=[ "thin", C.line ], B={l:thin,r:thin,t:thin,b:thin};
+  const now=new Date();
+  const genStr=now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+", "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:true});
+  const company=(DB.brandcfg&&DB.brandcfg.name)||"GRACE BATH WORLD";
+  const party=(partyName||"").trim();
+  const NF_INT="#,##0;[Red]-#,##0;0", NF_DEC="#,##0.00;[Red]-#,##0.00;0";
+  const nfOf=v=>Number.isInteger(Number(v))?NF_INT:NF_DEC;
+  const NA_NAME="not in master catalogue";
+
+  // ===== Sheet 1 · ORDER STATUS =====
+  const ws=XL.Sheet("ORDER STATUS");
+  const H=["SR#","CODE","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL"];
+  const NC=H.length, HR=8, R1=HR+1, n=results.length, RN=HR+n, TR=RN+1;
+  ws.widths([6.5,22,10.5,17,44,10,10,11,9.5,11.5,10.5,11.5,13]);
+  ws.opts={tab:C.teal, selected:true, freeze:{row:HR,col:2}, filter:`A${HR}:${L(NC)}${RN}`, printTitleRow:HR,
+    footer:`&L&8&K7C857F${company.replace(/&/g,"&&")}&C&8&K7C857FPage &P of &N&R&8&K7C857FGenerated ${genStr}`, drawing:true};
+
+  // header block (logo sits over A1:D3)
+  ws.height(1,24).height(2,17).height(3,16).height(4,7).height(5,15).height(6,27).height(7,9).height(HR,32);
+  ws.merge(1,5,1,NC,"STOCK AVAILABILITY REPORT", S.xf({f:{b:1,sz:17,c:C.tealD},al:{h:"right",v:"bottom"}}));
+  ws.merge(2,5,2,NC, party?("Party: "+party):company, S.xf({f:{b:1,sz:11,c:C.ink},al:{h:"right"}}));
+  ws.merge(3,5,3,NC, `Generated ${genStr}   ·   Sales Order: ${salesOrder}   ·   Status Display: ${statusDisplay}`, S.xf({f:{sz:9,c:C.muted},al:{h:"right"}}));
+  ws.fill(4,1,4,NC,S.xf({bd:{b:["medium",C.teal]}}));
+
+  // KPI tiles (live formulas over the table, so they follow edits)
+  const rg=c=>`${L(c)}${R1}:${L(c)}${RN}`;
+  const ok=results.filter(r=>effStatus(r)==="AVAILABLE").length;
+  const qtyTot=results.reduce((s,r)=>s+(+r.qty||0),0);
+  const brandSet=new Set(results.map(r=>r.brand).filter(Boolean));
+  const tiles=[
+    [1,2,"LINE ITEMS", `COUNTA(${rg(2)})`, n, C.teal],
+    [3,4,"TOTAL ORDER QTY", `SUM(${rg(3)})`, qtyTot, C.ink],
+    [5,5,"AVAILABLE", `COUNTIF(${rg(4)},"AVAILABLE")`, ok, C.green],
+    [6,8,"NOT AVAILABLE", `COUNTIF(${rg(4)},"NOT AVAILABLE")`, n-ok, C.red],
+    [9,11,"NOT IN MASTER", `COUNTIF(${rg(5)},"${NA_NAME}")`, results.filter(r=>!r.found).length, C.copper],
+    [12,13,"BRANDS", `SUMPRODUCT((${rg(6)}<>"—")/COUNTIF(${rg(6)},${rg(6)}))`, brandSet.size, C.tealD],
+  ];
+  const tileBd={l:["medium",C.white],r:["medium",C.white]};
+  tiles.forEach(([c1,c2,lab,f,v,col])=>{
+    ws.merge(5,c1,5,c2,lab,S.xf({fill:C.paper,bd:tileBd,f:{b:1,sz:7.5,c:C.muted},al:{h:"center",v:"bottom"}}));
+    ws.merge(6,c1,6,c2,v,S.xf({fill:C.paper,bd:tileBd,nf:"#,##0",f:{b:1,sz:16,c:col},al:{h:"center",v:"center"}}),f);
+  });
+
+  // column header row
+  const hdrSt=S.xf({fill:C.teal,f:{b:1,sz:9,c:C.white},bd:{l:["thin",C.tealD],r:["thin",C.tealD],t:["thin",C.tealD],b:["medium",C.tealD]},al:{h:"center",v:"center",wrap:1}});
+  H.forEach((h,i)=>ws.set(HR,i+1,h,hdrSt));
+
+  // data rows — zebra for available, soft rose for not-available, strong pill-style status cell
+  results.forEach((r,i)=>{
+    const row=R1+i, st=effStatus(r), okr=st==="AVAILABLE";
+    const bg= okr ? (i%2?C.cream:C.white) : C.rose;
+    const base=(o={})=>S.xf(Object.assign({fill:bg,bd:B,al:{h:"center",v:"center"}},o));
+    ws.height(row,20);
+    ws.set(row,1,r.sr,base({f:{sz:9,c:C.muted}}));
+    ws.set(row,2,r.code,base({f:{b:1,sz:10,c:C.tealD,n:"Consolas"}}));
+    ws.set(row,3,+r.qty||0,base({nf:nfOf(r.qty),f:{b:1,sz:10.5,c:C.ink}}));
+    ws.set(row,4,st,base({fill:okr?C.greenBg:C.redBg,f:{b:1,sz:9,c:okr?C.green:C.red}}));
+    ws.set(row,5,r.found?(r.name||""):NA_NAME,base({al:{h:"left",v:"center",indent:1},f:r.found?{sz:9.5,c:C.ink2}:{i:1,sz:9,c:C.muted}}));
+    ws.set(row,6,r.brand||"—",base({f:{b:1,sz:9.5,c:r.brand?(r.brandSrc==="master"?C.ink2:C.teal):C.line,n:"Consolas"}}));
+    ws.set(row,7,r.colour||"—",base({f:{b:1,sz:9.5,c:r.colour?C.teal:C.line,n:"Consolas"}}));
+    [["gbw",8],["disp",9],["pend",10],["net",11],["mvp",12]].forEach(([k,c])=>
+      ws.set(row,c,Number(r[k])||0,base({nf:nfOf(r[k]),f:{sz:10,c:k==="gbw"||k==="net"?C.ink:C.ink2,b:k==="gbw"?1:0}})));
+    const notMsl=r.msl==="NOT IN MSL";
+    ws.set(row,13,r.msl||"",base({f:notMsl?{i:1,sz:8.5,c:C.muted}:{b:1,sz:9,c:C.green}}));
+  });
+
+  // totals row — SUBTOTAL so it follows the Excel filter
+  const totSt=(o={})=>S.xf(Object.assign({fill:C.tealBg,bd:{t:["medium",C.teal],b:["medium",C.teal],l:thin,r:thin},al:{h:"center",v:"center"},f:{b:1,sz:10,c:C.tealD}},o));
+  ws.height(TR,24);
+  for(let c=1;c<=NC;c++) ws.set(TR,c,null,totSt());
+  ws.set(TR,2,"TOTAL",totSt());
+  ws.set(TR,3,qtyTot,totSt({nf:nfOf(qtyTot),f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(3)})`);
+  ws.set(TR,4,n+" lines shown",totSt({f:{b:1,sz:9,c:C.tealD}}),`SUBTOTAL(103,${rg(2)})&" lines shown"`);
+  ws.merge(TR+2,1,TR+2,NC,"Availability judged on GBW Stock vs ordered quantity  ·  Brand & Colour from the BRAND+COLOUR sheet (brand falls back to the master catalogue)  ·  Manual status overrides are included  ·  Use the ▼ filters on the header row to slice by Status, Brand or Colour.",
+    S.xf({f:{i:1,sz:8,c:C.muted},al:{h:"left",v:"center",wrap:1}}));
+  ws.height(TR+2,24);
+
+  // ===== Sheet 2 · BRAND SUMMARY (live formulas pointing at sheet 1) =====
+  const bs=XL.Sheet("BRAND SUMMARY");
+  bs.widths([12,34,10,13,12,15,12]);
+  const BH=["BRAND","BRAND NAME","LINES","ORDER QTY","AVAILABLE","NOT AVAILABLE","FILL RATE"], BHR=5;
+  const groups={};
+  results.forEach(r=>{ const k=r.brand||"—"; const g=groups[k]||(groups[k]={lines:0,qty:0,ok:0,name:""});
+    g.lines++; g.qty+=(+r.qty||0); if(effStatus(r)==="AVAILABLE") g.ok++;
+    if(!g.name) g.name = k==="—" ? "(no brand)" : ((IDX.brandname&&IDX.brandname[UP(k)])||r.brandName||""); });
+  const keys=Object.keys(groups).sort((a,b)=>(a==="—")-(b==="—")||groups[b].qty-groups[a].qty||a.localeCompare(b)); // "(no brand)" always last
+  const BR1=BHR+1, BRN=BHR+keys.length, BTR=BRN+1;
+  bs.opts={tab:C.copper, freeze:{row:BHR,col:0}, filter:`A${BHR}:G${BRN}`, printTitleRow:BHR, portrait:true,
+    footer:`&L&8&K7C857F${company.replace(/&/g,"&&")}&R&8&K7C857FBrand summary · ${genStr}`};
+  bs.height(1,26).height(2,16).height(3,8).height(BHR,30);
+  bs.merge(1,1,1,7,"BRAND-WISE SUMMARY",S.xf({f:{b:1,sz:16,c:C.tealD},al:{h:"left",v:"bottom"}}));
+  bs.merge(2,1,2,7,(party?("Party: "+party+"   ·   "):"")+company+"   ·   "+genStr,S.xf({f:{sz:9,c:C.muted},al:{h:"left"}}));
+  bs.fill(3,1,3,7,S.xf({bd:{b:["medium",C.teal]}}));
+  BH.forEach((h,i)=>bs.set(BHR,i+1,h,hdrSt));
+  const src=c=>`'ORDER STATUS'!$${L(c)}$${R1}:$${L(c)}$${RN}`;
+  keys.forEach((k,i)=>{
+    const row=BR1+i, g=groups[k], bg=i%2?C.cream:C.white;
+    const b=(o={})=>S.xf(Object.assign({fill:bg,bd:B,al:{h:"center",v:"center"}},o));
+    bs.height(row,20);
+    bs.set(row,1,k,b({f:{b:1,sz:10,c:C.teal,n:"Consolas"}}));
+    bs.set(row,2,g.name,b({al:{h:"left",v:"center",indent:1},f:{sz:9.5,c:C.ink2}}));
+    bs.set(row,3,g.lines,b({nf:"#,##0",f:{sz:10,c:C.ink}}),`COUNTIF(${src(6)},A${row})`);
+    bs.set(row,4,g.qty,b({nf:nfOf(g.qty),f:{b:1,sz:10,c:C.ink}}),`SUMIF(${src(6)},A${row},${src(3)})`);
+    bs.set(row,5,g.ok,b({nf:"#,##0",f:{b:1,sz:10,c:C.green}}),`COUNTIFS(${src(6)},A${row},${src(4)},"AVAILABLE")`);
+    bs.set(row,6,g.lines-g.ok,b({nf:"#,##0",f:{b:1,sz:10,c:(g.lines-g.ok)?C.red:C.muted}}),`C${row}-E${row}`);
+    const fr=g.lines?g.ok/g.lines:0;
+    bs.set(row,7,fr,b({nf:"0%",fill:fr>=1?C.greenBg:fr===0?C.redBg:bg,f:{b:1,sz:10,c:fr>=1?C.green:fr===0?C.red:C.copper}}),`IFERROR(E${row}/C${row},0)`);
+  });
+  const bt=(o={})=>S.xf(Object.assign({fill:C.tealBg,bd:{t:["medium",C.teal],b:["medium",C.teal],l:thin,r:thin},al:{h:"center",v:"center"},f:{b:1,sz:10,c:C.tealD}},o));
+  bs.height(BTR,24);
+  bs.set(BTR,1,"TOTAL",bt()); bs.set(BTR,2,keys.length+" brand"+(keys.length===1?"":"s"),bt({al:{h:"left",v:"center",indent:1}}));
+  bs.set(BTR,3,n,bt({nf:"#,##0"}),`SUM(C${BR1}:C${BRN})`);
+  bs.set(BTR,4,qtyTot,bt({nf:nfOf(qtyTot)}),`SUM(D${BR1}:D${BRN})`);
+  bs.set(BTR,5,ok,bt({nf:"#,##0"}),`SUM(E${BR1}:E${BRN})`);
+  bs.set(BTR,6,n-ok,bt({nf:"#,##0"}),`SUM(F${BR1}:F${BRN})`);
+  bs.set(BTR,7,n?ok/n:0,bt({nf:"0%"}),`IFERROR(E${BTR}/C${BTR},0)`);
+
+  // logo (custom report logo or the default GBW wordmark), fitted into A1:D3
+  let logo=null;
+  try{ const lg=effLogo(); const bt2=XL.dataUrlBytes(lg.url);
+    if(bt2){ const asp=(lg.w&&lg.h)?lg.w/lg.h:3; let h=46, w=h*asp; if(w>300){ w=300; h=w/asp; }
+      logo=Object.assign(bt2,{w:Math.round(w),h:Math.round(h),top:Math.max(4,Math.round((76-h)/2))}); } }catch(e){}
+  if(!logo) ws.opts.drawing=false;
+  return XL.build({sheets:[ws,bs], styles:S, title:"Stock Availability Report", creator:company, logo});
+}
+
 function exportXlsx(){
-  if(typeof XLSX==="undefined"){ toast("Excel library unavailable — use CSV","err"); return; }
-  const aoa=exportRows();
-  const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"]=[{wch:6},{wch:22},{wch:10},{wch:15},{wch:36},{wch:9},{wch:9},{wch:11},{wch:9},{wch:14},{wch:11},{wch:12},{wch:14}];
-  ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:aoa.length-1,c:aoa[0].length-1}})}; // filter by Brand / Colour / Status in Excel
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"ORDER STATUS");
-  XLSX.writeFile(wb,"stock-availability-"+new Date().toISOString().slice(0,10)+".xlsx");
-  toast("Exported to Excel","ok");
+  if(!results.length){ toast("Run a check first","warn"); return; }
+  const company=(DB.brandcfg&&DB.brandcfg.name)||"GRACE BATH WORLD";
+  const slug=t=>String(t||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  const fn=[slug(company),"stock",slug(partyName)].filter(Boolean).join("-")+"-"+new Date().toISOString().slice(0,10)+".xlsx";
+  try{
+    const blob=buildStockWorkbook();
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fn;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast("Formatted Excel exported ("+results.length+" items)","ok");
+  }catch(err){
+    console.error(err);
+    // safety net: plain (unformatted) export via SheetJS
+    if(typeof XLSX==="undefined"){ toast("Excel export failed — use CSV","err"); return; }
+    const aoa=exportRows(); const ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=[{wch:6},{wch:22},{wch:10},{wch:15},{wch:36},{wch:9},{wch:9},{wch:11},{wch:9},{wch:14},{wch:11},{wch:12},{wch:14}];
+    ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:aoa.length-1,c:aoa[0].length-1}})};
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"ORDER STATUS"); XLSX.writeFile(wb,fn);
+    toast("Exported plain Excel (formatting failed: "+err.message+")","warn");
+  }
 }
 function exportCsv(){
   const csv=exportRows().map(r=>r.map(c=>{ const s=String(c==null?"":c); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(",")).join("\n");
