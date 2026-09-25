@@ -1759,12 +1759,13 @@ function buildStockWorkbook(){
 
   // ===== Sheet 1 · ORDER STATUS — table starts on row 1 =====
   const ws=XL.Sheet("ORDER STATUS");
-  const H=["SR#","CODE","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","RDMS ORDER","SDP","RDMS VALUE\n(SDP − 4%)"];
+  const H=["SR#","CODE","RDMS ORDER","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","SDP","RDMS VALUE"];
   const NC=H.length, HR=1, R1=HR+1, n=results.length, RN=HR+n, TR=RN+1, DR=TR+1;   // DR = row holding the editable RDMS discount %
-  const cRO=14, cSDP=15, cRV=16;
+  // column map — RDMS ORDER sits right after CODE; SDP & RDMS VALUE stay at the end
+  const cRO=3, cQTY=4, cST=5, cNAME=6, cBR=7, cCOL=8, cMSL=14, cSDP=15, cRV=16;
   const NF_RS='"₹"#,##0.00', DISC=0.04;
-  ws.widths([6.5,22,10.5,17,44,10,10,11,9.5,11.5,10.5,11.5,13,12,12,16]);
-  ws.opts={tab:C.teal, selected:true, freeze:{row:HR,col:2}, filter:`A${HR}:${L(NC)}${RN}`, printTitleRow:HR,
+  ws.widths([6.5,22,17,10.5,17,44,10,10,11,9.5,11.5,10.5,11.5,13,12,16]);
+  ws.opts={tab:C.teal, selected:true, freeze:{row:HR,col:cRO}, filter:`A${HR}:${L(NC)}${RN}`, printTitleRow:HR,
     footer:`&L&8&K7C857F${company.replace(/&/g,"&&")}${party?(" · "+party.replace(/&/g,"&&")):""}&C&8&K7C857FPage &P of &N&R&8&K7C857FGenerated ${genStr}`};
   const rg=c=>`${L(c)}${R1}:${L(c)}${RN}`;
   const ok=results.filter(r=>effStatus(r)==="AVAILABLE").length;
@@ -1774,8 +1775,13 @@ function buildStockWorkbook(){
   const hb={l:["thin",C.tealD],r:["thin",C.tealD],t:["thin",C.tealD],b:["medium",C.tealD]};
   const hdrSt=S.xf({fill:C.teal,f:{b:1,sz:9,c:C.white},bd:hb,al:{h:"center",v:"center",wrap:1}});
   const hdrRd=S.xf({fill:C.copper,f:{b:1,sz:9,c:C.white},bd:{l:["thin","8A4F2C"],r:["thin","8A4F2C"],t:["thin","8A4F2C"],b:["medium","8A4F2C"]},al:{h:"center",v:"center",wrap:1}});
-  ws.height(HR,34);
-  H.forEach((h,i)=>ws.set(HR,i+1,h,i+1>=cRO?hdrRd:hdrSt));
+  ws.height(HR,48);
+  H.forEach((h,i)=>ws.set(HR,i+1,h,[cRO,cSDP,cRV].includes(i+1)?hdrRd:hdrSt));
+  // live RDMS total in the (frozen) RDMS ORDER header cell — always on screen while you type quantities
+  const discTxt=`ROUND($${L(cSDP)}$${DR}*100,2)&"%"`;
+  ws.set(HR,cRO,"RDMS ORDER\n₹ 0.00\n(SDP − 4%)",S.xf({fill:"8A4F2C",f:{b:1,sz:10,c:C.white},bd:{l:["medium","5E3419"],r:["medium","5E3419"],t:["medium","5E3419"],b:["medium","5E3419"]},al:{h:"center",v:"center",wrap:1}}),
+    `"RDMS ORDER"&CHAR(10)&"₹ "&TEXT(SUBTOTAL(109,${rg(cRV)}),"#,##0.00")&CHAR(10)&"(SDP − "&${discTxt}&")"`);
+  ws.set(HR,cRV,"RDMS VALUE\n(SDP − 4%)",hdrRd,`"RDMS VALUE"&CHAR(10)&"(SDP − "&${discTxt}&")"`);
 
   // data rows — zebra for available, soft rose for not-available, strong status cell
   results.forEach((r,i)=>{
@@ -1785,15 +1791,15 @@ function buildStockWorkbook(){
     ws.height(row,20);
     ws.set(row,1,r.sr,base({f:{sz:9,c:C.muted}}));
     ws.set(row,2,r.code,base({f:{b:1,sz:10,c:C.tealD,n:"Consolas"}}));
-    ws.set(row,3,+r.qty||0,base({nf:nfOf(r.qty),f:{b:1,sz:10.5,c:C.ink}}));
-    ws.set(row,4,st,base({fill:okr?C.greenBg:C.redBg,f:{b:1,sz:9,c:okr?C.green:C.red}}));
-    ws.set(row,5,r.found?(r.name||""):NA_NAME,base({al:{h:"left",v:"center",indent:1},f:r.found?{sz:9.5,c:C.ink2}:{i:1,sz:9,c:C.muted}}));
-    ws.set(row,6,r.brand||"—",base({f:{b:1,sz:9.5,c:r.brand?(r.brandSrc==="master"?C.ink2:C.teal):C.line,n:"Consolas"}}));
-    ws.set(row,7,r.colour||"—",base({f:{b:1,sz:9.5,c:r.colour?C.teal:C.line,n:"Consolas"}}));
-    [["gbw",8],["disp",9],["pend",10],["net",11],["mvp",12]].forEach(([k,c])=>
+    ws.set(row,cQTY,+r.qty||0,base({nf:nfOf(r.qty),f:{b:1,sz:10.5,c:C.ink}}));
+    ws.set(row,cST,st,base({fill:okr?C.greenBg:C.redBg,f:{b:1,sz:9,c:okr?C.green:C.red}}));
+    ws.set(row,cNAME,r.found?(r.name||""):NA_NAME,base({al:{h:"left",v:"center",indent:1},f:r.found?{sz:9.5,c:C.ink2}:{i:1,sz:9,c:C.muted}}));
+    ws.set(row,cBR,r.brand||"—",base({f:{b:1,sz:9.5,c:r.brand?(r.brandSrc==="master"?C.ink2:C.teal):C.line,n:"Consolas"}}));
+    ws.set(row,cCOL,r.colour||"—",base({f:{b:1,sz:9.5,c:r.colour?C.teal:C.line,n:"Consolas"}}));
+    [["gbw",9],["disp",10],["pend",11],["net",12],["mvp",13]].forEach(([k,c])=>
       ws.set(row,c,Number(r[k])||0,base({nf:nfOf(r[k]),f:{sz:10,c:k==="gbw"||k==="net"?C.ink:C.ink2,b:k==="gbw"?1:0}})));
     const notMsl=r.msl==="NOT IN MSL";
-    ws.set(row,13,r.msl||"",base({f:notMsl?{i:1,sz:8.5,c:C.muted}:{b:1,sz:9,c:C.green}}));
+    ws.set(row,cMSL,r.msl||"",base({f:notMsl?{i:1,sz:8.5,c:C.muted}:{b:1,sz:9,c:C.green}}));
     // RDMS ORDER: blank, yellow input cell — type a qty and RDMS VALUE fills in
     ws.set(row,cRO,null,S.xf({fill:"FFF6CC",bd:{l:["thin","D9B44A"],r:["thin","D9B44A"],t:["hair","D9B44A"],b:["hair","D9B44A"]},nf:"#,##0",al:{h:"center",v:"center"},f:{b:1,sz:10.5,c:"1F3A93"}}));
     ws.set(row,cSDP,r.sdp?r.sdp:null,base({nf:NF_RS,f:{sz:9.5,c:C.ink2}}));
@@ -1806,13 +1812,13 @@ function buildStockWorkbook(){
   ws.height(TR,24);
   for(let c=1;c<=NC;c++) ws.set(TR,c,null,totSt());
   ws.set(TR,2,"TOTAL",totSt());
-  ws.set(TR,3,qtyTot,totSt({nf:nfOf(qtyTot),f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(3)})`);
-  ws.set(TR,4,n+" lines shown",totSt({f:{b:1,sz:9,c:C.tealD}}),`SUBTOTAL(103,${rg(2)})&" lines shown"`);
+  ws.set(TR,cQTY,qtyTot,totSt({nf:nfOf(qtyTot),f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(cQTY)})`);
+  ws.set(TR,cST,n+" lines shown",totSt({f:{b:1,sz:9,c:C.tealD}}),`SUBTOTAL(103,${rg(2)})&" lines shown"`);
   ws.set(TR,cRO,0,totSt({nf:"#,##0",fill:"FCEBC0",f:{b:1,sz:11,c:"1F3A93"}}),`SUBTOTAL(109,${rg(cRO)})`);
   ws.set(TR,cRV,0,totSt({nf:NF_RS,fill:"FCEBC0",f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(cRV)})`);
   // editable discount: RDMS VALUE = RDMS ORDER × SDP × (1 − this %)
   ws.height(DR,20);
-  ws.merge(DR,cRO-3,DR,cRO,"RDMS discount on SDP  →",S.xf({f:{b:1,sz:9,c:C.copper},al:{h:"right",v:"center"}}));
+  ws.merge(DR,cSDP-3,DR,cSDP-1,"RDMS discount on SDP  →",S.xf({f:{b:1,sz:9,c:C.copper},al:{h:"right",v:"center"}}));
   ws.set(DR,cSDP,DISC,S.xf({fill:"FFF6CC",nf:"0.0%",bd:{l:["thin","D9B44A"],r:["thin","D9B44A"],t:["thin","D9B44A"],b:["thin","D9B44A"]},f:{b:1,sz:10.5,c:"1F3A93"},al:{h:"center",v:"center"}}));
   ws.set(DR,cRV,"(change % here)",S.xf({f:{i:1,sz:8,c:C.muted},al:{h:"left",v:"center"}}));
 
@@ -1840,14 +1846,14 @@ function buildStockWorkbook(){
     bs.height(row,20);
     bs.set(row,1,k,b({f:{b:1,sz:10,c:C.teal,n:"Consolas"}}));
     bs.set(row,2,g.name,b({al:{h:"left",v:"center",indent:1},f:{sz:9.5,c:C.ink2}}));
-    bs.set(row,3,g.lines,b({nf:"#,##0",f:{sz:10,c:C.ink}}),`COUNTIF(${src(6)},A${row})`);
-    bs.set(row,4,g.qty,b({nf:nfOf(g.qty),f:{b:1,sz:10,c:C.ink}}),`SUMIF(${src(6)},A${row},${src(3)})`);
-    bs.set(row,5,g.ok,b({nf:"#,##0",f:{b:1,sz:10,c:C.green}}),`COUNTIFS(${src(6)},A${row},${src(4)},"AVAILABLE")`);
+    bs.set(row,3,g.lines,b({nf:"#,##0",f:{sz:10,c:C.ink}}),`COUNTIF(${src(cBR)},A${row})`);
+    bs.set(row,4,g.qty,b({nf:nfOf(g.qty),f:{b:1,sz:10,c:C.ink}}),`SUMIF(${src(cBR)},A${row},${src(cQTY)})`);
+    bs.set(row,5,g.ok,b({nf:"#,##0",f:{b:1,sz:10,c:C.green}}),`COUNTIFS(${src(cBR)},A${row},${src(cST)},"AVAILABLE")`);
     bs.set(row,6,g.lines-g.ok,b({nf:"#,##0",f:{b:1,sz:10,c:(g.lines-g.ok)?C.red:C.muted}}),`C${row}-E${row}`);
     const fr=g.lines?g.ok/g.lines:0;
     bs.set(row,7,fr,b({nf:"0%",fill:fr>=1?C.greenBg:fr===0?C.redBg:bg,f:{b:1,sz:10,c:fr>=1?C.green:fr===0?C.red:C.copper}}),`IFERROR(E${row}/C${row},0)`);
-    bs.set(row,8,0,b({nf:"#,##0",f:{b:1,sz:10,c:"1F3A93"}}),`SUMIF(${src(6)},A${row},${src(cRO)})`);
-    bs.set(row,9,0,b({nf:NF_RS,f:{b:1,sz:10,c:C.tealD}}),`SUMIF(${src(6)},A${row},${src(cRV)})`);
+    bs.set(row,8,0,b({nf:"#,##0",f:{b:1,sz:10,c:"1F3A93"}}),`SUMIF(${src(cBR)},A${row},${src(cRO)})`);
+    bs.set(row,9,0,b({nf:NF_RS,f:{b:1,sz:10,c:C.tealD}}),`SUMIF(${src(cBR)},A${row},${src(cRV)})`);
   });
   const bt=(o={})=>S.xf(Object.assign({fill:C.tealBg,bd:{t:["medium",C.teal],b:["medium",C.teal],l:thin,r:thin},al:{h:"center",v:"center"},f:{b:1,sz:10,c:C.tealD}},o));
   bs.height(BTR,24);
