@@ -1024,7 +1024,7 @@ async function fetchTab(key){
       const find=(re,def)=>{ const idx=hdr.findIndex(h=>re.test(h)); return idx>=0?idx:def; };
       // headers look like "CODE-1, DESCRIPTION-2, BRAND-3, SDP-4, NRP-5, MRP-6, …, SDP-NET-9" — match the name, ignore the "-n" suffix
       cIdx={ desc:find(/^DESC|DESCRIPTION|ITEM ?NAME|^NAME$/,1), mrp:find(/^MRP(\b|-|$)/, hdr.length>=6?5:2), brand:find(/^BRAND(\b|-|$)/,2),
-             sdp:find(/^SDP(\s*BASIC)?(-\d+)?$/, hdr.length>=9?3:-1) };
+             sdp:find(/^SDP(\s*BASIC)?(-\d+)?$/, hdr.length>=9?3:-1), sdpNet:find(/^SDP[\s_-]*NET/, hdr.length>=9?8:-1) };
     }
     // BRAND+COLOUR sheet: CODE | BRAND | COLOUR — located by header so column order can change
     let bcIdx={brand:1,colour:2};
@@ -1053,7 +1053,7 @@ async function fetchTab(key){
       if(code in map) continue; // VLOOKUP: first wins
       if(key==="msl") map[code]={q:num(r[1],0), s:String(r[2]==null?"":r[2]).trim()||"OK"};
       else if(key==="bc"){ const b=String(r[bcIdx.brand]==null?"":r[bcIdx.brand]).trim(), c=String(r[bcIdx.colour]==null?"":r[bcIdx.colour]).trim(); if(!b&&!c) continue; map[code]=[b,c]; }
-      else if(key==="code") map[code]=[String(r[cIdx.desc]==null?"":r[cIdx.desc]).trim(), num(r[cIdx.mrp],0), String(r[cIdx.brand]==null?"":r[cIdx.brand]).trim(), cIdx.sdp>=0?num(r[cIdx.sdp],0):0];
+      else if(key==="code") map[code]=[String(r[cIdx.desc]==null?"":r[cIdx.desc]).trim(), num(r[cIdx.mrp],0), String(r[cIdx.brand]==null?"":r[cIdx.brand]).trim(), cIdx.sdp>=0?num(r[cIdx.sdp],0):0, cIdx.sdpNet>=0?num(r[cIdx.sdpNet],0):0];
       else if(key==="img"){ let u=String(r[imgCol]==null?"":r[imgCol]).trim(); if(!u){ const alt=(r||[]).map(x=>String(x==null?"":x).trim()).find(x=>/^https?:\/\//i.test(x)||/~mv2\./i.test(x)); u=alt||""; } if(!u)continue; map[code]=u; }
       else map[code]=num(r[1],0);
       n++;
@@ -1113,7 +1113,8 @@ function compute(code,qty){
   const v = C[key];
   const name = found ? (Array.isArray(v) ? (v[0]||"") : (v||"")) : "";
   const mrp = (found && Array.isArray(v)) ? num(v[1],0) : 0;
-  const sdp = (found && Array.isArray(v) && v.length>3) ? num(v[3],0) : 0;   // SDP (basic, pre-GST) from the CODE tab
+  const sdp = (found && Array.isArray(v) && v.length>3) ? num(v[3],0) : 0;      // SDP (basic, pre-GST) from the CODE tab
+  const sdpNet = (found && Array.isArray(v) && v.length>4) ? num(v[4],0) : 0;   // SDP-NET (GST-inclusive) — used for RDMS value
   const brandCode = (found && Array.isArray(v) && v.length>2) ? (v[2]||"") : "";
   const brandName = brandCode ? ((IDX.brandname&&IDX.brandname[brandCode.toUpperCase()])||brandCode) : "";
   // BRAND & COLOUR come from the BRAND+COLOUR tab; if a code isn't listed there, brand falls back to the master catalogue
@@ -1131,7 +1132,7 @@ function compute(code,qty){
   const K = S_[key] ? (S_[key].s||"OK") : "NOT IN MSL"; // MSL status
   const status = (F>=qty) ? "AVAILABLE" : "NOT AVAILABLE";   // GBW vs ordered qty
   const imgUrl = (IDX.img && IDX.img[key]) ? String(IDX.img[key]) : "";
-  return {code:raw,qty,status,name,mrp,sdp,brand,brandSrc,brandName,colour,imgUrl,found,gbw:F,disp:G,pend:H,net:I,mvp:J,msl:K};
+  return {code:raw,qty,status,name,mrp,sdp,sdpNet,brand,brandSrc,brandName,colour,imgUrl,found,gbw:F,disp:G,pend:H,net:I,mvp:J,msl:K};
 }
 
 /* ---------- parse the order input ---------- */
@@ -1759,7 +1760,7 @@ function buildStockWorkbook(){
 
   // ===== Sheet 1 · ORDER STATUS — table starts on row 1 =====
   const ws=XL.Sheet("ORDER STATUS");
-  const H=["SR#","CODE","RDMS ORDER","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","SDP","RDMS VALUE"];
+  const H=["SR#","CODE","RDMS ORDER","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","SDP NET","RDMS VALUE"];
   const NC=H.length, HR=1, R1=HR+1, n=results.length, RN=HR+n, TR=RN+1, DR=TR+1;   // DR = row holding the editable RDMS discount %
   // column map — RDMS ORDER sits right after CODE; SDP & RDMS VALUE stay at the end
   const cRO=3, cQTY=4, cST=5, cNAME=6, cBR=7, cCOL=8, cMSL=14, cSDP=15, cRV=16;
@@ -1779,9 +1780,9 @@ function buildStockWorkbook(){
   H.forEach((h,i)=>ws.set(HR,i+1,h,[cRO,cSDP,cRV].includes(i+1)?hdrRd:hdrSt));
   // live RDMS total in the (frozen) RDMS ORDER header cell — always on screen while you type quantities
   const discTxt=`ROUND($${L(cSDP)}$${DR}*100,2)&"%"`;
-  ws.set(HR,cRO,"RDMS ORDER\n₹ 0.00\n(SDP − 4%)",S.xf({fill:"8A4F2C",f:{b:1,sz:10,c:C.white},bd:{l:["medium","5E3419"],r:["medium","5E3419"],t:["medium","5E3419"],b:["medium","5E3419"]},al:{h:"center",v:"center",wrap:1}}),
-    `"RDMS ORDER"&CHAR(10)&"₹ "&TEXT(SUBTOTAL(109,${rg(cRV)}),"#,##0.00")&CHAR(10)&"(SDP − "&${discTxt}&")"`);
-  ws.set(HR,cRV,"RDMS VALUE\n(SDP − 4%)",hdrRd,`"RDMS VALUE"&CHAR(10)&"(SDP − "&${discTxt}&")"`);
+  ws.set(HR,cRO,"RDMS ORDER\n₹ 0.00\n(SDP NET − 4%)",S.xf({fill:"8A4F2C",f:{b:1,sz:10,c:C.white},bd:{l:["medium","5E3419"],r:["medium","5E3419"],t:["medium","5E3419"],b:["medium","5E3419"]},al:{h:"center",v:"center",wrap:1}}),
+    `"RDMS ORDER"&CHAR(10)&"₹ "&TEXT(SUBTOTAL(109,${rg(cRV)}),"#,##0.00")&CHAR(10)&"(SDP NET − "&${discTxt}&")"`);
+  ws.set(HR,cRV,"RDMS VALUE\n(SDP NET − 4%)",hdrRd,`"RDMS VALUE"&CHAR(10)&"(SDP NET − "&${discTxt}&")"`);
 
   // data rows — zebra for available, soft rose for not-available, strong status cell
   results.forEach((r,i)=>{
@@ -1802,7 +1803,7 @@ function buildStockWorkbook(){
     ws.set(row,cMSL,r.msl||"",base({f:notMsl?{i:1,sz:8.5,c:C.muted}:{b:1,sz:9,c:C.green}}));
     // RDMS ORDER: blank, yellow input cell — type a qty and RDMS VALUE fills in
     ws.set(row,cRO,null,S.xf({fill:"FFF6CC",bd:{l:["thin","D9B44A"],r:["thin","D9B44A"],t:["hair","D9B44A"],b:["hair","D9B44A"]},nf:"#,##0",al:{h:"center",v:"center"},f:{b:1,sz:10.5,c:"1F3A93"}}));
-    ws.set(row,cSDP,r.sdp?r.sdp:null,base({nf:NF_RS,f:{sz:9.5,c:C.ink2}}));
+    ws.set(row,cSDP,r.sdpNet?r.sdpNet:null,base({nf:NF_RS,f:{sz:9.5,c:C.ink2}}));
     ws.set(row,cRV,"",base({nf:NF_RS,f:{b:1,sz:10,c:C.tealD}}),
       `IF(OR(${L(cRO)}${row}="",${L(cSDP)}${row}=""),"",${L(cRO)}${row}*${L(cSDP)}${row}*(1-$${L(cSDP)}$${DR}))`);
   });
@@ -1818,7 +1819,7 @@ function buildStockWorkbook(){
   ws.set(TR,cRV,0,totSt({nf:NF_RS,fill:"FCEBC0",f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(cRV)})`);
   // editable discount: RDMS VALUE = RDMS ORDER × SDP × (1 − this %)
   ws.height(DR,20);
-  ws.merge(DR,cSDP-3,DR,cSDP-1,"RDMS discount on SDP  →",S.xf({f:{b:1,sz:9,c:C.copper},al:{h:"right",v:"center"}}));
+  ws.merge(DR,cSDP-3,DR,cSDP-1,"RDMS discount on SDP NET  →",S.xf({f:{b:1,sz:9,c:C.copper},al:{h:"right",v:"center"}}));
   ws.set(DR,cSDP,DISC,S.xf({fill:"FFF6CC",nf:"0.0%",bd:{l:["thin","D9B44A"],r:["thin","D9B44A"],t:["thin","D9B44A"],b:["thin","D9B44A"]},f:{b:1,sz:10.5,c:"1F3A93"},al:{h:"center",v:"center"}}));
   ws.set(DR,cRV,"(change % here)",S.xf({f:{i:1,sz:8,c:C.muted},al:{h:"left",v:"center"}}));
 
@@ -1922,7 +1923,7 @@ const IMPORT_META={
   mvp:{title:"MVP Pending", cols:"code, mvp qty", kind:"map"},
   msl:{title:"MSL", cols:"code, msl qty, status", kind:"msl"},
   display:{title:"Display Stock", cols:"code, qty", kind:"map"},
-  code:{title:"Master Catalogue", cols:"code, description, mrp, brand, sdp (optional)", kind:"map"},
+  code:{title:"Master Catalogue", cols:"code, description, mrp, brand, sdp, sdp net (optional)", kind:"map"},
   img:{title:"Product Images", cols:"code, image url", kind:"img"},
   bc:{title:"Brand + Colour", cols:"code, brand, colour", kind:"bc"},
 };
@@ -1997,7 +1998,7 @@ function buildFromRows(key,rows,skipHeader){
     const c=String(r[0]==null?"":r[0]).trim(); if(!c)continue;
     if(kind==="pairs"){ data.push([c, String(r[1]==null?"":r[1]).trim()]); n++; }
     else if(kind==="msl"){ if(c in data)continue; data[c]={q:num(r[1],0), s:String(r[2]==null?"":r[2]).trim()||"OK"}; n++; }
-    else if(key==="code"){ if(c in data)continue; data[c]=[String(r[1]==null?"":r[1]).trim(), num(r[2],0), String(r[3]==null?"":r[3]).trim(), num(r[4],0)]; n++; }
+    else if(key==="code"){ if(c in data)continue; data[c]=[String(r[1]==null?"":r[1]).trim(), num(r[2],0), String(r[3]==null?"":r[3]).trim(), num(r[4],0), num(r[5],0)]; n++; }
     else if(key==="bc"){ if(c in data)continue; const b=String(r[1]==null?"":r[1]).trim(), cl=String(r[2]==null?"":r[2]).trim(); if(!b&&!cl)continue; data[c]=[b,cl]; n++; }
     else if(key==="img"){ if(c in data)continue; const u=(r.slice(1).map(x=>String(x==null?"":x).trim()).find(x=>/^https?:\/\//i.test(x))) || String(r[1]==null?"":r[1]).trim(); if(!u)continue; data[c]=u; n++; }
     else { if(c in data)continue; data[c]=num(r[1],0); n++; }
