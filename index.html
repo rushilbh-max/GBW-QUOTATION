@@ -981,6 +981,7 @@ html, body{
 .fq-card.loading{opacity:.55;pointer-events:none;border-color:rgba(201,168,76,0.55)}
 .fq-card.loading .fq-n::after{content:' · opening…';font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--gold)}
 .fq-card .fq-fast{font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.6px;color:#4ADF90;margin-left:5px}
+.fq-card .fq-fast.fq-sync{color:var(--gold)}
 .fq-open{background:rgba(42,157,96,0.08);border:1px solid rgba(42,157,96,0.35);border-radius:8px;padding:9px 12px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:#4ADF90;display:none;align-items:center;justify-content:space-between;gap:8px}
 
 /* ── TOAST ── */
@@ -4701,7 +4702,7 @@ const CACHE_QTABS  = 'gbw_qtabs_v2';
    quotations with no per-device setup. Leave them blank to fall back to
    pasting them by hand in the Find Quotes tab.                             */
 const QAPI_URL_BAKED    = 'https://script.google.com/macros/s/AKfycbyQdLQmYwZBbXznS2-eOZDGGH18wJs8ItIYS_HPacKIRKnj_RXYzJx1y6ADTJ6dVB8N/exec';
-const QAPI_SECRET_BAKED = 'gbw-quotes-7k92mxq4';   // must match var SECRET on line 28 of the Apps Script
+const QAPI_SECRET_BAKED = 'gbw-quotes-7k92mxq4';   // must match var SECRET near the top of the Apps Script
 /* ══════════════════════════════════════════════════════════════════════════ */
 /* Fallback finish codes, used only if the catalog hasn't loaded yet. */
 const FINISH_SEED = ['CHR','GMP','GBP','BGP','BCH','SSF','ANT','BLM','GLD','RSG','WHM','BLK','DGM','CGM','PCG','ABR','NKL','MBL','SCR','GRF'];
@@ -4722,6 +4723,61 @@ let   _quotesSyncing = false;
 
 function cacheGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function cacheSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+
+/* ── BIG CACHE (IndexedDB) ──
+   The CODE NEW sheet is ~13 MB of CSV. localStorage holds about 5 MB per
+   site, so the catalogue was never actually cached: every open re-downloaded
+   it and the app could not start offline. IndexedDB has no such ceiling, so
+   the three catalogue CSVs live there. localStorage stays the fallback for
+   browsers where IndexedDB is unavailable (some private windows). */
+const IDB_NAME='gbw-cache', IDB_STORE='kv';
+let _idbP=null;
+function idbOpen(){
+  if(_idbP) return _idbP;
+  _idbP=new Promise(res=>{
+    const t=setTimeout(()=>res(null),3000);          // never let a stuck IDB hold up the app
+    try{
+      const r=indexedDB.open(IDB_NAME,1);
+      r.onupgradeneeded=()=>{ try{ r.result.createObjectStore(IDB_STORE); }catch(e){} };
+      r.onsuccess=()=>{ clearTimeout(t); res(r.result); };
+      r.onerror=r.onblocked=()=>{ clearTimeout(t); res(null); };
+    }catch(e){ clearTimeout(t); res(null); }
+  });
+  return _idbP;
+}
+async function idbGet(k){
+  const db=await idbOpen(); if(!db) return null;
+  return new Promise(res=>{
+    try{ const q=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(k);
+         q.onsuccess=()=>res(q.result==null?null:q.result); q.onerror=()=>res(null); }
+    catch(e){ res(null); }
+  });
+}
+async function idbSet(k,v){
+  const db=await idbOpen(); if(!db) return false;
+  return new Promise(res=>{
+    try{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k);
+         tx.oncomplete=()=>res(true); tx.onerror=tx.onabort=()=>res(false); }
+    catch(e){ res(false); }
+  });
+}
+async function bigCacheGet(k){
+  const v=await idbGet(k);
+  if(v!=null) return v;
+  return cacheGet(k);                                // older builds kept the small CSVs here
+}
+async function bigCacheSet(k,v){
+  if(await idbSet(k,v)){ try{ localStorage.removeItem(k); }catch(e){} return true; }   // free the 5 MB
+  return cacheSet(k,v);
+}
+/* Cheap fingerprint so an unchanged sheet is not re-parsed (the 110k-row
+   catalogue costs ~0.8 s of main-thread parsing every time). */
+function textHash(t){
+  let h=0x811c9dc5; const n=t.length;
+  for(let i=0;i<n;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); }
+  return n+':'+(h>>>0).toString(36);
+}
+const _applied={prod:'',img:'',stock:''};           // fingerprint of what is loaded now
 
 function gvizQuoteUrl(tab){
   return 'https://docs.google.com/spreadsheets/d/' + GQUOTE_ID +
@@ -4902,23 +4958,23 @@ async function syncFromGoogleSheet(manual){
     fetchSheetText(GSHEET_IMAGE_TAB),
     fetchSheetText(GSHEET_STOCK_TAB)
   ]);
+  try{ await HYDRATE_P; }catch(e){}                   // cache first, so live data always lands last
 
-  let prodOK=false, imgOK=false, stockOK=false, prodN=0, imgN=0, stockN=0; const errs=[];
-
-  if(prodR.status==='fulfilled'){
-    try{ prodN=applyProductsCSV(prodR.value); prodOK=true; cacheSet(CACHE_PROD, prodR.value); }
-    catch(e){ errs.push('CODE NEW: '+e.message); }
-  } else errs.push('CODE NEW: '+((prodR.reason&&prodR.reason.message)||prodR.reason));
-
-  if(imgR.status==='fulfilled'){
-    try{ imgN=applyImagesCSV(imgR.value); imgOK=true; cacheSet(CACHE_IMG, imgR.value); }
-    catch(e){ errs.push('IMAGE NEW: '+e.message); }
-  } else errs.push('IMAGE NEW: '+((imgR.reason&&imgR.reason.message)||imgR.reason));
-
-  if(stockR.status==='fulfilled'){
-    try{ stockN=applyStockCSV(stockR.value); stockOK=true; cacheSet(CACHE_STOCK, stockR.value); }
-    catch(e){ errs.push('GBW STOCK: '+e.message); }
-  } else errs.push('GBW STOCK: '+((stockR.reason&&stockR.reason.message)||stockR.reason));
+  let prodOK=false, imgOK=false, stockOK=false, prodN=0, imgN=0, stockN=0, changed=false; const errs=[];
+  /* Apply one tab unless it is byte-for-byte what is already loaded. */
+  function take(key, res, label, apply, cacheKey, count){
+    if(res.status!=='fulfilled'){ errs.push(label+': '+((res.reason&&res.reason.message)||res.reason)); return [false,0]; }
+    try{
+      const h=textHash(res.value);
+      if(h===_applied[key]) return [true, count()];
+      const n=apply(res.value); _applied[key]=h; changed=true;
+      bigCacheSet(cacheKey, res.value);               // background write, not awaited
+      return [true, n];
+    }catch(e){ errs.push(label+': '+e.message); return [false,0]; }
+  }
+  [prodOK,prodN]   = take('prod',  prodR,  'CODE NEW',  applyProductsCSV, CACHE_PROD,  ()=>ALL.length);
+  [imgOK,imgN]     = take('img',   imgR,   'IMAGE NEW', applyImagesCSV,   CACHE_IMG,   ()=>Object.keys(IMAGE_MAP).length);
+  [stockOK,stockN] = take('stock', stockR, 'GBW STOCK', applyStockCSV,    CACHE_STOCK, ()=>Object.keys(STOCK_MAP).length);
 
   _syncing=false;
 
@@ -4926,14 +4982,17 @@ async function syncFromGoogleSheet(manual){
     _dataSource='sheet'; _syncedOK=true;
     _lastSyncTime=new Date().toLocaleString();
     cacheSet(CACHE_TIME,_lastSyncTime);
-    refreshAll(); renderEditor(); updateOfflineOverlay();
-    if(typeof renderStock==='function' && $('screen-stock') && $('screen-stock').classList.contains('active')) renderStock();
-    if(typeof sI!=='undefined' && sI.value.trim()) runSearch(sI.value); // refresh open search
+    if(changed){                                      // nothing new → no re-render, no jank
+      refreshAll();
+      if(typeof renderStock==='function' && $('screen-stock') && $('screen-stock').classList.contains('active')) renderStock();
+      if(typeof sI!=='undefined' && sI.value.trim()) runSearch(sI.value); // refresh open search
+    }
+    renderEditor(); updateOfflineOverlay();
     const parts=[];
     if(prodOK) parts.push(prodN.toLocaleString()+' products');
     if(imgOK)  parts.push(imgN.toLocaleString()+' image URLs');
     if(stockOK)parts.push(stockN.toLocaleString()+' stock rows');
-    let msg='✔ Live-synced '+parts.join(' & ')+' · '+new Date().toLocaleTimeString();
+    let msg='✔ Live-synced '+parts.join(' & ')+(changed?'':' · no changes')+' · '+new Date().toLocaleTimeString();
     if(errs.length) msg+=' (partial — '+errs.join('; ')+')';
     setSyncStatus(msg, true);
   } else {
@@ -5061,19 +5120,31 @@ async function discoverQuoteTabs(){
 }
 function setQStatus(msg){ const el=$('se-status'); if(el) el.textContent=msg; }
 
+const QTABS_AT_KEY='gbw_qtabs_at_v1';
+const QTABS_TTL=12*60*60*1000;
 async function syncQuotes(manual){
   if(_quotesSyncing) return;
   _quotesSyncing=true;
-  setQStatus('⏳ Scanning sheet for colour tabs…');
-  try{
-    const disc=await discoverQuoteTabs();
-    if(disc.length){ GQUOTE_TABS=disc; saveTabState(); }
-  }catch(e){}
+  /* Discovering the colour tabs costs ~20 probe requests (≈3 s). The tab list
+     almost never changes, so it is re-scanned at most twice a day, or when
+     you tap ↻ Refresh — a newly added tab shows up the moment you do. */
+  const at=+(cacheGet(QTABS_AT_KEY)||0), haveList=!!cacheGet(CACHE_QTABS);
+  // With a known tab list but no catalogue yet (first open after an update),
+  // use the list as is — a proper scan needs the catalogue's finish codes.
+  if(manual || !haveList || (ALL.length && (!at || (Date.now()-at)>QTABS_TTL))){
+    setQStatus('⏳ Scanning sheet for colour tabs…');
+    try{
+      const disc=await discoverQuoteTabs();
+      if(disc.length){ GQUOTE_TABS=disc; saveTabState(); if(ALL.length) cacheSet(QTABS_AT_KEY,String(Date.now())); }   // a scan without the catalogue's finish codes is provisional
+    }catch(e){}
+  }
   const tabs=GQUOTE_TABS.filter(Boolean);
   setQStatus('⏳ Loading saved quotations from '+tabs.length+' tab'+(tabs.length===1?'':'s')+'…');
   const all=[], seen={}, sigSeen={}; let okTabs=0;
-  for(const tab of tabs){
-    const d=await fetchQuoteTab(tab);
+  // all tabs at once (they were fetched one after another: ~0.5 s × 8)
+  const fetched=await Promise.all(tabs.map(fetchQuoteTab));
+  for(const d of fetched){
+    const tab=d.tab;
     if(!d.ok) continue;
     const qs=parseQuoteMatrix(d.text);
     if(!qs.length) continue;
@@ -5517,30 +5588,46 @@ async function saveQuoteApiSettings(){
   else setFqStatus('⚠ Could not reach the script — check the URL, the secret, and that access is set to “Anyone”.');
 }
 
+/* ── NETWORK ──
+   Every call to the Apps Script web app costs 1.5–2 s even when it does
+   nothing, and randomly 9–12 s (measured). So nothing below makes the user
+   wait on it unless it has to: updates and deletes are applied on this device
+   at once and synced in the background through a small persisted outbox. */
+const QAPI_TIMEOUT_MS = 35000;
+async function qFetch(url, opts){
+  const ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const t = ctl ? setTimeout(()=>ctl.abort(), QAPI_TIMEOUT_MS) : 0;
+  try{ return await fetch(url, ctl ? Object.assign({}, opts, {signal:ctl.signal}) : opts); }
+  finally{ if(t) clearTimeout(t); }
+}
+function netErr(e){
+  return {ok:false, net:true, error:(e&&e.name==='AbortError') ? 'timed out' : 'offline / no connection'};
+}
+
 /* GET helper — Apps Script answers simple GETs with Access-Control-Allow-Origin:* */
 async function qapiGet(action, extra){
   if(!qapiReady()) return {ok:false,error:'not configured'};
   let url = qapiUrl()+'?secret='+encodeURIComponent(qapiSecret())+'&action='+encodeURIComponent(action)+'&_cb='+Date.now();
   if(extra) for(const k in extra) url += '&'+k+'='+encodeURIComponent(extra[k]);
   try{
-    const r=await fetch(url,{method:'GET',cache:'no-store',redirect:'follow'});
-    if(!r.ok) return {ok:false,error:'HTTP '+r.status};
+    const r=await qFetch(url,{method:'GET',cache:'no-store',redirect:'follow'});
+    if(!r.ok) return {ok:false, net:(r.status>=500||r.status===429), error:'HTTP '+r.status};
     return await r.json();
-  }catch(e){ return {ok:false,error:'blocked (offline/CORS)'}; }
+  }catch(e){ return netErr(e); }
 }
 
 /* POST helper — text/plain keeps it a simple request, so no CORS preflight */
 async function qapiPost(payload){
   if(!qapiReady()) return {ok:false,error:'not configured'};
   try{
-    const r=await fetch(qapiUrl(),{
-      method:'POST', redirect:'follow',
+    const r=await qFetch(qapiUrl(),{
+      method:'POST', redirect:'follow', cache:'no-store',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(payload)
     });
-    if(!r.ok) return {ok:false,error:'HTTP '+r.status};
+    if(!r.ok) return {ok:false, net:(r.status>=500||r.status===429), error:'HTTP '+r.status};
     return await r.json();
-  }catch(e){ return {ok:false,error:'blocked (offline/CORS)'}; }
+  }catch(e){ return netErr(e); }
 }
 
 /* ── SAVE ── */
@@ -5561,10 +5648,51 @@ function quotePayload(quoteNo){
     bathrooms: baths, items: flat
   };
 }
+/* The payload flattened exactly the way the server stores it: one entry per
+   line, repeated codes kept as separate lines, blank/zero lines dropped. */
+function payloadItems(p){
+  const baths=(p.bathrooms&&p.bathrooms.length) ? p.bathrooms : [{name:'', items:p.items||[]}];
+  const out=[];
+  baths.forEach(b=>(b.items||[]).forEach(it=>{
+    const code=String(it.code||'').trim().toUpperCase();
+    const qty=Math.max(0, parseInt(it.qty,10)||0);
+    if(code && qty>0) out.push({bathroom:String(b.name||'').trim(), code:code, qty:qty});
+  }));
+  return out;
+}
+function headFromPayload(qno, p, savedAt, prev){
+  const items=payloadItems(p), seen={};
+  let products=0, pcs=0;
+  items.forEach(i=>{ pcs+=i.qty; if(!seen[i.code]){ seen[i.code]=1; products++; } });
+  return Object.assign({}, prev||{}, {
+    quoteNo:qno, savedAt:savedAt, customer:p.customer, phone:p.phone, phoneKey:phoneKeyOf(p.phone),
+    gst:p.gst, address:p.address, bathrooms:(p.bathrooms&&p.bathrooms.length)||0,
+    products:products, pcs:pcs, mrpTotal:Math.round(Number(p.mrpTotal)||0), mode:p.mode, disc:Number(p.disc)||0
+  });
+}
+/* Put a head into SAVED: replace in place (the server list keeps creation
+   order, newest first) or add at the top if it is new. */
+function upsertHead(h){
+  const i=SAVED.findIndex(q=>q.quoteNo===h.quoteNo);
+  if(i>=0) SAVED[i]=h; else SAVED.unshift(h);
+}
+function dropHead(qno){ SAVED=SAVED.filter(q=>q.quoteNo!==qno); }
+function persistSaved(){
+  try{ localStorage.setItem(QAPI_CACHE, JSON.stringify(SAVED)); localStorage.setItem(QAPI_REV_KEY, QAPI_REV||''); }catch(e){}
+}
+
+let _newSaveBusy=false;
+function setSaveBtnBusy(on){
+  const b=document.querySelector('.prev-bar button[onclick="saveQuoteToCloud()"]');
+  if(!b) return;
+  if(!b._label) b._label=b.textContent;
+  b.disabled=!!on; b.style.opacity=on?'.6':'';
+  b.textContent=on?'⏳ Saving…':b._label;
+}
+
 async function saveQuoteToCloud(){
   if(!qapiReady()){ showScreen('quotes'); toggleQuoteApiSetup(); toast('Set up saving first'); return; }
   if(!S.items||!S.items.length){ toast('Nothing to save — add products first'); return; }
-  if(_qapiBusy){ toast('Still saving…'); return; }
   const name=($('f-name')&&$('f-name').value.trim())||'';
   if(!name && !confirm('No customer name entered.\n\nSave anyway? It will be harder to find later.')) return;
 
@@ -5572,28 +5700,201 @@ async function saveQuoteToCloud(){
   if(CUR_QNO){
     qno = confirm('“'+CUR_QNO+'” is open.\n\nOK = update it\nCancel = save as a NEW quotation') ? CUR_QNO : '';
   }
-  _qapiBusy=true; toast('Saving…');
-  const r=await qapiPost({secret:qapiSecret(), action:'save', quote:quotePayload(qno)});
-  _qapiBusy=false;
+  const payload=quotePayload(qno);
+  if(!payloadItems(payload).length){ toast('Nothing to save — every line has qty 0'); return; }
+
+  /* UPDATE — the quote number is already known, so apply it here instantly
+     and let the outbox carry it to the sheet. Nothing to wait for. */
+  if(qno){
+    const prev=headFor(qno);
+    const base=prev && !prev.pending ? prev.savedAt : (pendingBase(qno)||'');
+    const head=headFromPayload(qno, payload, new Date().toISOString(), prev);
+    head.pending=true;
+    upsertHead(head);
+    cacheItemsFor(qno, payloadItems(payload));
+    persistSaved();
+    enqueue({op:'save', quoteNo:qno, payload:payload, head:head, base:base});
+    toast('Updated '+qno+' ✓');
+    renderOpenBanner(); renderQuoteResults();
+    flushOutbox();
+    return;
+  }
+
+  /* NEW — the number comes from the server (it keeps the daily sequence so
+     two PCs can't collide), and it is printed on the quote, so this one
+     waits. The server side of it is now a single append. */
+  if(_newSaveBusy){ toast('Still saving…'); return; }
+  _newSaveBusy=true; setSaveBtnBusy(true); toast('Saving new quotation…');
+  const r=await qapiPost({secret:qapiSecret(), action:'save', quote:payload});
+  _newSaveBusy=false; setSaveBtnBusy(false);
   if(r && r.ok){
     CUR_QNO=r.quoteNo;
-    forgetCachedItems(r.quoteNo);                    // contents just changed
     const qn=$('f-qno'); if(qn) qn.value=r.quoteNo;   // printed no. == searchable no.
-    toast((r.updated?'Updated ':'Saved as ')+r.quoteNo+' — '+r.products+' products');
-    syncSavedQuotes(false);
-    renderOpenBanner();
+    acceptServerSave(r, payload, '');
+    toast('Saved as '+r.quoteNo+' — '+r.products+' products');
+    renderOpenBanner(); renderQuoteResults();
   }else{
-    toast('Save failed — '+((r&&r.error)||'unknown error'));
+    toast('Save failed — '+((r&&r.error)||'unknown error')+(r&&r.net?' · check the internet and tap Save again':''));
   }
 }
 
+/* The server confirmed a save: adopt its record (exact SAVED_AT) and re-key
+   the local line-item copy to it, so the quote stays instantly re-openable
+   instead of being thrown away and fetched again. */
+function acceptServerSave(r, payload, sentAs){
+  const qno=r.quoteNo;
+  if(sentAs && sentAs!==qno){
+    // the quote had been removed from the sheet by hand — the server saved it as a new number
+    dropHead(sentAs); forgetCachedItems(sentAs);
+    if(CUR_QNO===sentAs){ CUR_QNO=qno; const qn=$('f-qno'); if(qn) qn.value=qno; }
+    toast(sentAs+' no longer existed in the sheet — saved as '+qno);
+  }
+  const head = r.head ? Object.assign({}, r.head)
+                      : headFromPayload(qno, payload, new Date().toISOString(), headFor(qno));
+  delete head.pending;
+  if(hasQueued('save', qno)){
+    // a newer edit of this quote is already queued — keep showing that one,
+    // but base it on the version the server now holds
+    OUTBOX.forEach(e=>{ if(e.op==='save' && e.quoteNo===qno) e.base=head.savedAt; });
+    saveOutbox();
+  }else{
+    upsertHead(head);
+    cacheItemsFor(qno, payloadItems(payload));
+  }
+  noteRecent(qno, head);
+  if(r.rev && r.prevRev && r.prevRev===QAPI_REV) QAPI_REV=r.rev;   // we were in sync, still are
+  persistSaved();
+  if(!r.head) syncSavedQuotes(false);        // v1 script: learn the real SAVED_AT from the list
+}
+
+/* ── OUTBOX ──
+   Queued updates/deletes, persisted, so a change survives a dropped
+   connection, a refresh or a closed tab and is sent the next time the app
+   opens. Two edits of the same quote coalesce into one request. */
+const OUTBOX_KEY='gbw_qoutbox_v1';
+const QAPI_REV_KEY='gbw_qapi_rev_v1';
+let OUTBOX=[], _flushing=false, _flushTimer=0, _flushDelay=0;
+let QAPI_REV='', _lastFullList=0, _savedEpoch=0;
+const RECENT={};                    // quoteNo → {head|null, t}: confirmed changes a stale list must not undo
+(function loadOutbox(){
+  try{ const o=JSON.parse(localStorage.getItem(OUTBOX_KEY)||'[]'); if(Array.isArray(o)) OUTBOX=o.map(e=>Object.assign(e,{inFlight:false, resumed:true})); }catch(e){}
+  try{ QAPI_REV=localStorage.getItem(QAPI_REV_KEY)||''; }catch(e){}
+})();
+function saveOutbox(){ try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(OUTBOX.map(e=>{ const c=Object.assign({},e); delete c.inFlight; return c; }))); }catch(e){} }
+function hasQueued(op,qno){ return OUTBOX.some(e=>e.op===op && e.quoteNo===qno); }
+function pendingBase(qno){ const e=OUTBOX.filter(x=>x.op==='save'&&x.quoteNo===qno)[0]; return e?e.base:''; }
+function noteRecent(qno, head){
+  RECENT[qno]={head:head, t:Date.now()};
+  _savedEpoch++;
+  const cut=Date.now()-5*60*1000;
+  Object.keys(RECENT).forEach(k=>{ if(RECENT[k].t<cut) delete RECENT[k]; });
+}
+function enqueue(entry){
+  entry.id=Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  entry.tries=0; entry.at=new Date().toISOString();
+  if(entry.op==='delete'){
+    OUTBOX=OUTBOX.filter(e=>e.inFlight || e.quoteNo!==entry.quoteNo);   // nothing left to save
+  }else{
+    const i=OUTBOX.findIndex(e=>!e.inFlight && e.op==='save' && e.quoteNo===entry.quoteNo);
+    if(i>=0){ entry.base=OUTBOX[i].base; OUTBOX[i]=entry; saveOutbox(); renderSyncState(); return; }
+  }
+  OUTBOX.push(entry); saveOutbox(); renderSyncState();
+}
+function scheduleFlush(){
+  clearTimeout(_flushTimer);
+  _flushDelay = Math.min(_flushDelay ? _flushDelay*2 : 4000, 120000);   // 4 s, 8 s … 2 min
+  _flushTimer=setTimeout(flushOutbox, _flushDelay);
+}
+function retryable(r){
+  return !r || r.net || /busy|lock|timed out|Service|Exception/i.test(String(r.error||''));
+}
+async function flushOutbox(){
+  if(_flushing || !OUTBOX.length || !qapiReady()){ renderSyncState(); return; }
+  _flushing=true; clearTimeout(_flushTimer);
+  try{
+    while(OUTBOX.length){
+      const e=OUTBOX[0]; e.inFlight=true; renderSyncState();
+      let r;
+      if(e.op==='save'){
+        const q=Object.assign({}, e.payload);
+        // only a change that waited (failed once, or came from an earlier
+        // session) is checked for "someone saved a newer version meanwhile"
+        if((e.tries>0 || e.resumed) && e.base) q.baseSavedAt=e.base;
+        r=await qapiPost({secret:qapiSecret(), action:'save', quote:q});
+      }else{
+        r=await qapiGet('delete',{q:e.quoteNo});
+      }
+      e.inFlight=false;
+      if(r && r.ok){
+        OUTBOX.shift(); saveOutbox(); _flushDelay=0;
+        if(e.op==='save') acceptServerSave(r, e.payload, e.quoteNo);
+        else{
+          noteRecent(e.quoteNo, null);
+          if(r.rev && r.prevRev && r.prevRev===QAPI_REV) QAPI_REV=r.rev;
+          persistSaved();
+        }
+        continue;
+      }
+      if(r && r.conflict){
+        OUTBOX.shift(); saveOutbox();
+        if(r.head){ upsertHead(r.head); noteRecent(e.quoteNo, r.head); }
+        forgetCachedItems(e.quoteNo); persistSaved();
+        toast(e.quoteNo+' was changed on another device while this one was offline — kept that newer version. Your edit is still on screen; save again to replace it.');
+        continue;
+      }
+      if(retryable(r) && !((e.tries||0)>=12 && !(r&&r.net))){   // a server error that keeps repeating is not transient
+        e.tries=(e.tries||0)+1; e.lastErr=(r&&r.error)||'no reply'; saveOutbox();
+        scheduleFlush();
+        break;
+      }
+      // permanent refusal (bad secret, bad data) — don't retry forever
+      OUTBOX.shift(); saveOutbox();
+      const h=headFor(e.quoteNo); if(h){ delete h.pending; persistSaved(); }
+      toast('Could not sync '+e.quoteNo+' — '+((r&&r.error)||'refused'));
+    }
+  }finally{
+    _flushing=false;
+    renderSyncState(); renderQuoteResults(); renderOpenBanner();
+  }
+}
+/* A change still queued when the tab closes is fired once more with
+   keepalive, so it usually reaches the sheet anyway. It also stays queued
+   until confirmed, and re-sending an update is harmless. */
+window.addEventListener('pagehide', ()=>{
+  if(!OUTBOX.length || !qapiReady()) return;
+  OUTBOX.filter(e=>e.op==='save' && !e.inFlight).slice(0,3).forEach(e=>{
+    try{
+      const q=Object.assign({}, e.payload); if(e.base) q.baseSavedAt=e.base;
+      const body=JSON.stringify({secret:qapiSecret(), action:'save', quote:q});
+      if(body.length<60000) fetch(qapiUrl(),{method:'POST', mode:'no-cors', keepalive:true,
+        headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body});
+    }catch(x){}
+  });
+});
+window.addEventListener('online', ()=>{ _flushDelay=0; flushOutbox(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && OUTBOX.length){ _flushDelay=0; flushOutbox(); } });
+
+function renderSyncState(){
+  const n=OUTBOX.length;
+  const b=document.querySelector('.prev-bar button[onclick="saveQuoteToCloud()"]');
+  if(b && !_newSaveBusy){
+    if(!b._label) b._label=b.textContent;
+    b.textContent = n ? '💾 Save Quote · ⟳'+n : b._label;
+    b.title = n ? (n+' change'+(n===1?'':'s')+' syncing to the sheet in the background') : '';
+  }
+  if(!n) return;
+  const stuck=OUTBOX.some(e=>e.tries>0);
+  setFqStatus(stuck
+    ? '⚠ '+n+' change'+(n===1?'':'s')+' waiting to sync — will retry automatically ('+(OUTBOX[0].lastErr||'no connection')+')'
+    : '⟳ Syncing '+n+' change'+(n===1?'':'s')+' to the sheet…');
+}
+
 /* ── LINE-ITEM CACHE ──
-   Opening a quote is one round trip to the Apps Script web app, and that trip
-   is essentially the whole wait — the rendering itself is a few milliseconds.
-   So line items are cached locally against the quote's SAVED_AT stamp: if the
+   Line items are cached locally against the quote's SAVED_AT stamp: if the
    quote has not been re-saved since, the cached copy is used and the open is
    instant. If it HAS been re-saved (by the other PC, say), the stamp differs
-   and we fetch fresh. */
+   and we fetch fresh. A save on THIS device re-keys the copy instead of
+   dropping it, so a quote you just saved re-opens instantly too. */
 const QITEMS_KEY='gbw_quote_items_v1';
 const QITEMS_MAX=80;
 function itemsCache(){ try{ return JSON.parse(localStorage.getItem(QITEMS_KEY)||'{}')||{}; }catch(e){ return {}; } }
@@ -5611,6 +5912,7 @@ function cachedItemsFor(qno){
 }
 function cacheItemsFor(qno, items){
   const head=headFor(qno), c=itemsCache();
+  delete c[qno];                                   // re-insert so it counts as most recent
   c[qno]={at:head?String(head.savedAt||''):'', items:items};
   putItemsCache(c);
 }
@@ -5618,24 +5920,28 @@ function forgetCachedItems(qno){ const c=itemsCache(); delete c[qno]; putItemsCa
 
 /* Warm the cache for the most recent quotes in ONE request, in the background,
    so the first tap is instant too. One round trip, not ten. */
+let _prefetching=false;
 async function prefetchQuoteItems(n){
-  if(!qapiReady()||!SAVED.length) return;
+  if(_prefetching||!qapiReady()||!SAVED.length) return;
   const cache=itemsCache();
   const want=SAVED.slice(0,n||10)
+    .filter(q=>!q.pending)
     .filter(q=>{ const c=cache[q.quoteNo]; return !c || String(c.at||'')!==String(q.savedAt||''); })
     .map(q=>q.quoteNo);
   if(!want.length) return;
+  _prefetching=true;
   const r=await qapiGet('items',{q:want.join(',')});
+  _prefetching=false;
   if(!r||!r.ok) return;
   const c=itemsCache();
   if(r.byQuote){
     Object.keys(r.byQuote).forEach(k=>{
       const head=headFor(k);
-      c[k]={at:head?String(head.savedAt||''):'', items:r.byQuote[k]};
+      if(head && !head.pending) c[k]={at:String(head.savedAt||''), items:r.byQuote[k]};
     });
   }else if(Array.isArray(r.items) && want.length===1){
     const head=headFor(want[0]);                       // older script build
-    c[want[0]]={at:head?String(head.savedAt||''):'', items:r.items};
+    if(head && !head.pending) c[want[0]]={at:String(head.savedAt||''), items:r.items};
   }
   putItemsCache(c);
   renderQuoteResults();
@@ -5644,30 +5950,59 @@ async function prefetchQuoteItems(n){
 /* ── LIST + SEARCH ── */
 function hydrateSavedQuotes(){
   try{ const c=JSON.parse(localStorage.getItem(QAPI_CACHE)||'null'); if(Array.isArray(c)) SAVED=c; }catch(e){}
+  overlayLocal();
 }
+/* Local changes the server list may not reflect yet: queued ones, and ones
+   confirmed moments ago that a list fetched before them would undo. */
+function overlayLocal(){
+  let touched=false;
+  Object.keys(RECENT).forEach(k=>{
+    const rc=RECENT[k], cur=headFor(k);
+    if(rc.head===null){ if(cur){ dropHead(k); touched=true; } }
+    else if(!cur || Date.parse(cur.savedAt||0)<Date.parse(rc.head.savedAt||0)){ upsertHead(rc.head); touched=true; }
+  });
+  OUTBOX.forEach(e=>{
+    if(e.op==='delete'){ if(headFor(e.quoteNo)){ dropHead(e.quoteNo); touched=true; } }
+    else if(e.head){ upsertHead(Object.assign({}, e.head, {pending:true})); touched=true; }
+  });
+  return touched;
+}
+let _listSyncing=false;
 async function syncSavedQuotes(manual){
   if(!qapiReady()){ setFqStatus('Not set up yet — tap ⚙ to paste your web app URL.'); renderQuoteResults(); return; }
-  /* The list is always refreshed on entering the tab — it renders from cache
-     first so nothing blocks, and it is how quotes saved on the other PC show
-     up. The prefetch below is the part that self-throttles: it compares
-     SAVED_AT stamps and makes no request at all when nothing has changed. */
-  setFqStatus(SAVED.length ? ('⏳ Refreshing… showing '+SAVED.length+' cached')
-                           : '⏳ Loading saved quotations…');
-  const r=await qapiGet('list');
-  if(r && r.ok && Array.isArray(r.quotes)){
-    SAVED=r.quotes;
-    try{ localStorage.setItem(QAPI_CACHE, JSON.stringify(SAVED)); }catch(e){}
-    setFqStatus('✓ '+SAVED.length+' saved quotation'+(SAVED.length===1?'':'s')+' · '+new Date().toLocaleTimeString());
+  if(_listSyncing){ if(manual) toast('Already refreshing…'); return; }
+  _listSyncing=true;
+  /* The list renders from cache first so nothing blocks. The server keeps a
+     revision stamp: sending ours back means "only if something changed",
+     which is a tiny answer when nothing did. A full list is still pulled on
+     ↻ Refresh and at least every 10 minutes, as a safety net. */
+  const full = manual || !QAPI_REV || !SAVED.length || (Date.now()-_lastFullList)>10*60*1000;
+  if(!OUTBOX.length) setFqStatus(SAVED.length ? ('⏳ Checking for changes… showing '+SAVED.length+' saved')
+                                              : '⏳ Loading saved quotations…');
+  const epoch=_savedEpoch;
+  const r=await qapiGet('list', full ? null : {rev:QAPI_REV});
+  _listSyncing=false;
+  if(r && r.ok && (r.unchanged || Array.isArray(r.quotes))){
+    if(Array.isArray(r.quotes)){
+      SAVED=r.quotes; _lastFullList=Date.now();
+      const touched=overlayLocal();
+      // only trust the stamp if nothing local happened while the list was in flight
+      QAPI_REV = (touched || epoch!==_savedEpoch) ? '' : (r.rev||'');
+    }
+    persistSaved();
+    if(!OUTBOX.length) setFqStatus('✓ '+SAVED.length+' saved quotation'+(SAVED.length===1?'':'s')+(r.unchanged?' · up to date':'')+' · '+new Date().toLocaleTimeString());
     if(manual) toast(SAVED.length+' quotations loaded');
     prefetchQuoteItems(10);                              // background, not awaited
   }else if(SAVED.length){
-    setFqStatus('⚠ Refresh failed — showing '+SAVED.length+' cached.');
+    setFqStatus('⚠ Refresh failed — showing '+SAVED.length+' saved on this device.');
     if(manual) toast('Could not refresh — showing cached list');
   }else{
     setFqStatus('⚠ '+((r&&r.error)||'Could not load')+'.');
     if(manual) toast('Could not load saved quotations');
   }
+  renderSyncState();
   renderQuoteResults();
+  if(OUTBOX.length) flushOutbox();
 }
 function phoneKeyOf(s){
   let d=String(s||'').replace(/\D/g,'');
@@ -5687,7 +6022,11 @@ function renderQuotesPage(){
 function renderOpenBanner(){
   const b=$('fq-open'), t=$('fq-open-t');
   if(!b) return;
-  if(CUR_QNO){ b.style.display='flex'; if(t) t.textContent='Open: '+CUR_QNO+' — saving will offer to update it'; }
+  if(CUR_QNO){
+    b.style.display='flex';
+    const syncing=hasQueued('save',CUR_QNO);
+    if(t) t.textContent='Open: '+CUR_QNO+(syncing?' — saved here, syncing to the sheet…':' — saving will offer to update it');
+  }
   else b.style.display='none';
 }
 function renderQuoteResults(){
@@ -5706,14 +6045,17 @@ function renderQuoteResults(){
     return false;
   }).slice(0,300);
   if(!res.length){ list.innerHTML='<div class="se-empty">Nothing matches “'+esc(raw)+'”.</div>'; return; }
+  const cache=itemsCache();                           // parse once, not once per card
   list.innerHTML=res.map(q=>{
     let when='';
     try{ when=new Date(q.savedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}); }catch(e){}
     const meta=[q.products+' products', q.pcs+' pcs', (q.bathrooms?q.bathrooms+' bathrooms':'flat'), when].filter(Boolean).join(' · ');
-    const ready=!!cachedItemsFor(q.quoteNo);
+    const c=cache[q.quoteNo];
+    const ready=!!(c && Array.isArray(c.items) && String(c.at||'')===String(q.savedAt||''));
+    const badge = q.pending ? '<span class="fq-fast fq-sync">⟳ SYNCING</span>'
+                : (ready ? '<span class="fq-fast">● READY</span>' : '');
     return '<div class="fq-card" data-q="'+esc(q.quoteNo)+'" onclick="openSavedQuote(\''+esc(q.quoteNo)+'\')">'+
-      '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+
-        (ready?'<span class="fq-fast">● READY</span>':'')+'</div>'+
+      '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+badge+'</div>'+
       '<div class="fq-q">'+esc(q.quoteNo)+(q.phone?' · '+esc(q.phone):'')+'</div>'+
       '<div class="fq-m">'+esc(meta)+'</div></div>'+
       '<div class="fq-r"><div class="fq-mrp">₹'+fmtN(q.mrpTotal)+'</div>'+
@@ -5786,15 +6128,16 @@ function detachSavedQuote(){
   renderOpenBanner();
   toast('Detached — the next save creates a new quotation');
 }
-async function deleteSavedQuote(quoteNo){
+function deleteSavedQuote(quoteNo){
   if(!confirm('Remove “'+quoteNo+'” from the saved quotations list?\n\nThe row stays in the sheet with a DELETED date, so it can be brought back.')) return;
-  const r=await qapiGet('delete',{q:quoteNo});
-  if(r && r.ok){
-    forgetCachedItems(quoteNo);
-    if(CUR_QNO===quoteNo){ CUR_QNO=''; renderOpenBanner(); }
-    toast(quoteNo+' deleted');
-    syncSavedQuotes(false);
-  }else toast('Delete failed — '+((r&&r.error)||'unknown error'));
+  dropHead(quoteNo);
+  forgetCachedItems(quoteNo);
+  if(CUR_QNO===quoteNo){ CUR_QNO=''; renderOpenBanner(); }
+  persistSaved();
+  enqueue({op:'delete', quoteNo:quoteNo});
+  renderQuoteResults();
+  toast(quoteNo+' deleted');
+  flushOutbox();
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -5851,6 +6194,8 @@ function repositionEdCodeDrop(){
     fb.addEventListener('search',renderQuoteResults);
   }
   hydrateSavedQuotes();
+  renderSyncState();
+  if(OUTBOX.length) setTimeout(flushOutbox, 1500);   // changes left over from last time
 })();
 (function wireSearchEdit(){
   const sb=$('se-search-box');
@@ -5902,22 +6247,29 @@ function repositionEdCodeDrop(){
 //    class happened to get baked into the markup — so it can never drift again.
 showScreen('builder');
 
-// 1) Instantly hydrate from the last successful sync saved in localStorage,
-//    so the app is usable immediately and works offline after a first load.
-(function hydrateFromCache(){
+// 1) Hydrate from the last successful sync (IndexedDB), so the app is usable
+//    at once and works offline. The live download starts in parallel (step 2)
+//    and always applies after this, never before.
+async function hydrateFromCache(){
   let any=false;
-  const pc=cacheGet(CACHE_PROD), ic=cacheGet(CACHE_IMG), sc=cacheGet(CACHE_STOCK);
-  if(pc){ try{ applyProductsCSV(pc); any=true; }catch(e){} }
-  if(ic){ try{ applyImagesCSV(ic);  any=true; }catch(e){} }
-  if(sc){ try{ applyStockCSV(sc);   any=true; }catch(e){} }
+  const [pc,ic,sc]=await Promise.all([bigCacheGet(CACHE_PROD),bigCacheGet(CACHE_IMG),bigCacheGet(CACHE_STOCK)]);
+  if(pc){ try{ applyProductsCSV(pc); _applied.prod=textHash(pc);  any=true; }catch(e){} }
+  if(ic){ try{ applyImagesCSV(ic);   _applied.img=textHash(ic);   any=true; }catch(e){} }
+  if(sc){ try{ applyStockCSV(sc);    _applied.stock=textHash(sc); any=true; }catch(e){} }
+  // one-time move of the small CSVs older builds kept in localStorage
+  if(ic && cacheGet(CACHE_IMG))   bigCacheSet(CACHE_IMG, ic);
+  if(sc && cacheGet(CACHE_STOCK)) bigCacheSet(CACHE_STOCK, sc);
   if(any){
     _dataSource='cache';
     _lastSyncTime=cacheGet(CACHE_TIME)||'';
     refreshAll(); renderEditor();
-    setSyncStatus('Loaded offline cache (last sync '+(_lastSyncTime||'unknown')+'). Checking for updates…', null);
+    if(_syncing) setSyncStatus('Loaded offline cache (last sync '+(_lastSyncTime||'unknown')+'). Checking for updates…', null);
   }
-  updateOfflineOverlay();
-})();
+  // With nothing cached and the download still running, don't flash the
+  // "not loaded" screen — it is only shown if that download actually fails.
+  if(any || !_syncing) updateOfflineOverlay();
+}
+const HYDRATE_P = hydrateFromCache();
 
 // 2) Refresh from the live sheet in the background (overwrites data + cache)
 syncFromGoogleSheet();
@@ -5928,7 +6280,8 @@ syncFromGoogleSheet();
   if(c){ try{ const a=JSON.parse(c); if(Array.isArray(a)&&a.length){ QUOTES=a; setQStatus('Loaded '+a.length+' cached quotation'+(a.length===1?'':'s')+'. Checking for updates…'); } }catch(e){} }
   renderSearchResults();
 })();
-syncQuotes();
+// needs the catalogue (finish codes for tab discovery, MRP for sorting) — so after hydration
+HYDRATE_P.then(()=>{ renderSearchResults(); syncQuotes(); }, ()=>syncQuotes());
 </script>
 
 
