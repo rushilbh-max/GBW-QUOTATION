@@ -1615,6 +1615,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <div>
         <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">🖼 Image Audit</div>
         <div style="font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:2px">Every image URL is actually loaded and verified — missing, broken and fixable links are all reported</div>
+        <div id="ia-sheetnote" style="font-family:'Jost',sans-serif;font-size:10px;color:#4ADF90;margin-top:3px"></div>
       </div>
       <button onclick="closeImageAudit()" style="background:transparent;border:none;color:var(--muted2);font-size:22px;line-height:1;cursor:pointer;padding:0 4px">&times;</button>
     </div>
@@ -1764,7 +1765,7 @@ function renderSummary(){
   const totalItems = S.items.reduce((a,i)=>a+i.qty,0);
   $('summary-item-info').textContent = `${S.items.length} product${S.items.length!==1?'s':''} · ${totalItems} piece${totalItems!==1?'s':''}`;
 }
-function goPreview(){ dropBlankRows(); renderPreview(); showScreen('preview'); }
+function goPreview(){ dropBlankRows(); renderPreview(); showScreen('preview'); setTimeout(autoHealQuoteImages, 300); }
 
 // ── STOCK AVAILABILITY ──────────────────────────────────────────────
 // Auto status: AVAILABLE when GBW stock is known AND >= order qty; otherwise NOT AVAILABLE.
@@ -2480,7 +2481,7 @@ function _imgKeyLookup(code){
 /* ---- resolve the URL the app would actually try to render for a code ---- */
 function auditResolveUrl(code){
   const custom = (getCustomProducts()[code] || {}).img;
-  const raw    = custom || IMAGE_MAP[code] || _imgKeyLookup(code) || '';
+  const raw    = custom || sheetImageUrl(code);
   return String(raw == null ? '' : raw).trim();
 }
 
@@ -2589,6 +2590,109 @@ function auditBathroomOf(code){
   return hit.join(' / ');
 }
 
+/* ═══ AUTO-REPAIR ═══
+   Brand sites move images. Two moves are predictable, so a broken URL is
+   retried in its likely new places before being called broken:
+     • OpenCart resized copies (/image/cache/…-444x484.jpg) are purged and
+       regenerated — the original (/image/catalog/….jpg) stays put. (Artize,
+       Essco, Jaquar UK and most dealer sites run on OpenCart.)
+     • Jaquar thumbnails exist in several sizes; one size can vanish while
+       another still loads.
+   A repair that actually loads is used at once everywhere in the app (screen,
+   PDFs, exports) and remembered on this device. It is tied to the exact
+   broken URL: when the sheet cell changes, the sheet wins again.            */
+const IMG_HEAL_KEY='gbw_img_heal_v1';
+let IMG_HEAL={};
+try{ IMG_HEAL=JSON.parse(localStorage.getItem(IMG_HEAL_KEY)||'{}')||{}; }catch(e){ IMG_HEAL={}; }
+function saveHeals(){ try{ localStorage.setItem(IMG_HEAL_KEY, JSON.stringify(IMG_HEAL)); }catch(e){} }
+/* called every time IMAGE NEW is (re)loaded */
+function applyHeals(){
+  let dirty=false;
+  Object.keys(IMG_HEAL).forEach(code=>{
+    const h=IMG_HEAL[code], cur=IMAGE_MAP[code];
+    if(cur===h.from) IMAGE_MAP[code]=h.to;             // sheet still has the dead link
+    else { delete IMG_HEAL[code]; dirty=true; }        // sheet was edited (or fixed) — it wins
+  });
+  if(dirty) saveHeals();
+}
+function rememberHeal(code, from, to){
+  if(!code || !from || !to || from===to) return;
+  IMG_HEAL[code]={from:from, to:to, at:new Date().toISOString()};
+  IMAGE_MAP[code]=to;
+}
+/* the URL as written in the sheet, even when this device is using a repair */
+function sheetImageUrl(code){
+  const h=IMG_HEAL[code];
+  if(h && IMAGE_MAP[code]===h.to) return h.from;
+  return IMAGE_MAP[code] || _imgKeyLookup(code) || '';
+}
+function healCandidates(url){
+  const out=[], add=u=>{ if(u && u!==url && out.indexOf(u)<0) out.push(u); };
+  const m=String(url).match(/^(https?:\/\/[^?#]*?)\/image\/cache\/(.+?)-\d+x\d+(\.(?:jpe?g|png|webp|gif))(?:[?#].*)?$/i);
+  if(m) add(m[1]+'/image/'+m[2]+m[3]);                                   // OpenCart original
+  const t=String(url).match(/^(https?:\/\/)([^/]*jaquar[^/]*)(\/images\/thumbs\/\d+_[^/]+?)_(\d{2,4})(\.(?:jpe?g|png|webp))$/i);
+  if(t){
+    [960,1000,800,600,550,415,400].forEach(sz=>add(t[1]+t[2]+t[3]+'_'+sz+t[5]));
+    const other=/^www\./i.test(t[2]) ? 'global.jaquar.com' : 'www.jaquar.com';
+    add(t[1]+other+t[3]+'_'+t[4]+t[5]);
+  }
+  return out.slice(0,10);
+}
+async function findRepair(url){
+  const cands=healCandidates(url);
+  for(let i=0;i<cands.length && !IMG_AUDIT.cancelled;i++){
+    const p=await auditProbeOnce(cands[i]);
+    if(p.ok) return {url:cands[i], w:p.w, h:p.h};
+  }
+  return null;
+}
+/* where to look by hand when nothing automatic works */
+function imageSearchLink(code, url){
+  const c=encodeURIComponent(code), lo=String(url||'').toLowerCase();
+  if(/artize/.test(lo))            return {label:'Find on artize.com', href:'https://www.artize.com/in/index.php?route=product/search&search='+c};
+  if(/jaquar/.test(lo) || !lo)     return {label:'Find on jaquar.com', href:'https://www.jaquar.com/en/search?q='+c};
+  return {label:'Search images', href:'https://www.google.com/search?tbm=isch&q='+c};
+}
+/* Re-read IMAGE NEW before checking, so a fix just typed into the sheet is
+   what gets tested (the app otherwise reads the sheet when it opens). */
+async function refreshImagesFromSheet(){
+  try{
+    const t=await fetchSheetText(GSHEET_IMAGE_TAB);
+    const h=textHash(t);
+    if(h===_applied.img) return 'same';
+    const before=Object.assign({}, IMAGE_MAP);
+    applyImagesCSV(t); _applied.img=h; bigCacheSet(CACHE_IMG, t);
+    let n=0; Object.keys(IMAGE_MAP).forEach(k=>{ if(before[k]!==IMAGE_MAP[k]) n++; });
+    return n ? ('changed:'+n) : 'same';
+  }catch(e){ return 'failed'; }
+}
+function _imgsChanged(){
+  refreshAll();
+  if($('screen-preview') && $('screen-preview').classList.contains('active')) renderPreview();
+}
+/* Quiet pass when the quotation preview opens: anything broken that can be
+   repaired is repaired before a PDF is made. Already-checked URLs are free. */
+let _autoHealBusy=false;
+async function autoHealQuoteImages(){
+  if(_autoHealBusy || !S.items || !S.items.length) return;
+  _autoHealBusy=true;
+  try{
+    const codes=[...new Set(S.items.map(i=>i.code))].filter(c=>{ const u=IMAGE_MAP[c]; return u && /^https:\/\//i.test(u) && !IMG_HEAL[c]; });
+    let healed=0, i=0;
+    const worker=async()=>{
+      while(i<codes.length){
+        const code=codes[i++], u=IMAGE_MAP[code];
+        const p=await auditProbe(u);
+        if(p.ok) continue;
+        const fix=await findRepair(u);
+        if(fix){ rememberHeal(code, u, fix.url); healed++; }
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(6,codes.length)}, worker));
+    if(healed){ saveHeals(); _imgsChanged(); toast(healed+' product image'+(healed===1?' was':'s were')+' moved by the brand site — repaired automatically'); }
+  }finally{ _autoHealBusy=false; }
+}
+
 /* ═══ MAIN RUN ═══ */
 async function runImageAudit(force){
   if(IMG_AUDIT.running) return;
@@ -2597,6 +2701,19 @@ async function runImageAudit(force){
   IMG_AUDIT.running = true;
   IMG_AUDIT.cancelled = false;
   IMG_AUDIT.results = [];
+
+  auditSetProgress(0, 1, 'Reading the latest IMAGE NEW sheet…');
+  const fresh = await refreshImagesFromSheet();
+  const note = $('ia-sheetnote');
+  if(note){
+    const tm = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    note.style.color = fresh==='failed' ? '#FFB870' : '#4ADF90';
+    note.textContent = fresh==='failed' ? '⚠ Could not reach the sheet — checked the URLs loaded when the app opened'
+      : fresh.indexOf('changed:')===0 ? ('✓ Read the IMAGE NEW sheet at '+tm+' — picked up '+fresh.split(':')[1]+' changed URL'+(fresh.split(':')[1]==='1'?'':'s'))
+      : ('✓ Read the IMAGE NEW sheet at '+tm+' — these are the URLs in it right now');
+  }
+  if(fresh.indexOf('changed:')===0) _imgsChanged();
+  if(IMG_AUDIT.cancelled){ IMG_AUDIT.running = false; auditRender(true); return; }
 
   const items = S.items.slice();
   auditSetProgress(0, items.length, 'Reading catalogue…');
@@ -2655,9 +2772,36 @@ async function runImageAudit(force){
     }
   });
 
+  /* 4 ─ broken links: look for the image where the site moved it */
+  const broken = rows.filter(r => r.status === 'BROKEN' && r.probeUrl);
+  const tried = new Map();
+  let bi = 0, healed = 0;
+  if(broken.length) auditSetProgress(0, broken.length, 'Looking for moved images…');
+  const fixer = async () => {
+    while(bi < broken.length && !IMG_AUDIT.cancelled){
+      const r = broken[bi++];
+      if(!tried.has(r.probeUrl)) tried.set(r.probeUrl, findRepair(r.probeUrl));
+      const fix = await tried.get(r.probeUrl);
+      if(fix){
+        r.status = 'NEEDS_FIX'; r.repaired = fix.url; r.w = fix.w; r.h = fix.h; r.autoFixed = true;
+        r.reason = 'The site moved this image — found it and repaired it automatically (working now on this device). Paste the new URL into IMAGE NEW to fix it for every device:';
+      }
+      auditSetProgress(bi, broken.length, 'Looking for moved images…');
+    }
+  };
+  await Promise.all(Array.from({length: Math.min(4, broken.length)}, fixer));
+
+  /* 5 ─ every verified repair is used right away, everywhere */
+  rows.forEach(r => {
+    if(r.status === 'NEEDS_FIX' && r.repaired && r.url && IMAGE_MAP[r.code] !== r.repaired){
+      rememberHeal(r.code, r.url, r.repaired); healed++;
+    }
+  });
+  if(healed){ saveHeals(); _imgsChanged(); }
+
   IMG_AUDIT.results = rows;
   IMG_AUDIT.running = false;
-  auditRender();
+  auditRender(IMG_AUDIT.cancelled);
 }
 
 /* ═══ UI ═══ */
@@ -2764,9 +2908,17 @@ function auditRender(cancelled){
       ? '<div style="width:38px;height:38px;background:#fff;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="' + esc(thumbSrc) + '" style="width:38px;height:38px;object-fit:contain" onerror="this.parentNode.style.background=\'var(--ink4)\';this.remove()"/></div>'
       : '<div style="width:38px;height:38px;background:var(--ink4);border:1px dashed ' + m.bd + ';border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;color:' + m.col + '">✕</div>';
 
-    const urlLine = r.url
-      ? '<div style="margin-top:3px"><a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="font-family:monospace;font-size:9.5px;color:#7FB0D0;word-break:break-all;text-decoration:none">' + esc(r.url.length > 110 ? r.url.slice(0,110) + '…' : r.url) + '</a></div>'
+    let urlLine = r.url
+      ? '<div style="margin-top:3px"><a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="font-family:monospace;font-size:9.5px;color:#7FB0D0;word-break:break-all;text-decoration:' + (r.repaired ? 'line-through' : 'none') + '">' + esc(r.url.length > 110 ? r.url.slice(0,110) + '…' : r.url) + '</a></div>'
       : '<div style="margin-top:3px;font-family:monospace;font-size:9.5px;color:var(--muted);font-style:italic">— cell is empty in the IMAGE NEW sheet —</div>';
+    if(r.repaired){
+      urlLine += '<div style="margin-top:4px;display:flex;gap:6px;align-items:flex-start"><span style="font-family:\'Jost\',sans-serif;font-size:9px;font-weight:800;color:#4ADF90;white-space:nowrap">NEW →</span>'
+        + '<a href="' + esc(r.repaired) + '" target="_blank" rel="noopener" style="font-family:monospace;font-size:9.5px;color:#4ADF90;word-break:break-all;text-decoration:none">' + esc(r.repaired) + '</a></div>';
+    }else if(r.status === 'BROKEN' || r.status === 'NO_URL'){
+      const f = imageSearchLink(r.code, r.url);
+      urlLine += '<div style="margin-top:4px"><a href="' + esc(f.href) + '" target="_blank" rel="noopener" style="font-family:\'Jost\',sans-serif;font-size:10px;font-weight:700;color:var(--gold-l);text-decoration:none">🔎 ' + esc(f.label) + ' ↗</a>'
+        + '<span style="font-family:\'Jost\',sans-serif;font-size:9.5px;color:var(--muted2)"> — open the product, right-click its picture → Copy image address, paste into IMAGE NEW, then RE-CHECK</span></div>';
+    }
 
     h += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:' + (ok ? 'transparent' : m.bg.replace('0.16','0.06')) + '">'
       + '<td style="padding:7px 6px;text-align:center;font-family:\'Jost\',sans-serif;font-size:11px;color:var(--muted2)">' + (i+1) + '</td>'
@@ -2787,7 +2939,7 @@ function auditRender(cancelled){
 function auditCopyCodes(){
   const list = IMG_AUDIT.results.filter(r => r.status !== 'OK');
   if(!list.length){ alert('Nothing to copy — no problem items.'); return; }
-  const txt = list.map(r => r.code).join('\n');
+  const txt = list.map(r => r.repaired ? (r.code + '\t' + r.repaired) : r.code).join('\n');   // code<TAB>url pastes straight into two sheet columns
   const done = () => { const b = $('ia-copy'); const o = b.textContent; b.textContent = '✓ Copied ' + list.length; setTimeout(()=>{ b.textContent = o; }, 1600); };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(done).catch(()=>auditFallbackCopy(txt, done));
@@ -4851,6 +5003,7 @@ function applyImagesCSV(text){
   if(!keys.length) throw new Error('0 valid image rows');
   Object.keys(IMAGE_MAP).forEach(k=>delete IMAGE_MAP[k]); // mutate const in place
   Object.assign(IMAGE_MAP, m);
+  if(typeof applyHeals==='function') applyHeals();        // keep verified repairs of dead links
   return keys.length;
 }
 function applyStockCSV(text){
