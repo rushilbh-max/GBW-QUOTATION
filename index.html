@@ -976,6 +976,15 @@ html, body{
 .fq-card .fq-m{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px;line-height:1.5}
 .fq-card .fq-r{text-align:right;flex-shrink:0}
 .fq-card .fq-mrp{font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:#D8E4EC}
+.fq-card .fq-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.fq-card .fq-lvl{display:inline-block;font-family:'Jost',sans-serif;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:10px;white-space:nowrap}
+.fq-card .fq-lvl.nrp{color:#7FC8F0;background:rgba(80,160,220,0.12);border:1px solid rgba(80,160,220,0.4)}
+.fq-card .fq-lvl.sdp{color:#E8B86A;background:rgba(231,160,60,0.12);border:1px solid rgba(231,160,60,0.4)}
+.fq-card .fq-amt{font-family:'Jost',sans-serif;font-size:14px;font-weight:800;color:var(--gold-l);white-space:nowrap}
+.fq-card .fq-amt.wait{color:var(--muted2);font-weight:600;font-size:11px}
+.fq-card .fq-mrpline{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);white-space:nowrap}
+.fq-card .fq-mrpline s{color:#9FB4C4}
+.fq-card .fq-off{color:#4ADF90;font-weight:700}
 .fq-card .fq-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer;padding:4px 2px;margin-top:2px}
 .fq-list{display:flex;flex-direction:column;gap:8px}
 .fq-card.loading{opacity:.55;pointer-events:none;border-color:rgba(201,168,76,0.55)}
@@ -6049,7 +6058,7 @@ function renderSyncState(){
    and we fetch fresh. A save on THIS device re-keys the copy instead of
    dropping it, so a quote you just saved re-opens instantly too. */
 const QITEMS_KEY='gbw_quote_items_v1';
-const QITEMS_MAX=80;
+const QITEMS_MAX=600;             // every saved quote fits (≈1 KB each) — so every card can show its amount
 function itemsCache(){ try{ return JSON.parse(localStorage.getItem(QITEMS_KEY)||'{}')||{}; }catch(e){ return {}; } }
 function putItemsCache(c){
   const keys=Object.keys(c);
@@ -6074,30 +6083,62 @@ function forgetCachedItems(qno){ const c=itemsCache(); delete c[qno]; putItemsCa
 /* Warm the cache for the most recent quotes in ONE request, in the background,
    so the first tap is instant too. One round trip, not ten. */
 let _prefetching=false;
+/* Fetches the lines of every quote not cached yet (newest first, 40 per
+   request). After the first run only quotes re-saved since are fetched —
+   usually none — so every card shows its amount and every quote opens instantly. */
 async function prefetchQuoteItems(n){
   if(_prefetching||!qapiReady()||!SAVED.length) return;
   const cache=itemsCache();
-  const want=SAVED.slice(0,n||10)
+  const want=(n ? SAVED.slice(0,n) : SAVED)
     .filter(q=>!q.pending)
     .filter(q=>{ const c=cache[q.quoteNo]; return !c || String(c.at||'')!==String(q.savedAt||''); })
     .map(q=>q.quoteNo);
   if(!want.length) return;
   _prefetching=true;
-  const r=await qapiGet('items',{q:want.join(',')});
-  _prefetching=false;
-  if(!r||!r.ok) return;
-  const c=itemsCache();
-  if(r.byQuote){
-    Object.keys(r.byQuote).forEach(k=>{
-      const head=headFor(k);
-      if(head && !head.pending) c[k]={at:String(head.savedAt||''), items:r.byQuote[k]};
-    });
-  }else if(Array.isArray(r.items) && want.length===1){
-    const head=headFor(want[0]);                       // older script build
-    if(head && !head.pending) c[want[0]]={at:String(head.savedAt||''), items:r.items};
-  }
-  putItemsCache(c);
-  renderQuoteResults();
+  try{
+    for(let i=0;i<want.length;i+=40){
+      const chunk=want.slice(i,i+40);
+      const r=await qapiGet('items',{q:chunk.join(',')});
+      if(!r||!r.ok) break;
+      const c=itemsCache();
+      if(r.byQuote){
+        Object.keys(r.byQuote).forEach(k=>{
+          const head=headFor(k);
+          if(head && !head.pending) c[k]={at:String(head.savedAt||''), items:r.byQuote[k]};
+        });
+      }else if(Array.isArray(r.items) && chunk.length===1){
+        const head=headFor(chunk[0]);                   // older script build
+        if(head && !head.pending) c[chunk[0]]={at:String(head.savedAt||''), items:r.items};
+      }else break;                                      // older script without batching
+      putItemsCache(c);
+      renderQuoteResults();
+    }
+  }finally{ _prefetching=false; }
+}
+
+/* ── card figures: MRP, quotation amount and price level ──
+   Worked out from the quote's lines at TODAY's catalogue prices — exactly
+   what opening the quote shows. Until its lines are on this device the card
+   shows the MRP saved with it and "calculating…". */
+function priceLevelOf(q){
+  const mode=String(q.mode||'NRP').toUpperCase()==='SDP' ? 'SDP' : 'NRP';
+  const d=Number(q.disc)||0, pct=(Math.round(d*100)/100)+'%';
+  if(mode==='SDP') return {cls:'sdp', label:'SDP NET' + (d ? ' + '+pct : '')};
+  return {cls:'nrp', label:'NRP' + (d ? ' − '+pct : '')};
+}
+function quoteFigures(q, cache){
+  const c=cache[q.quoteNo];
+  const fresh=c && Array.isArray(c.items) && String(c.at||'')===String(q.savedAt||'');
+  if(!fresh || !ALL.length) return {mrp:Number(q.mrpTotal)||0, amt:null, missing:0};
+  const sdp=String(q.mode||'').toUpperCase()==='SDP', d=Number(q.disc)||0;
+  let mrp=0, amt=0, missing=0;
+  c.items.forEach(it=>{
+    const p=PMAP[it.code]; const n=Number(it.qty)||0;
+    if(!p){ missing++; return; }
+    mrp+=(p.mrp||0)*n;
+    amt+=(sdp ? (p.sdp_net||0)*(100+d)/100 : (p.nrp||0)*(100-d)/100)*n;
+  });
+  return {mrp:mrp, amt:amt, missing:missing};
 }
 
 /* ── LIST + SEARCH ── */
@@ -6145,7 +6186,7 @@ async function syncSavedQuotes(manual){
     persistSaved();
     if(!OUTBOX.length) setFqStatus('✓ '+SAVED.length+' saved quotation'+(SAVED.length===1?'':'s')+(r.unchanged?' · up to date':'')+' · '+new Date().toLocaleTimeString());
     if(manual) toast(SAVED.length+' quotations loaded');
-    prefetchQuoteItems(10);                              // background, not awaited
+    prefetchQuoteItems(0);                               // background, not awaited — all quotes
   }else if(SAVED.length){
     setFqStatus('⚠ Refresh failed — showing '+SAVED.length+' saved on this device.');
     if(manual) toast('Could not refresh — showing cached list');
@@ -6211,9 +6252,20 @@ function renderQuoteResults(){
       '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+badge+'</div>'+
       '<div class="fq-q">'+esc(q.quoteNo)+(q.phone?' · '+esc(q.phone):'')+'</div>'+
       '<div class="fq-m">'+esc(meta)+'</div></div>'+
-      '<div class="fq-r"><div class="fq-mrp">₹'+fmtN(q.mrpTotal)+'</div>'+
-      '<button class="fq-x" onclick="event.stopPropagation();deleteSavedQuote(\''+esc(q.quoteNo)+'\')" title="Delete">✕</button>'+
-      '</div></div>';
+      (function(){
+        const f=quoteFigures(q, cache), lv=priceLevelOf(q);
+        const off=(f.amt!=null && f.mrp>0) ? Math.round((1-f.amt/f.mrp)*100) : null;
+        return '<div class="fq-r">'+
+          '<span class="fq-lvl '+lv.cls+'">'+esc(lv.label)+'</span>'+
+          (f.amt!=null
+            ? '<div class="fq-amt" title="Quotation amount at today\'s prices">₹'+fmtN(f.amt)+'</div>'
+            : '<div class="fq-amt wait">calculating…</div>')+
+          '<div class="fq-mrpline">MRP <s>₹'+fmtN(f.mrp)+'</s>'+(off!=null && off>0 ? ' <span class="fq-off">'+off+'% off</span>' : '')+'</div>'+
+          (f.missing ? '<div class="fq-mrpline" style="color:#FFB870">'+f.missing+' code'+(f.missing===1?'':'s')+' not in catalogue</div>' : '')+
+          '<button class="fq-x" onclick="event.stopPropagation();deleteSavedQuote(\''+esc(q.quoteNo)+'\')" title="Delete">✕</button>'+
+        '</div>';
+      })()+
+      '</div>';
   }).join('');
 }
 
@@ -6434,7 +6486,7 @@ syncFromGoogleSheet();
   renderSearchResults();
 })();
 // needs the catalogue (finish codes for tab discovery, MRP for sorting) — so after hydration
-HYDRATE_P.then(()=>{ renderSearchResults(); syncQuotes(); }, ()=>syncQuotes());
+HYDRATE_P.then(()=>{ renderSearchResults(); renderQuoteResults(); syncQuotes(); }, ()=>syncQuotes());
 </script>
 
 
