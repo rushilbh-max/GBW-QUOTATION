@@ -6676,29 +6676,38 @@ function exportQuotationExcel(){
   if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
   const inBath = S.bathrooms && S.bathrooms.length>0;
   let aoa, fname;
+  /* Basic Rate = the pre-GST unit rate after the discount / margin — the same
+     figure as the "Rate" column of the GST Format quotation. It sits AFTER Qty,
+     so the file still imports back into the app (which reads code + qty by
+     position and ignores anything further right). */
+  const basicRate=it=>Math.round(basicUnit(it)*100)/100;
   if(inBath){
-    aoa=[['Bathroom','Code','Qty']];
-    S.bathrooms.forEach(b=>b.items.forEach(it=>aoa.push([b.name, it.code, it.qty])));
+    aoa=[['Bathroom','Code','Qty','Basic Rate']];
+    S.bathrooms.forEach(b=>b.items.forEach(it=>aoa.push([b.name, it.code, it.qty, basicRate(it)])));
     fname='quotation_bathroomwise.xlsx';
   }else{
     if(!S.items.length){ alert('No products in the quotation to export.'); return; }
-    aoa=[['Code','Qty']];
-    S.items.forEach(it=>aoa.push([it.code, it.qty]));
+    aoa=[['Code','Qty','Basic Rate']];
+    S.items.forEach(it=>aoa.push([it.code, it.qty, basicRate(it)]));
     fname='quotation_codes.xlsx';
   }
   if(aoa.length<=1){ alert('No products in the quotation to export.'); return; }
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']= inBath ? [{wch:24},{wch:20},{wch:8}] : [{wch:20},{wch:8}];
+  ws['!cols']= inBath ? [{wch:24},{wch:20},{wch:8},{wch:13}] : [{wch:20},{wch:8},{wch:13}];
+  const rateCol=XLSX.utils.encode_col(inBath?3:2);
+  for(let r=2;r<=aoa.length;r++){ const c=ws[rateCol+r]; if(c && c.t==='n') c.z='#,##0.00'; }   // always 2 decimals
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
 
   // second sheet: the dispatch view — one row per code, quantities added up
   const dr=dispatchRows();
   if(dr.length){
-    const d=[['Code','Description','MRP','Qty','Received','Short']];
-    dr.forEach(r=>d.push([r.code, r.desc||'', r.mrp||0, r.qty, '', '']));
+    const d=[['Code','Description','MRP','Qty','Basic Rate','Received','Short']];
+    const byCode={}; (S.items||[]).forEach(it=>{ if(!byCode[it.code]) byCode[it.code]=it; });
+    dr.forEach(r=>{ const it=byCode[r.code]||PMAP[r.code]; d.push([r.code, r.desc||'', r.mrp||0, r.qty, it?basicRate(it):'', '', '']); });
     const wsd=XLSX.utils.aoa_to_sheet(d);
-    wsd['!cols']=[{wch:22},{wch:42},{wch:10},{wch:7},{wch:10},{wch:9}];
+    wsd['!cols']=[{wch:22},{wch:42},{wch:10},{wch:7},{wch:13},{wch:10},{wch:9}];
+    for(let r=2;r<=d.length;r++){ const c=wsd['E'+r]; if(c && c.t==='n') c.z='#,##0.00'; }
     XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
   }
 
