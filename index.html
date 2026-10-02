@@ -977,6 +977,14 @@ html, body{
 .se-loaded-item .li-m:hover:not(:disabled),.se-loaded-item .li-m:active:not(:disabled){background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.4)}
 .se-loaded-item .li-m:disabled{opacity:.25;cursor:default}
 .se-loaded-item.moved{animation:liFlash .9s ease}
+.se-loaded-item .li-grip{display:flex;align-items:center;justify-content:center;width:30px;height:36px;margin:-4px 0 -4px -6px;border-radius:6px;color:var(--muted2);font-size:17px;line-height:1;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;flex-shrink:0;background:transparent;border:none}
+.se-loaded-item .li-grip:hover,.se-loaded-item .li-grip:focus-visible{color:var(--gold);background:rgba(201,168,76,0.12);outline:none}
+#se-loaded-list{display:flex;flex-direction:column;gap:6px;position:relative}
+#se-loaded-list.dragging{user-select:none;-webkit-user-select:none}
+#se-loaded-list.dragging .se-loaded-item{transition:transform .16s ease}
+#se-loaded-list.dragging .se-loaded-item.drag{transition:none;z-index:5;position:relative;border-color:var(--gold);background:var(--ink4);box-shadow:0 12px 28px rgba(0,0,0,0.55);cursor:grabbing}
+#se-loaded-list.dragging .se-loaded-item.drag .li-grip{cursor:grabbing;color:var(--gold)}
+.se-loaded-hint{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:-4px}
 @keyframes liFlash{0%{background:rgba(201,168,76,0.28)}100%{background:var(--ink3)}}
 .se-loaded-item .li-e{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);border-radius:5px;padding:6px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .15s}
 .se-loaded-item .li-e:active,.se-loaded-item .li-e:hover{background:rgba(201,168,76,0.14);border-color:rgba(201,168,76,0.7)}
@@ -1288,6 +1296,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
         <span class="t" id="se-loaded-t">Loaded into quotation</span>
         <button class="se-btn red" style="padding:6px 10px" onclick="clearLoadedQuotation()">Clear all</button>
       </div>
+      <div class="se-loaded-hint" id="se-loaded-hint">Drag ⠿ to put the bathrooms in the order they should print.</div>
       <div id="se-loaded-list"></div>
       <button class="se-btn gold" onclick="goPreview()">🧾 Go to Quotation →</button>
     </div>
@@ -5782,16 +5791,16 @@ function renderLoadedPanel(){
   const t=$('se-loaded-t'); if(t) t.textContent='Loaded into quotation · '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s');
   const ei=editTargetIndex();
   const n=S.bathrooms.length;
+  const hint=$('se-loaded-hint'); if(hint) hint.style.display = n>1 ? 'block' : 'none';
   list.innerHTML=S.bathrooms.map((b,i)=>{
     let pcs=0,mrp=0; b.items.forEach(it=>{pcs+=it.qty;mrp+=it.mrp*it.qty;});
     const on=(i===ei);
     return '<div class="se-loaded-item'+(on?' editing':'')+(b===_bathFlash?' moved':'')+'" data-bi="'+i+'">'+
+      (n>1 ? '<button class="li-grip" data-grip="'+i+'" title="Drag to change the order (or use the ↑ ↓ keys)" aria-label="Drag '+esc(b.name)+' to reorder">⠿</button>' : '')+
       '<span class="li-pos">'+(i+1)+'</span>'+
       '<div class="li-l"><div class="li-name">'+esc(b.name)+(on?' <span class="li-tag">• EDITING</span>':'')+'</div>'+
       '<div class="li-meta">'+b.items.length+' product'+(b.items.length===1?'':'s')+' · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
       '<div class="li-acts">'+
-        '<button class="li-m" onclick="moveLoadedBathroom('+i+',-1)" title="Move up in the quotation"'+(i===0?' disabled':'')+'>▲</button>'+
-        '<button class="li-m" onclick="moveLoadedBathroom('+i+',1)" title="Move down in the quotation"'+(i===n-1?' disabled':'')+'>▼</button>'+
         '<button class="li-m" onclick="duplicateLoadedBathroom('+i+')" title="Make a copy of this bathroom">⧉ Copy</button>'+
         '<button class="li-e" onclick="editLoadedBathroom('+i+')" title="Re-edit this bathroom">✎ '+(on?'Editing':'Edit')+'</button>'+
         '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button>'+
@@ -5811,14 +5820,115 @@ function _bathroomsChanged(){
   syncEditorMode();          // the editor's target is tracked by reference, so it survives a move
   renderLoadedPanel();
 }
-function moveLoadedBathroom(i, dir){
-  const a=S.bathrooms||[], j=i+dir;
-  if(!a[i] || j<0 || j>=a.length) return;
-  const b=a[i]; a[i]=a[j]; a[j]=b;
+function moveLoadedBathroomTo(from, to){
+  const a=S.bathrooms||[];
+  if(!a[from]) return;
+  to=Math.max(0, Math.min(a.length-1, to));
+  if(to===from){ renderLoadedPanel(); return; }
+  const b=a.splice(from,1)[0];
+  a.splice(to,0,b);
   _bathFlash=b;
   _bathroomsChanged();
-  toast('“'+b.name+'” is now no. '+(j+1)+' of '+a.length);
+  toast('“'+b.name+'” is now no. '+(to+1)+' of '+a.length);
 }
+function moveLoadedBathroom(i, dir){ moveLoadedBathroomTo(i, i+dir); }
+
+/* ── drag a bathroom to its place ──
+   Grab the ⠿ handle and drop the bathroom where it should print. Pointer
+   events cover mouse, touch and pen alike; only the handle starts a drag, so
+   the list still scrolls normally under a finger. The other rows slide apart
+   to show where it will land, the page scrolls when the drag nears an edge,
+   and Esc (or a cancelled touch) puts everything back.                     */
+(function wireBathroomDrag(){
+  const list=$('se-loaded-list'); if(!list) return;
+  let D=null;
+  const scrollerOf=el=>{
+    for(let p=el.parentElement; p; p=p.parentElement){
+      const o=getComputedStyle(p).overflowY;
+      if((o==='auto'||o==='scroll') && p.scrollHeight>p.clientHeight+1) return p;
+    }
+    return document.scrollingElement||document.documentElement;
+  };
+  function place(){
+    if(!D) return;
+    const sc=D.sc.scrollTop-D.sc0;
+    let dy=(D.y-D.y0)+sc;
+    dy=Math.max(D.minDy, Math.min(D.maxDy, dy));
+    // a row gives way once the dragged one's leading edge passes its middle
+    const top=D.rects[D.from].top+dy, bottom=D.rects[D.from].bottom+dy;
+    let to=0;
+    D.rects.forEach((r,k)=>{
+      const mid=r.top+r.height/2;
+      if(k<D.from){ if(mid<top) to++; }
+      else if(k>D.from){ if(mid<bottom) to++; }
+    });
+    D.to=to;
+    const step=D.rects[D.from].height+D.gap;
+    D.rows.forEach((row,k)=>{
+      if(k===D.from){ row.style.transform='translateY('+dy+'px)'; return; }
+      let sh=0;
+      if(D.from<k && k<=to) sh=-step; else if(to<=k && k<D.from) sh=step;
+      row.style.transform=sh?('translateY('+sh+'px)'):'';
+    });
+  }
+  function autoScroll(){
+    if(!D) return;
+    const box = (D.sc===document.scrollingElement||D.sc===document.documentElement)
+      ? {top:0, bottom:window.innerHeight} : D.sc.getBoundingClientRect();
+    const edge=56; let v=0;
+    if(D.y<box.top+edge) v=-Math.ceil((box.top+edge-D.y)/5);
+    else if(D.y>box.bottom-edge) v=Math.ceil((D.y-(box.bottom-edge))/5);
+    if(v){ const before=D.sc.scrollTop; D.sc.scrollTop=before+Math.max(-18,Math.min(18,v)); if(D.sc.scrollTop!==before) place(); }
+    D.raf=requestAnimationFrame(autoScroll);
+  }
+  function finish(commit){
+    if(!D) return;
+    const d=D; D=null;
+    cancelAnimationFrame(d.raf);
+    try{ d.grip.releasePointerCapture(d.id); }catch(e){}
+    document.removeEventListener('keydown', onKey, true);
+    list.classList.remove('dragging');
+    d.rows.forEach(r=>{ r.style.transform=''; r.classList.remove('drag'); });
+    if(commit && d.to!==d.from) moveLoadedBathroomTo(d.from, d.to);
+  }
+  function onKey(e){ if(e.key==='Escape'){ e.preventDefault(); finish(false); } }
+
+  list.addEventListener('pointerdown', e=>{
+    const grip=e.target.closest('.li-grip'); if(!grip || D) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    const rows=[...list.querySelectorAll('.se-loaded-item')];
+    const from=rows.indexOf(grip.closest('.se-loaded-item'));
+    if(from<0 || rows.length<2) return;
+    e.preventDefault();
+    const rects=rows.map(r=>r.getBoundingClientRect());
+    const sc=scrollerOf(list);
+    D={ id:e.pointerId, grip:grip, rows:rows, rects:rects, from:from, to:from,
+        y0:e.clientY, y:e.clientY, sc:sc, sc0:sc.scrollTop,
+        gap: rows.length>1 ? Math.max(0, rects[1].top-rects[0].bottom) : 0,
+        minDy: rects[0].top-rects[from].top,
+        maxDy: rects[rects.length-1].bottom-rects[from].bottom, raf:0 };
+    try{ grip.setPointerCapture(e.pointerId); }catch(x){}
+    list.classList.add('dragging');
+    rows[from].classList.add('drag');
+    document.addEventListener('keydown', onKey, true);
+    D.raf=requestAnimationFrame(autoScroll);
+  });
+  list.addEventListener('pointermove', e=>{ if(D && e.pointerId===D.id){ D.y=e.clientY; place(); } });
+  list.addEventListener('pointerup',     e=>{ if(D && e.pointerId===D.id) finish(true); });
+  list.addEventListener('pointercancel', e=>{ if(D && e.pointerId===D.id) finish(false); });
+  list.addEventListener('lostpointercapture', e=>{ if(D && e.pointerId===D.id) finish(false); });
+  /* keyboard: focus the handle, ↑ / ↓ moves the bathroom one place */
+  list.addEventListener('keydown', e=>{
+    const grip=e.target.closest && e.target.closest('.li-grip'); if(!grip || D) return;
+    const i=+grip.dataset.grip, dir = e.key==='ArrowUp' ? -1 : e.key==='ArrowDown' ? 1 : 0;
+    if(!dir) return;
+    e.preventDefault();
+    const j=i+dir; if(j<0 || j>=(S.bathrooms||[]).length) return;
+    moveLoadedBathroomTo(i, j);
+    const g=list.querySelector('.li-grip[data-grip="'+j+'"]'); if(g) g.focus();
+  });
+  list.addEventListener('contextmenu', e=>{ if(e.target.closest('.li-grip')) e.preventDefault(); });
+})();
 /* Bathroom names identify the bathroom when a quote is saved and reopened, so
    a copy always gets a name of its own. */
 function uniqueBathroomName(name){
