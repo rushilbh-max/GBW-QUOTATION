@@ -94,7 +94,28 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .disc-row{display:flex;align-items:center;gap:10px}
 .disc-lbl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#9BAABD;flex:1;font-family:'Jost',sans-serif;font-weight:700}
 .disc-inp-wrap{display:flex;align-items:center;gap:5px;background:var(--ink4);border:1px solid rgba(201,168,76,0.25);border-radius:var(--r-sm);padding:5px 10px}
-#f-disc{width:44px;text-align:center;background:transparent;border:none;color:var(--gold);font-size:16px;font-weight:600;outline:none}
+#f-disc{width:58px;text-align:center;background:transparent;border:none;color:var(--gold);font-size:16px;font-weight:600;outline:none}
+.net-btn{background:transparent;border:1px solid rgba(201,168,76,0.45);color:var(--gold);border-radius:var(--r-sm);padding:7px 11px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.net-btn.on,.net-btn:hover{background:rgba(201,168,76,0.14);border-color:rgba(201,168,76,0.75)}
+#net-box{display:none;flex-direction:column;gap:8px;background:var(--ink4);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:10px 12px;margin-top:8px}
+.net-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.net-lbl{font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9BAABD}
+.net-inp-wrap{display:flex;align-items:center;gap:6px;background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:var(--r-sm);padding:6px 10px;flex:1;min-width:150px}
+.net-inp-wrap span{color:var(--gold);font-weight:700;font-size:15px}
+#f-net{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--gold-l);font-family:'Jost',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px}
+.net-x{background:transparent;border:none;color:var(--muted2);font-size:18px;cursor:pointer;padding:0 4px}
+#net-opts{display:flex;gap:8px;flex-wrap:wrap}
+.net-opt{flex:1;min-width:220px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink3);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:9px 11px}
+.net-opt.cur{border-color:rgba(201,168,76,0.6)}
+.net-opt.bad{opacity:.6}
+.net-opt .no-l{min-width:0}
+.net-opt .no-t{font-family:'Jost',sans-serif;font-size:14px;font-weight:800;color:var(--gold-l);white-space:nowrap}
+.net-opt .no-m{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:2px;line-height:1.45}
+.net-opt .no-m b{color:#C0D4E4;font-weight:600}
+.net-opt .no-m .warn{color:#FFB870}
+.net-opt button{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:5px;padding:8px 13px;font-family:'Jost',sans-serif;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.net-opt button:disabled{background:var(--ink4);color:var(--muted2);cursor:not-allowed}
+.net-hint{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2)}
 .disc-sym{font-size:15px;font-weight:600;color:var(--gold)}
 .disc-note{font-size:9px;color:var(--slate);letter-spacing:.3px;font-style:italic;font-family:'Cormorant',serif;font-size:11px}
 
@@ -942,11 +963,21 @@ html, body{
 .se-loaded-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .se-loaded-h .t{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#4ADF90}
 .se-loaded-item{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--ink3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:9px 12px}
-.se-loaded-item .li-l{min-width:0;flex:1}
+.se-loaded-item .li-l{min-width:0}
 .se-loaded-item .li-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);word-break:break-word}
 .se-loaded-item .li-name .li-tag{font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--gold);vertical-align:middle}
 .se-loaded-item .li-meta{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2)}
-.se-loaded-item .li-acts{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.se-loaded-item{flex-wrap:wrap}
+.se-loaded-item .li-acts{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.se-loaded-item .li-l{flex:1 1 150px}
+.se-loaded-item .li-acts{margin-left:auto}
+@media(max-width:560px){.disc-row{flex-wrap:wrap}.disc-note{flex-basis:100%}}
+.se-loaded-item .li-pos{font-family:'Jost',sans-serif;font-size:11px;font-weight:800;color:var(--gold);min-width:18px;text-align:center}
+.se-loaded-item .li-m{background:transparent;border:1px solid rgba(255,255,255,0.18);color:#C0D4E4;border-radius:5px;min-width:32px;height:30px;font-size:12px;font-weight:700;cursor:pointer;padding:0 8px;font-family:'Jost',sans-serif}
+.se-loaded-item .li-m:hover:not(:disabled),.se-loaded-item .li-m:active:not(:disabled){background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.4)}
+.se-loaded-item .li-m:disabled{opacity:.25;cursor:default}
+.se-loaded-item.moved{animation:liFlash .9s ease}
+@keyframes liFlash{0%{background:rgba(201,168,76,0.28)}100%{background:var(--ink3)}}
 .se-loaded-item .li-e{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);border-radius:5px;padding:6px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .15s}
 .se-loaded-item .li-e:active,.se-loaded-item .li-e:hover{background:rgba(201,168,76,0.14);border-color:rgba(201,168,76,0.7)}
 .se-loaded-item .li-x{background:transparent;border:none;color:#E06060;font-size:15px;font-weight:700;cursor:pointer;padding:0 2px}
@@ -985,7 +1016,11 @@ html, body{
 .fq-card .fq-mrpline{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);white-space:nowrap}
 .fq-card .fq-mrpline s{color:#9FB4C4}
 .fq-card .fq-off{color:#4ADF90;font-weight:700}
-.fq-card .fq-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer;padding:4px 2px;margin-top:2px}
+.fq-card .fq-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer;padding:4px 2px}
+.fq-card .fq-acts{display:flex;align-items:center;gap:6px;margin-top:5px}
+.fq-card .fq-b{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);border-radius:5px;padding:5px 9px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;cursor:pointer;white-space:nowrap}
+.fq-card .fq-b:hover,.fq-card .fq-b:active{background:rgba(201,168,76,0.14);border-color:rgba(201,168,76,0.75)}
+.fq-open.copy{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.4);color:var(--gold-l)}
 .fq-list{display:flex;flex-direction:column;gap:8px}
 .fq-card.loading{opacity:.55;pointer-events:none;border-color:rgba(201,168,76,0.55)}
 .fq-card.loading .fq-n::after{content:' · opening…';font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--gold)}
@@ -1045,10 +1080,19 @@ html, body{
   <div class="disc-row">
     <span class="disc-lbl" id="disc-lbl">Discount</span>
     <div class="disc-inp-wrap">
-      <input type="number" id="f-disc" class="" value="0" min="0" max="100" step="0.5" inputmode="decimal" style="width:44px;text-align:center;background:transparent;border:none;color:var(--gold);font-size:16px;font-weight:600;outline:none">
+      <input type="number" id="f-disc" class="" value="0" min="0" max="100" step="any" inputmode="decimal" style="text-align:center;background:transparent;border:none;color:var(--gold);font-size:16px;font-weight:600;outline:none">
       <span class="disc-sym">%</span>
     </div>
+    <button class="net-btn" id="net-btn" onclick="toggleNetBox()" title="Type the final amount — the discount or margin % is worked out for you">🎯 Net amount</button>
     <span class="disc-note" id="disc-note">Best Price = NRP × (100 − disc%)</span>
+  </div>
+  <div id="net-box">
+    <div class="net-row">
+      <span class="net-lbl">Final net amount</span>
+      <div class="net-inp-wrap"><span>₹</span><input id="f-net" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 2,50,000"></div>
+      <button class="net-x" onclick="toggleNetBox(false)" title="Close">&times;</button>
+    </div>
+    <div id="net-opts"></div>
   </div>
 </div>
 
@@ -1707,6 +1751,7 @@ function setMode(m){
   $('mode-sdp').classList.toggle('on',m==='SDP');
   $('disc-lbl').textContent=m==='NRP'?'Discount':'Margin';
   $('disc-note').textContent=m==='NRP'?'Best Price = NRP × (100 − disc%)':'Best Price = SDP Net × (100 + margin%)';
+  if(typeof NET_SET!=='undefined'){ NET_SET=0; if(_netOpen()) renderNetOpts(); }
   refreshAll();
 }
 
@@ -2218,7 +2263,99 @@ function setQty(code,n){ setQtyAt(S.items.findIndex(i=>i.code===code), n); }
 function delItem(code){ delItemAt(S.items.findIndex(i=>i.code===code)); }
 function beginInsert(code,pos){ beginInsertAt(S.items.findIndex(i=>i.code===code), pos); }
 function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};S.stockFilter='ALL';cancelInsert();showBathroomModeBar();refreshAll();}
-$('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0;refreshAll();});
+$('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0; NET_SET=0; setDiscNote(); refreshAll(); if(_netOpen()) renderNetOpts(); _rerenderPreviewIfOpen();});
+
+/* The % can carry many decimals (it is worked out from a net amount); the box
+   shows it to 2 places while S.disc keeps the exact value. */
+function showDisc(){ const el=$('f-disc'); if(el) el.value=String(Math.round((Number(S.disc)||0)*100)/100); }
+function _rerenderPreviewIfOpen(){ const p=$('screen-preview'); if(p && p.classList.contains('active')) renderPreview(); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   NET AMOUNT  →  discount % (on NRP)  or  margin % (on SDP Net)
+   ────────────────────────────────────────────────────────────────────────
+   The quotation total is  Σ(price × qty) × factor, so for a wanted total the
+   factor is simply total ÷ Σ(price × qty). Both ways of reaching the amount
+   are shown; picking one switches the mode and fills the % in. The % is kept
+   at full precision so the total lands on the rupee typed.                  */
+var NET_SET=0;                                  // the net amount the current % was set from (0 = typed by hand)
+function _netOpen(){ const b=$('net-box'); return !!(b && b.style.display==='flex'); }
+function parseNet(v){ const n=parseFloat(String(v||'').replace(/[^0-9.]/g,'')); return isFinite(n)?n:0; }
+function netBases(){
+  let nrp=0, sdp=0, mrp=0;
+  (S.items||[]).forEach(i=>{ const q=Number(i.qty)||0; nrp+=(i.nrp||0)*q; sdp+=(i.sdp_net||0)*q; mrp+=(i.mrp||0)*q; });
+  return {nrp:nrp, sdp:sdp, mrp:mrp};
+}
+function netSolve(target){
+  const b=netBases(), out={target:target, bases:b};
+  out.nrp = b.nrp>0 ? {pct:100*(1-target/b.nrp)} : null;      // discount %
+  out.sdp = b.sdp>0 ? {pct:100*(target/b.sdp-1)} : null;      // margin %
+  return out;
+}
+function pct2(n){ return (Math.round(n*100)/100).toFixed(2).replace(/\.?0+$/,''); }
+function toggleNetBox(force){
+  const box=$('net-box'), btn=$('net-btn'); if(!box) return;
+  const open = (force===undefined) ? !_netOpen() : !!force;
+  box.style.display = open ? 'flex' : 'none';
+  if(btn) btn.classList.toggle('on', open);
+  if(open){
+    const inp=$('f-net');
+    if(inp && !inp.value && S.items && S.items.length) inp.value=fmtN(totals().best);
+    renderNetOpts();
+    if(inp){ inp.focus(); inp.select(); }
+  }
+}
+function renderNetOpts(){
+  const el=$('net-opts'); if(!el) return;
+  if(!S.items || !S.items.length){ el.innerHTML='<div class="net-hint">Add products to the quotation first — then type the final amount here.</div>'; return; }
+  const target=parseNet($('f-net').value);
+  if(!(target>0)){ el.innerHTML='<div class="net-hint">Type the final amount the customer will pay. NRP total is ₹'+fmtN(netBases().nrp)+', SDP Net total is ₹'+fmtN(netBases().sdp)+'.</div>'; return; }
+  const r=netSolve(target), b=r.bases;
+  const card=(mode, title, meta, ok)=>
+    '<div class="net-opt'+(S.mode===mode?' cur':'')+(ok?'':' bad')+'"><div class="no-l"><div class="no-t">'+title+'</div><div class="no-m">'+meta+'</div></div>'+
+    '<button '+(ok?'':'disabled ')+'onclick="applyNet(\''+mode+'\')">'+(S.mode===mode?'Apply':'Use this')+'</button></div>';
+  let h='';
+  if(!r.nrp) h+=card('NRP','NRP','<span class="warn">No NRP prices on these products</span>',false);
+  else if(r.nrp.pct<0)    h+=card('NRP','Above NRP','<span class="warn">₹'+fmtN(target)+' is ₹'+fmtN(target-b.nrp)+' more than the NRP total (₹'+fmtN(b.nrp)+') — no discount gives this</span>',false);
+  else if(r.nrp.pct>=100) h+=card('NRP','NRP','<span class="warn">Amount is zero</span>',false);
+  else h+=card('NRP','NRP − '+pct2(r.nrp.pct)+'%','NRP total <b>₹'+fmtN(b.nrp)+'</b> · discount <b>₹'+fmtN(b.nrp-target)+'</b>'+(b.mrp>0?' · <b>'+pct2(100*(1-target/b.mrp))+'%</b> off MRP':''),true);
+  if(!r.sdp) h+=card('SDP','SDP Net','<span class="warn">No SDP Net prices on these products</span>',false);
+  else if(r.sdp.pct<0)    h+=card('SDP','Below SDP Net','<span class="warn">₹'+fmtN(target)+' is ₹'+fmtN(b.sdp-target)+' less than the SDP Net total (₹'+fmtN(b.sdp)+') — this would sell below cost</span>',false);
+  else h+=card('SDP','SDP Net + '+pct2(r.sdp.pct)+'%','SDP Net total <b>₹'+fmtN(b.sdp)+'</b> · margin <b>₹'+fmtN(target-b.sdp)+'</b>',true);
+  el.innerHTML=h;
+}
+function applyNet(mode){
+  const target=parseNet($('f-net').value);
+  if(!(target>0) || !S.items || !S.items.length) return;
+  const r=netSolve(target), o=(mode==='SDP')?r.sdp:r.nrp;
+  if(!o || o.pct<0 || (mode==='NRP' && o.pct>=100)) return;
+  S.disc=o.pct;
+  setMode(mode);                                  // switches buttons + labels, re-renders
+  // floating point can leave the total a rupee out — nudge until it lands
+  const base=(mode==='SDP')?r.bases.sdp:r.bases.nrp;
+  for(let k=0;k<4 && Math.round(totals().best)!==Math.round(target);k++){
+    const diff=totals().best-target;
+    S.disc += (mode==='SDP' ? -1 : 1) * 100*diff/base;
+  }
+  NET_SET=Math.round(target);
+  showDisc(); setDiscNote(); refreshAll(); _rerenderPreviewIfOpen();
+  if(typeof renderQuoteResults==='function') renderQuoteResults();
+  toggleNetBox(false);
+  toast('Net ₹'+fmtN(target)+' set — '+(mode==='SDP'?'SDP Net + ':'NRP − ')+pct2(S.disc)+'%');
+}
+function setDiscNote(){
+  const n=$('disc-note'); if(!n) return;
+  const base = S.mode==='NRP' ? 'Best Price = NRP × (100 − disc%)' : 'Best Price = SDP Net × (100 + margin%)';
+  n.textContent = NET_SET ? ('Set from net amount ₹'+fmtN(NET_SET)+' · exact '+(Math.round(S.disc*10000)/10000)+'%') : base;
+}
+(function wireNet(){
+  const inp=$('f-net'); if(!inp) return;
+  inp.addEventListener('input', renderNetOpts);
+  inp.addEventListener('blur', function(){ const n=parseNet(this.value); if(n>0) this.value=fmtN(n); });
+  inp.addEventListener('keydown', function(e){
+    if(e.key==='Enter'){ e.preventDefault(); applyNet(S.mode); }
+    else if(e.key==='Escape'){ toggleNetBox(false); }
+  });
+})();
 
 // ── BATHROOM MODE ──────────────────────────────────────────────────
 S.bathrooms = []; // [{name, items:[{code,qty,desc,mrp,nrp,sdp,sdp_net}]}]
@@ -5644,17 +5781,61 @@ function renderLoadedPanel(){
   panel.style.display='flex';
   const t=$('se-loaded-t'); if(t) t.textContent='Loaded into quotation · '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s');
   const ei=editTargetIndex();
+  const n=S.bathrooms.length;
   list.innerHTML=S.bathrooms.map((b,i)=>{
     let pcs=0,mrp=0; b.items.forEach(it=>{pcs+=it.qty;mrp+=it.mrp*it.qty;});
     const on=(i===ei);
-    return '<div class="se-loaded-item'+(on?' editing':'')+'">'+
+    return '<div class="se-loaded-item'+(on?' editing':'')+(b===_bathFlash?' moved':'')+'" data-bi="'+i+'">'+
+      '<span class="li-pos">'+(i+1)+'</span>'+
       '<div class="li-l"><div class="li-name">'+esc(b.name)+(on?' <span class="li-tag">• EDITING</span>':'')+'</div>'+
       '<div class="li-meta">'+b.items.length+' product'+(b.items.length===1?'':'s')+' · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
       '<div class="li-acts">'+
+        '<button class="li-m" onclick="moveLoadedBathroom('+i+',-1)" title="Move up in the quotation"'+(i===0?' disabled':'')+'>▲</button>'+
+        '<button class="li-m" onclick="moveLoadedBathroom('+i+',1)" title="Move down in the quotation"'+(i===n-1?' disabled':'')+'>▼</button>'+
+        '<button class="li-m" onclick="duplicateLoadedBathroom('+i+')" title="Make a copy of this bathroom">⧉ Copy</button>'+
         '<button class="li-e" onclick="editLoadedBathroom('+i+')" title="Re-edit this bathroom">✎ '+(on?'Editing':'Edit')+'</button>'+
         '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button>'+
       '</div></div>';
   }).join('');
+  _bathFlash=null;
+}
+/* The quotation prints bathrooms in this order, so moving one here moves it
+   on the quotation, the PDFs, the Excel export and in what gets saved. */
+let _bathFlash=null;
+function _bathroomsChanged(){
+  rebuildItemsFromBathrooms();
+  pruneStockOverrides();
+  cancelInsert();
+  showBathroomModeBar();
+  refreshAll();
+  syncEditorMode();          // the editor's target is tracked by reference, so it survives a move
+  renderLoadedPanel();
+}
+function moveLoadedBathroom(i, dir){
+  const a=S.bathrooms||[], j=i+dir;
+  if(!a[i] || j<0 || j>=a.length) return;
+  const b=a[i]; a[i]=a[j]; a[j]=b;
+  _bathFlash=b;
+  _bathroomsChanged();
+  toast('“'+b.name+'” is now no. '+(j+1)+' of '+a.length);
+}
+/* Bathroom names identify the bathroom when a quote is saved and reopened, so
+   a copy always gets a name of its own. */
+function uniqueBathroomName(name){
+  const taken={}; (S.bathrooms||[]).forEach(b=>{ taken[String(b.name).trim().toUpperCase()]=1; });
+  const base=String(name||'Bathroom').replace(/\s*\(copy(?: \d+)?\)\s*$/i,'').trim() || 'Bathroom';
+  let cand=base+' (copy)', k=2;
+  while(taken[cand.toUpperCase()]) cand=base+' (copy '+(k++)+')';
+  return cand;
+}
+function duplicateLoadedBathroom(i){
+  const a=S.bathrooms||[], b=a[i];
+  if(!b) return;
+  const copy={name:uniqueBathroomName(b.name), items:b.items.map(it=>({...it}))};
+  a.splice(i+1, 0, copy);
+  _bathFlash=copy;
+  _bathroomsChanged();
+  toast('Copied as “'+copy.name+'” — tap ✎ Edit to rename or change it');
 }
 function removeLoadedBathroom(i){
   if(!S.bathrooms||!S.bathrooms[i]) return;
@@ -5890,7 +6071,7 @@ async function saveQuoteToCloud(){
   const r=await qapiPost({secret:qapiSecret(), action:'save', quote:payload});
   _newSaveBusy=false; setSaveBtnBusy(false);
   if(r && r.ok){
-    CUR_QNO=r.quoteNo;
+    CUR_QNO=r.quoteNo; COPY_OF='';
     const qn=$('f-qno'); if(qn) qn.value=r.quoteNo;   // printed no. == searchable no.
     acceptServerSave(r, payload, '');
     toast('Saved as '+r.quoteNo+' — '+r.products+' products');
@@ -6216,10 +6397,15 @@ function renderQuotesPage(){
 function renderOpenBanner(){
   const b=$('fq-open'), t=$('fq-open-t');
   if(!b) return;
+  b.classList.toggle('copy', !CUR_QNO && !!COPY_OF);
   if(CUR_QNO){
     b.style.display='flex';
     const syncing=hasQueued('save',CUR_QNO);
     if(t) t.textContent='Open: '+CUR_QNO+(syncing?' — saved here, syncing to the sheet…':' — saving will offer to update it');
+  }
+  else if(COPY_OF){
+    b.style.display='flex';
+    if(t) t.textContent='Working on a copy of '+COPY_OF+' — not saved yet; 💾 Save Quote creates a new quotation';
   }
   else b.style.display='none';
 }
@@ -6262,7 +6448,11 @@ function renderQuoteResults(){
             : '<div class="fq-amt wait">calculating…</div>')+
           '<div class="fq-mrpline">MRP <s>₹'+fmtN(f.mrp)+'</s>'+(off!=null && off>0 ? ' <span class="fq-off">'+off+'% off</span>' : '')+'</div>'+
           (f.missing ? '<div class="fq-mrpline" style="color:#FFB870">'+f.missing+' code'+(f.missing===1?'':'s')+' not in catalogue</div>' : '')+
-          '<button class="fq-x" onclick="event.stopPropagation();deleteSavedQuote(\''+esc(q.quoteNo)+'\')" title="Delete">✕</button>'+
+          '<div class="fq-acts">'+
+            '<button class="fq-b" onclick="event.stopPropagation();openSavedQuote(\''+esc(q.quoteNo)+'\',\'edit\')" title="Open this quotation for changes — saving updates it">✎ Edit</button>'+
+            '<button class="fq-b" onclick="event.stopPropagation();openSavedQuote(\''+esc(q.quoteNo)+'\',\'copy\')" title="Start a new quotation from a copy of this one">⧉ Duplicate</button>'+
+            '<button class="fq-x" onclick="event.stopPropagation();deleteSavedQuote(\''+esc(q.quoteNo)+'\')" title="Delete">✕</button>'+
+          '</div>'+
         '</div>';
       })()+
       '</div>';
@@ -6270,7 +6460,11 @@ function renderQuoteResults(){
 }
 
 /* ── OPEN ── */
-async function openSavedQuote(quoteNo){
+/* how: undefined = open on the Quotation screen (tap on the card)
+        'edit'    = open on the screen where it is changed; saving updates it
+        'copy'    = same contents as a NEW, not-yet-saved quotation            */
+let COPY_OF='';
+async function openSavedQuote(quoteNo, how){
   if(!quoteNo) return;
   if(!ALL.length){ toast('Catalogue still loading — try again in a moment'); return; }
   const head=headFor(quoteNo);
@@ -6316,20 +6510,40 @@ async function openSavedQuote(quoteNo){
     if($('f-qno'))   $('f-qno').value   = head.quoteNo||'';
     if(head.mode && head.mode!==S.mode) setMode(head.mode);
     S.disc = Number(head.disc)||0;
-    if($('f-disc')) $('f-disc').value = S.disc;
+    NET_SET=0; showDisc(); setDiscNote();
   }
 
-  CUR_QNO=quoteNo;
+  // nothing half-edited from the previous quotation may leak into this one
+  EDIT=null; EDIT_REF=null; hideEdCodeDrop();
+  const sed=$('se-editor'); if(sed) sed.style.display='none';
+
+  const lost = missing.length ? ' — '+missing.length+' code(s) no longer in catalogue' : '';
+  if(how==='copy'){
+    CUR_QNO=''; COPY_OF=quoteNo;
+    if($('f-qno'))  $('f-qno').value='Q-'+Date.now().toString().slice(-6);     // real number is given when it is saved
+    if($('f-date')) $('f-date').value=new Date().toISOString().split('T')[0];
+  }else{
+    CUR_QNO=quoteNo; COPY_OF='';
+  }
   cancelInsert();
   showBathroomModeBar();
   refreshAll();
+  syncEditorMode();
   renderLoadedPanel();
   renderOpenBanner();
-  toast(quoteNo+' opened'+(missing.length?' — '+missing.length+' code(s) no longer in catalogue':''));
-  goPreview();
+  if(how==='edit' || how==='copy'){
+    showScreen(S.bathrooms.length ? 'search' : 'builder');
+    if(S.bathrooms.length){ const lp=$('se-loaded'); if(lp) lp.scrollIntoView({behavior:'smooth', block:'start'}); }
+    toast(how==='copy'
+      ? 'Copy of '+quoteNo+' — a NEW quotation, not saved yet. 💾 Save Quote gives it its own number'+lost
+      : quoteNo+' open for editing — 💾 Save Quote will update it'+lost);
+  }else{
+    toast(quoteNo+' opened'+lost);
+    goPreview();
+  }
 }
 function detachSavedQuote(){
-  CUR_QNO='';
+  CUR_QNO=''; COPY_OF='';
   renderOpenBanner();
   toast('Detached — the next save creates a new quotation');
 }
