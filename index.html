@@ -1036,6 +1036,66 @@ html, body{
 .fq-card .fq-fast.fq-sync{color:var(--gold)}
 .fq-open{background:rgba(42,157,96,0.08);border:1px solid rgba(42,157,96,0.35);border-radius:8px;padding:9px 12px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:#4ADF90;display:none;align-items:center;justify-content:space-between;gap:8px}
 
+/* ── READ PDF / PHOTO ── */
+.scan-box{background:var(--ink2);border:1px solid rgba(201,168,76,0.25);border-radius:10px;width:100%;max-width:1040px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden}
+.scan-head{padding:13px 18px;background:rgba(201,168,76,0.06);border-bottom:1px solid rgba(201,168,76,0.12);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-shrink:0}
+.scan-t{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase}
+.scan-s{font-family:'Jost',sans-serif;font-size:10.5px;color:var(--muted2);margin-top:3px;line-height:1.45}
+.scan-x{background:transparent;border:none;color:var(--muted2);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}
+.scan-pad{padding:18px}
+.scan-drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--ink3);border:2px dashed rgba(201,168,76,0.35);border-radius:10px;padding:30px 18px;cursor:pointer;transition:all .15s}
+.scan-drop:hover,.scan-drop.over{border-color:var(--gold);background:rgba(201,168,76,0.08)}
+.scan-dt{font-family:'Jost',sans-serif;font-size:14px;font-weight:700;color:var(--gold-l)}
+.scan-ds{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);line-height:1.5}
+.scan-tips{margin-top:14px;font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);line-height:1.75}
+.scan-tips b{color:var(--gold);font-weight:700;letter-spacing:.6px;text-transform:uppercase;font-size:10px}
+.scan-err{margin-top:12px;padding:9px 12px;border-radius:6px;background:rgba(220,60,50,0.12);border:1px solid rgba(220,60,50,0.35);color:#FF9B8F;font-family:'Jost',sans-serif;font-size:12px}
+.scan-sum{padding:10px 18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
+.sc-chip{font-family:'Jost',sans-serif;font-size:11px;color:#C0D4E4;border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:4px 11px;white-space:nowrap}
+.sc-chip b{color:#fff}
+.sc-chip.ok{color:#4ADF90;border-color:rgba(42,157,96,0.5)}
+.sc-chip.ck{color:#FFB870;border-color:rgba(231,140,60,0.55)}
+.sc-chip.un{color:#FF9B8F;border-color:rgba(224,96,96,0.5)}
+.sc-src{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-left:auto}
+.scan-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 14px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.sc-row{background:var(--ink3);border:1px solid rgba(255,255,255,0.08);border-left:3px solid #2A9D60;border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.sc-row.check{border-left-color:#E78C3C;background:rgba(231,140,60,0.06)}
+.sc-row.unknown{border-left-color:#E06060;background:rgba(224,96,96,0.06)}
+.sc-row.off{opacity:.45}
+.sc-stripw{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;border-radius:4px}
+.sc-strip{width:100%;min-width:520px;max-height:130px;object-fit:contain;object-position:left center;background:#fff;display:block}
+.sc-b.tw{color:#7FC8F0;background:rgba(80,160,220,0.12);border:1px solid rgba(80,160,220,0.45)}
+.sc-chip.tw{color:#7FC8F0;border-color:rgba(80,160,220,0.5);white-space:normal}
+.sc-main{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.sc-on{padding-top:8px}
+.sc-on input{width:17px;height:17px;accent-color:#C9A84C;cursor:pointer}
+.sc-codewrap{flex:1 1 240px;min-width:0}
+.sc-code{width:100%;background:var(--ink4);border:1px solid rgba(201,168,76,0.3);border-radius:5px;padding:7px 9px;color:var(--gold-l);font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:.4px;outline:none;text-transform:uppercase}
+.sc-code:focus{border-color:var(--gold)}
+.sc-code.bad{border-color:rgba(224,96,96,0.7);color:#FF9B8F}
+.sc-desc{font-family:'Jost',sans-serif;font-size:10.5px;color:var(--muted2);margin-top:3px;line-height:1.4}
+.sc-desc b{color:#C0D4E4;font-weight:600}
+.sc-desc .warn{color:#FF9B8F}
+.sc-qty{display:flex;align-items:center;gap:6px}
+.sc-qty span{font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted2)}
+.sc-qty input{width:64px;background:var(--ink4);border:1px solid rgba(201,168,76,0.3);border-radius:5px;padding:7px 6px;color:#fff;font-family:'Jost',sans-serif;font-size:15px;font-weight:700;text-align:center;outline:none}
+.sc-qty input.ck{border-color:rgba(231,140,60,0.8);color:#FFB870}
+.sc-b{font-family:'Jost',sans-serif;font-size:9px;font-weight:800;letter-spacing:.6px;border-radius:4px;padding:5px 8px;white-space:nowrap;margin-top:4px}
+.sc-b.ok{color:#4ADF90;background:rgba(42,157,96,0.14);border:1px solid rgba(42,157,96,0.45)}
+.sc-b.ck{color:#FFB870;background:rgba(231,140,60,0.14);border:1px solid rgba(231,140,60,0.5)}
+.sc-b.un{color:#FF9B8F;background:rgba(224,96,96,0.14);border:1px solid rgba(224,96,96,0.5)}
+.sc-notes{font-family:'Jost',sans-serif;font-size:10.5px;color:#9FB4C4;line-height:1.5;padding-left:27px}
+.sc-row.check .sc-notes{color:#E8B86A}
+.sc-altl{color:var(--muted2);margin-left:4px}
+.sc-alt{background:transparent;border:1px solid rgba(201,168,76,0.45);color:var(--gold-l);border-radius:4px;padding:2px 7px;font-family:'Cinzel',serif;font-size:10.5px;font-weight:600;cursor:pointer;margin:2px 2px 0 0}
+.sc-alt:hover{background:rgba(201,168,76,0.15)}
+.scan-empty{padding:40px 18px;text-align:center;font-family:'Jost',sans-serif;font-size:13px;color:#C0D4E4;line-height:1.7}
+.scan-empty span{font-size:11px;color:var(--muted2)}
+.scan-foot{padding:11px 18px;border-top:1px solid rgba(201,168,76,0.12);background:rgba(201,168,76,0.04);gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+.scan-btn{background:transparent;border:1px solid rgba(255,255,255,0.18);border-radius:5px;padding:9px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#C0D4E4;cursor:pointer}
+.scan-btn.gold{background:#C9A84C;border-color:#C9A84C;color:#0D1520;font-weight:800}
+.scan-btn:disabled{opacity:.45;cursor:not-allowed}
+
 /* ── TOAST ── */
 #se-toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translateX(-50%) translateY(20px);background:#0D1520;border:1px solid rgba(201,168,76,0.5);color:var(--gold-l);font-family:'Jost',sans-serif;font-size:13px;font-weight:600;padding:12px 20px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:all .3s;z-index:10000;max-width:90vw;text-align:center}
 #se-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -1114,6 +1174,9 @@ html, body{
     <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap">
       <button onclick="$('upload-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
         ⬆ Upload Code List
+      </button>
+      <button onclick="openScan()" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer" title="Pick codes and quantities out of a quotation PDF, a photo or a screenshot">
+        📄 Read PDF / Photo
       </button>
       <button onclick="$('bathroom-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
         🛁 Bathroom Wise
@@ -1667,6 +1730,52 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 <!-- Floating catalogue picker for the editor + toast -->
 <div id="ed-code-dd"></div>
 <div id="se-toast"></div>
+
+<!-- ═══ READ PDF / PHOTO MODAL ═══ -->
+<div id="scan-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10001;align-items:center;justify-content:center;padding:14px">
+  <div class="scan-box">
+    <div class="scan-head">
+      <div>
+        <div class="scan-t">📄 Read codes &amp; quantities from a PDF or photo</div>
+        <div class="scan-s">The file stays on this device. Every line is checked against your catalogue and against the document itself before it is added.</div>
+      </div>
+      <button onclick="closeScan()" class="scan-x">&times;</button>
+    </div>
+
+    <div id="scan-pick" class="scan-pad">
+      <label id="scan-drop" class="scan-drop">
+        <div style="font-size:34px">📥</div>
+        <div class="scan-dt">Choose a PDF or picture</div>
+        <div class="scan-ds">or drag it here · or press Ctrl+V to paste a screenshot · on a phone you can take a photo</div>
+        <input type="file" id="scan-file" accept="application/pdf,.pdf,image/*" style="display:none">
+      </label>
+      <div id="scan-pickmsg" class="scan-err" style="display:none"></div>
+      <div class="scan-tips">
+        <b>Best results</b><br>
+        • A PDF made by software (Jaquar / dealer quotation) is read exactly — nothing is guessed.<br>
+        • For a photo: flat, straight, sharp, the whole table in the frame, no shadow across the codes.<br>
+        • Codes of the usual shape (ALD-CHR-079N) are picked up; the few catalogue items without that shape must be typed.
+      </div>
+    </div>
+
+    <div id="scan-prog" class="scan-pad" style="display:none">
+      <div id="scan-progname" class="scan-dt" style="margin-bottom:10px"></div>
+      <div style="height:6px;background:var(--ink4);border-radius:3px;overflow:hidden"><div id="scan-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8B6914,#E8D08A);transition:width .2s ease"></div></div>
+      <div id="scan-progtxt" class="scan-ds" style="margin-top:8px">Starting…</div>
+    </div>
+
+    <div id="scan-review" style="display:none;flex-direction:column;min-height:0;flex:1">
+      <div id="scan-sum" class="scan-sum"></div>
+      <div id="scan-list" class="scan-list"></div>
+    </div>
+
+    <div id="scan-foot" class="scan-foot" style="display:none">
+      <button class="scan-btn" onclick="scanShow('pick');$('scan-file').value=''">↺ Another file</button>
+      <button class="scan-btn" onclick="closeScan()">Cancel</button>
+      <button class="scan-btn gold" id="scan-add" onclick="scanAdd()">Add to quotation</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ IMAGE AUDIT MODAL ═══ -->
 <div id="imgaudit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10001;align-items:center;justify-content:center;padding:14px">
@@ -6668,6 +6777,921 @@ function deleteSavedQuote(quoteNo){
   toast(quoteNo+' deleted');
   flushOutbox();
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   READ A PDF / PHOTO  →  code + qty lines
+   ────────────────────────────────────────────────────────────────────────
+   Everything runs on this device; the file is never uploaded anywhere.
+     • PDF with real text (a quotation exported from software): the text is
+       read exactly with pdf.js — no guessing of characters at all.
+     • Photo, screenshot or scanned PDF: read by OCR (Tesseract), twice, with
+       two different image treatments.
+
+   Why a plain "is this code in the catalogue?" check is NOT enough: in this
+   catalogue 3 codes out of 4 have another valid code one character away
+   (ALD-GLD-705 / ALD-GLD-805) and 19,000 codes are the beginning of a longer
+   one (ALD-CHR-079 / ALD-CHR-079N). So a misread or cut-off code is usually
+   still "valid". Each line is therefore checked against the document itself:
+     code  — the MRP or the description printed on that line must match the
+             catalogue entry of the code; near-miss codes are tried too, and
+             the one the line actually agrees with wins.
+     qty   — qty × rate must equal the amount on the line, or the number must
+             sit under the QTY heading; for OCR both readings must agree.
+   A line that passes shows ✓. A line that cannot be proven is never hidden or
+   guessed silently: it is marked ⚠ with the strip of the original beside it,
+   and nothing enters the quotation until Add is pressed.
+   ════════════════════════════════════════════════════════════════════════ */
+const SCAN_LIBS = {
+  pdf       : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfWorker : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  tess      : 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+  tessWorker: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+  tessCore  : 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
+  tessLang  : 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int'
+};
+const SCAN = { rows:[], busy:false, cancelled:false, worker:null, fileName:'', kind:'' };
+const SCAN_CODE_RE  = /[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{2,16}/;
+const SCAN_CODE_FULL= /^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{2,16}$/;
+
+function scanLoadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector('script[data-scan="'+src+'"]')) return res();
+    const s=document.createElement('script'); s.src=src; s.dataset.scan=src;
+    s.onload=()=>res(); s.onerror=()=>{ s.remove(); rej(new Error('could not load '+src.split('/').pop()+' — check the internet connection')); };
+    document.head.appendChild(s);
+  });
+}
+
+/* ───────────── text helpers ───────────── */
+function scanClean(s){
+  return String(s||'').toUpperCase().replace(/[‐-―−﹘﹣－_]/g,'-');
+}
+function scanNum(s){                      // "₹1,234.50/-" → 1234.5 ; not a number → NaN
+  const t=String(s||'').replace(/[₹$,\s]|RS\.?|INR|\/-|\/=/gi,'');
+  if(!/^-?\d+(\.\d+)?$/.test(t)) return NaN;
+  return parseFloat(t);
+}
+function scanWords(s){ return scanClean(s).split(/[^A-Z0-9]+/).filter(w=>w.length>=4 && !/^\d+$/.test(w)); }
+
+/* sorted code list for "which codes start with …" look-ups */
+let _scanSorted=null, _scanSortedN=-1;
+function scanSorted(){
+  if(!_scanSorted || _scanSortedN!==ALL.length){ _scanSorted=ALL.map(p=>p.code).sort(); _scanSortedN=ALL.length; }
+  return _scanSorted;
+}
+function scanExtensions(prefix, limit){
+  const a=scanSorted(); let lo=0, hi=a.length;
+  while(lo<hi){ const m=(lo+hi)>>1; if(a[m]<prefix) lo=m+1; else hi=m; }
+  const out=[];
+  for(let i=lo;i<a.length && out.length<(limit||40);i++){ if(a[i].lastIndexOf(prefix,0)!==0) break; if(a[i]!==prefix) out.push(a[i]); }
+  return out;
+}
+
+function scanNeighboursHas(raw, code){ return raw===code || scanNeighbours(raw,true).has(code); }
+/* characters OCR mixes up */
+const SCAN_CONF={ '0':'OQD', 'O':'0QD', 'Q':'0O', 'D':'0O', '1':'IL', 'I':'1L', 'L':'1I', '5':'S', 'S':'5', '8':'B', 'B':'8', '2':'Z', 'Z':'2', '6':'G', 'G':'6', 'U':'V', 'V':'U', 'M':'N', 'N':'M' };
+const SCAN_AB='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+/* every catalogue code reachable from a read string by look-alike swaps (≤2),
+   one wrong / missing / extra character, or being cut short */
+function scanNeighbours(r, ocr){
+  const out=new Map();                         // code → how it differs
+  const add=(c,why)=>{ if(c!==r && PMAP[c] && !out.has(c)) out.set(c,why); };
+  scanExtensions(r, 30).forEach(c=>add(c,'longer'));
+  for(let k=r.length-1;k>8;k--){ const c=r.slice(0,k); if(SCAN_CODE_FULL.test(c)) add(c,'shorter'); }   // text ran into the next cell
+  if(!ocr) return out;
+  const n=r.length;
+  for(let i=0;i<n;i++){
+    const ch=r[i]; if(ch==='-') continue;
+    const alts=SCAN_CONF[ch]||'';
+    for(const a of alts){
+      const v=r.slice(0,i)+a+r.slice(i+1); add(v,'lookalike');
+      for(let j=i+1;j<n;j++){ const b=SCAN_CONF[v[j]]||''; for(const c2 of b) add(v.slice(0,j)+c2+v.slice(j+1),'lookalike'); }
+    }
+  }
+  for(let i=0;i<n;i++){
+    if(r[i]==='-') continue;
+    for(const a of SCAN_AB){ if(a!==r[i]) add(r.slice(0,i)+a+r.slice(i+1),'1char'); }
+    if(i>7){ add(r.slice(0,i)+r.slice(i+1),'1char'); }                       // an extra character was read
+  }
+  for(let i=8;i<=n;i++){ for(const a of SCAN_AB) add(r.slice(0,i)+a+r.slice(i),'1char'); }   // a character was dropped
+  return out;
+}
+
+/* ───────────── layout: tokens → lines ───────────── */
+function scanLines(tokens){
+  const t=tokens.filter(k=>k && String(k.s).trim()!=='').map(k=>Object.assign({}, k, {yc:(k.y0+k.y1)/2, h:Math.max(1,k.y1-k.y0), xc:(k.x0+k.x1)/2, u:scanClean(k.s)}));
+  t.sort((a,b)=>a.yc-b.yc || a.x0-b.x0);
+  const lines=[];
+  t.forEach(k=>{
+    let best=null;
+    for(let i=lines.length-1;i>=0 && i>=lines.length-6;i--){
+      const L=lines[i];
+      if(Math.abs(L.yc-k.yc) < 0.55*Math.min(L.h,k.h)+0.15*Math.max(L.h,k.h)){ best=L; break; }
+    }
+    if(!best){ best={toks:[], yc:k.yc, h:k.h, y0:k.y0, y1:k.y1}; lines.push(best); }
+    best.toks.push(k);
+    best.y0=Math.min(best.y0,k.y0); best.y1=Math.max(best.y1,k.y1);
+    best.yc=(best.yc*(best.toks.length-1)+k.yc)/best.toks.length;
+    best.h=Math.max(best.h,k.h);
+  });
+  lines.sort((a,b)=>a.yc-b.yc);
+  lines.forEach(L=>L.toks.sort((a,b)=>a.x0-b.x0));
+  return lines;
+}
+
+/* find code-shaped strings on a line; pieces split by the PDF or by OCR are
+   glued back when they sit right next to each other */
+function scanFindCodes(L){
+  const hits=[], used={};
+  for(let i=0;i<L.toks.length;i++){
+    if(used[i]) continue;
+    let join='', best=null;
+    for(let j=i;j<L.toks.length && j<i+6;j++){
+      const tk=L.toks[j];
+      if(j>i){
+        const gap=tk.x0-L.toks[j-1].x1, prev=L.toks[j-1].u, glue=/-$/.test(prev) || /^-/.test(tk.u);
+        if(gap > (glue?1.6:0.45)*L.h) break;
+      }
+      join+=tk.u.replace(/[^A-Z0-9-]/g,'');
+      const m=join.match(SCAN_CODE_RE);
+      if(m){
+        const before=join.slice(0,m.index), after=join.slice(m.index+m[0].length);
+        if(/[A-Z0-9]$/.test(before)) { /* glued to something in front — not a clean code */ }
+        else if(after==='' || /^-?$/.test(after)) best={raw:m[0], i:i, j:j, x0:L.toks[i].x0, x1:tk.x1, conf:Math.min.apply(null, L.toks.slice(i,j+1).map(x=>x.conf==null?100:x.conf))};
+      }else if(!/^[A-Z0-9]{0,3}(-[A-Z0-9]{0,3}(-[A-Z0-9]{0,16})?)?-?$/.test(join.replace(/^.*[^A-Z0-9-]/,''))) break;
+    }
+    /* a code cut at a hyphen at the end of the cell: "ALD-CHR-" then the rest below */
+    if(!best){
+      const w=L.toks[i].u.replace(/[^A-Z0-9-]/g,'');
+      if(/^[A-Z0-9]{3}-[A-Z0-9]{3}-$/.test(w) || /^[A-Z0-9]{3}-$/.test(w)) best={raw:w, i:i, j:i, x0:L.toks[i].x0, x1:L.toks[i].x1, conf:L.toks[i].conf==null?100:L.toks[i].conf, partial:true};
+    }
+    if(best){ for(let k=best.i;k<=best.j;k++) used[k]=1; best.line=L; hits.push(best); }
+  }
+  /* OCR of a poor picture loses hyphens ("ALDCHR42184"), turns one into a
+     letter ("SHACHRA477") or glues the quantity on ("ALD-CHR-705x1"). A token
+     whose 4th-6th characters are a real finish code (CHR, BGP…) or whose
+     first three are a real series is rebuilt into code shape and then has to
+     prove itself like any other reading. */
+  const K=scanKeys();
+  for(let i=0;i<L.toks.length;i++){
+    if(used[i]) continue;
+    const tk=L.toks[i], src=tk.u.replace(/[^A-Z0-9-]/g,''), z=src.replace(/-/g,'');
+    if(z.length<8 || z.length>26 || !/\d/.test(z)) continue;
+    if(!(K.fin[z.slice(3,6)] || (K.pre[z.slice(0,3)] && /-/.test(src)))) continue;
+    const raw=z.slice(0,3)+'-'+z.slice(3,6)+'-'+z.slice(6);
+    if(!SCAN_CODE_FULL.test(raw)) continue;
+    used[i]=1;
+    hits.push({raw:raw, i:i, j:i, x0:tk.x0, x1:tk.x1, conf:tk.conf==null?100:tk.conf, line:L, soft:true});
+  }
+  hits.sort((a,b)=>a.x0-b.x0);
+  return hits;
+}
+/* the series (ALD, KUP…) and finish (CHR, BGP…) codes that exist in the catalogue */
+let _scanKeys=null, _scanKeysN=-1;
+function scanKeys(){
+  if(!_scanKeys || _scanKeysN!==ALL.length){
+    _scanKeys={pre:{}, fin:{}}; _scanKeysN=ALL.length;
+    ALL.forEach(p=>{ const m=/^([A-Z0-9]{3})-([A-Z0-9]{3})-/.exec(p.code); if(m){ _scanKeys.pre[m[1]]=1; _scanKeys.fin[m[2]]=1; } });
+  }
+  return _scanKeys;
+}
+/* "ALD-CHR-705X12" → the code, and the 12 that was glued to it */
+function scanUnglue(raw){
+  const m=/^([A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{2,16}?)[X](\d{1,3})$/.exec(raw);
+  return m ? {code:m[1], qty:parseInt(m[2],10)} : null;
+}
+
+/* numbers printed on a line. Two amounts set tight against each other come
+   out of a PDF/OCR glued ("4,278.008,556.00") — split them after the paise. */
+function scanNums(u){
+  const t=String(u||'').replace(/[₹$\s]|RS\.?|INR|\/-|\/=/gi,'');
+  const parts=t.match(/\d{1,3}(?:,\d{2,3})*\.\d{2}(?=\d)|\d[\d,]*(?:\.\d+)?/g);
+  if(!parts || parts.join('')!==t) { const n=scanNum(u); return isNaN(n)?[]:[n]; }
+  return parts.map(p=>parseFloat(p.replace(/,/g,''))).filter(n=>!isNaN(n));
+}
+function scanCtx(toks){
+  const ctx={nums:[], words:{}, money:0};
+  toks.forEach(k=>{
+    const ns=scanNums(k.u); ns.forEach(n=>ctx.nums.push(n));
+    if(/\d\.\d{2}/.test(k.u)) ctx.money+=Math.max(1,ns.length);
+    scanWords(k.u).forEach(w=>{ ctx.words[w]=1; });
+  });
+  return ctx;
+}
+
+/* does this catalogue product agree with what is printed on the line? */
+function scanVerify(p, ctx){
+  let score=0; const why=[];
+  if(p.mrp>=50 && ctx.nums.some(n=>Math.abs(n-p.mrp)<0.51)){ score+=3; why.push('MRP ₹'+fmtN(p.mrp)+' matches'); }
+  const w=scanWords(p.desc).slice(0,8);
+  if(w.length>=2){
+    let hit=0; w.forEach(x=>{ if(ctx.words[x]) hit++; });
+    const f=hit/w.length;
+    if(f>=0.6){ score+=2; why.push('description matches'); }
+    else if(f>=0.34 && hit>=2){ score+=1; why.push('description partly matches'); }
+  }
+  return {score:score, why:why};
+}
+
+/* which catalogue code is this? raws = the string as read (and as read + the
+   part that wrapped below it). Near-miss codes are tried too and the one the
+   line itself agrees with wins. */
+function scanResolve(raws, ctx, ocr){
+  const cand=new Map();
+  const put=(code,why)=>{ if(PMAP[code] && !cand.has(code)) cand.set(code,why); };
+  raws.forEach((r,k)=>put(r.code, r.how));
+  raws.forEach(r=>scanNeighbours(r.code, ocr).forEach((why,code)=>put(code,why)));
+  const scored=[]; cand.forEach((why,code)=>{ const v=scanVerify(PMAP[code], ctx); scored.push({code:code, how:why, score:v.score, why:v.why}); });
+  const rank={read:0, wrapped:0, longer:1, shorter:2, lookalike:2, '1char':3};
+  scored.sort((a,b)=>b.score-a.score || rank[a.how]-rank[b.how] || b.code.length-a.code.length);
+  return scored;
+}
+function scanApplyCode(row, scored, ctx, ocr, rawShown, hadWrap){
+  const best=scored[0]||null, second=scored[1]||null;
+  const canVerify = ctx.nums.length>0 || Object.keys(ctx.words).length>=2;
+  row.codeOk=false; row.alts=[];
+  row.notes=row.notes.filter(n=>/qty/i.test(n));
+  if(!best){ row.code=rawShown; row.status='unknown'; row.notes.unshift('not in your catalogue'); return; }
+  row.status=''; row.code=best.code; row.alts=scored.slice(1,5).map(s=>s.code);
+  const direct=scored.filter(s=>s.how==='read'||s.how==='wrapped');
+  const clear = best.score>=2 && (!second || best.score-second.score>=1);
+  const N=[];
+  if(clear){
+    row.codeOk=true; N.push(best.why.join(' + '));
+    if(best.how==='wrapped') N.push('code continued on the next line');
+    else if(best.how!=='read') N.push('read as '+rawShown+' — corrected');
+  }else if(!ocr && direct.length===1 && (best.how==='read'||best.how==='wrapped') && !(hadWrap && scored.some(s=>s.how==='longer'))){
+    row.codeOk = true;                                    // exact text, only one way to read it
+    if(best.how==='wrapped') N.push('code continued on the next line');
+    if(canVerify && best.score===0) N.push('MRP / description on the line differ from the catalogue');
+  }else{
+    if(best.how!=='read' && best.how!=='wrapped') N.push('read as '+rawShown+' — closest catalogue code');
+    else if(direct.length>1) N.push('code may continue on the next line — pick the right one');
+    else N.push(canVerify ? 'could not be confirmed from MRP / description' : 'nothing on the line to confirm it with');
+  }
+  row.notes=N.concat(row.notes);
+}
+
+/* MRP → products, for finding a product when its code cannot be read at all */
+let _scanMrp=null, _scanMrpN=-1;
+function scanByMrp(n){
+  if(!_scanMrp || _scanMrpN!==ALL.length){ _scanMrp=new Map(); _scanMrpN=ALL.length; ALL.forEach(p=>{ const k=Math.round(p.mrp); if(k>=50){ let a=_scanMrp.get(k); if(!a){ a=[]; _scanMrp.set(k,a); } a.push(p); } }); }
+  return _scanMrp.get(Math.round(n))||[];
+}
+function scanIdentify(ctx){
+  const seen={}, out=[];
+  ctx.nums.forEach(n=>scanByMrp(n).forEach(p=>{ if(seen[p.code]) return; seen[p.code]=1; const v=scanVerify(p,ctx); if(v.score>=4) out.push({code:p.code, score:v.score}); }));
+  out.sort((a,b)=>b.score-a.score);
+  return out;
+}
+
+/* ───────────── the analysis ─────────────
+   page = {tokens:[{s,x0,y0,x1,y1,conf?}], w, h, ocr:bool}                    */
+function scanAnalyzePage(page, pi){
+  const lines=scanLines(page.tokens), ocr=!!page.ocr, rows=[];
+  const hits=[];
+  lines.forEach((L,li)=>{ L.i=li; scanFindCodes(L).forEach(h=>{ h.li=li; hits.push(h); }); });
+  const res={rows:rows, lines:lines, orphans:[], qtyX:null, totalQty:null, codeX:null};
+  if(ocr){
+    const cs=page.tokens.filter(k=>k.conf!=null && String(k.s).trim().length>1).map(k=>k.conf);
+    res.meanConf = cs.length ? cs.reduce((a,b)=>a+b,0)/cs.length : 0;
+    res.itemLines = lines.filter(L=>L.toks.some(k=>k.u.replace(/[^A-Z0-9]/g,'').length>=7 && /\d/.test(k.u) && /[A-Z]/.test(k.u))).length;
+  }
+
+  /* QTY heading → the x position of the quantity column */
+  const isTotal=L=>L.toks.some(k=>/^(TOTAL|TOTALS|SUBTOTAL|SUB-TOTAL|GRAND|ROUND|ROUNDING|TAXABLE|CGST|SGST|IGST)$/.test(k.u.replace(/[^A-Z-]/g,'')));
+  let qtyX=null, qtyHeadY=-1;
+  const firstHitY = hits.length ? Math.min.apply(null, hits.map(h=>h.line.yc)) : 1e9;
+  lines.forEach(L=>{
+    if(qtyX!==null || L.yc>=firstHitY || isTotal(L)) return;          // the heading sits above the first item ("Total Qty" is not it)
+    L.toks.forEach(k=>{
+      if(qtyX===null && /^(QTY|QTY\.|QTY\.?\(?NOS\.?\)?|QUANTITY|QNTY|QTY:|NOS\.?|PCS\.?)$/.test(k.u.replace(/\s/g,''))){ qtyX=k.xc; qtyHeadY=L.yc; }
+    });
+    /* OCR may smudge the heading itself ("Qry", "Quy"): accept it on a line that is clearly the table heading */
+    if(qtyX===null && ocr && L.toks.filter(k=>/^(MRP|RATE|AMOUNT|DESCRIPTION|CODE|ITEM|HSN|PARTICULARS|DISC|TOTAL)/.test(k.u)).length>=2){
+      const k=L.toks.filter(t=>/^[QO0][A-Z]{1,2}[YV]\.?$/.test(t.u))[0];
+      if(k){ qtyX=k.xc; qtyHeadY=L.yc; }
+    }
+  });
+  if(qtyX===null && page.qtyX!=null){ qtyX=page.qtyX; qtyHeadY=-1; }   // heading is on an earlier page
+  res.qtyX=qtyX;
+  const qtol=L=>Math.max(2.2*L.h, 0.045*(page.w||1000));
+  if(!hits.length && qtyX===null) return res;
+  /* left and right edge of what is printed — the strips are cut to this, not to the whole page */
+  const body=lines.filter(L=>L.yc>=Math.min(firstHitY, 1e9)-1);
+  let px0=1e9, px1=-1e9; (body.length?body:lines).forEach(L=>L.toks.forEach(k=>{ if(k.x0<px0) px0=k.x0; if(k.x1>px1) px1=k.x1; }));
+  res.px=[px0,px1];
+  if(hits.length) res.codeX=[Math.min.apply(null,hits.map(h=>h.x0)), Math.max.apply(null,hits.map(h=>h.x1))];
+
+  hits.forEach((h,hi)=>{
+    const L=h.line;
+    /* the band of the page that belongs to this line item */
+    const nextSame=hits.slice(hi+1).filter(x=>x.li>h.li)[0];
+    const top=L.y0-0.25*L.h;
+    let bottom=nextSame ? nextSame.line.y0-0.2*nextSame.line.h : L.y1+3.2*L.h;
+    bottom=Math.min(bottom, L.y1+5*L.h);
+    const band=lines.filter(x=>x.yc>=top && x.yc<bottom && !(x!==L && isTotal(x)));
+    const sameLineCodes=hits.filter(x=>x.li===h.li);
+    /* when two codes share a line (two-column lists) each only owns its side */
+    let bx0=-1e9, bx1=1e9;
+    if(sameLineCodes.length>1){
+      const k=sameLineCodes.indexOf(h);
+      if(k>0) bx0=(sameLineCodes[k-1].x1+h.x0)/2;
+      if(k<sameLineCodes.length-1) bx1=sameLineCodes[k+1].x0-0.5*L.h;
+    }
+    const ctxToks=[]; band.forEach(x=>x.toks.forEach(k=>{
+      if(x===L && L.toks.indexOf(k)>=h.i && L.toks.indexOf(k)<=h.j) return;
+      if(k.xc<bx0 || k.xc>bx1) return;
+      ctxToks.push(k);
+    }));
+    const ctx=scanCtx(ctxToks);
+
+    /* the rest of a code that wrapped onto the next line(s) of its cell */
+    const frags=[]; let acc='';
+    for(let k=1;k<=2;k++){
+      const NL=lines[h.li+k]; if(!NL || NL.y0-L.y1>1.3*L.h*k) break;
+      if(hits.some(x=>x.li===NL.i && x.x0<h.x1 && x.x1>h.x0)) break;
+      const under=NL.toks.filter(t=>t.xc>h.x0-0.6*L.h && t.xc<h.x1+0.6*L.h && /^[A-Z0-9-]{1,16}$/.test(t.u));
+      if(!under.length) break;
+      acc+=under.map(t=>t.u).join('');
+      frags.push(acc);
+    }
+    const raws=[]; let glued=null, row0read='';
+    if(!h.partial) raws.push({code:h.raw, how:'read'});
+    frags.forEach(f=>{ const c=(h.raw+f).replace(/--+/g,'-'); if(SCAN_CODE_FULL.test(c)) raws.push({code:c, how:'wrapped'}); });
+    if(ocr && !h.partial && !PMAP[h.raw]){
+      glued=scanUnglue(h.raw); if(glued) raws.unshift({code:glued.code, how:'read'});
+      else if(/X$/.test(h.raw) && PMAP[h.raw.slice(0,-1)]){ raws.length=0; raws.push({code:h.raw.slice(0,-1), how:'read'}); row0read=h.raw.slice(0,-1); }   // "CODE x 2" with the x stuck to the code
+    }
+
+    const row={page:pi, cy0:L.y0, cy1:L.y1, y0:top, y1:Math.max(L.y1+0.3*L.h, Math.min(bottom, L.y1+2.6*L.h)), yc:L.yc, x0:h.x0, x1:h.x1, lh:L.h,
+               read:row0read || (h.raw+(h.partial&&frags.length?frags[frags.length-1]:'')), code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:h.conf, _ctx:ctx, _raws:raws, _wrap:frags.length>0};
+    const scored=scanResolve(raws, ctx, ocr);
+    if(h.soft && !scored.length && !/-/.test(L.toks[h.i].u)) return;         // a word that merely looked a bit like a code
+    scanApplyCode(row, scored, ctx, ocr, row.read, row._wrap);
+    if(h.soft){ row.soft=true; if(row.status!=='unknown' && !row.codeOk) row.notes.unshift('badly printed / blurred code — rebuilt from '+L.toks[h.i].s); }
+    scanQty(row, L, h, band, bx0, bx1, ctx, qtyX, qtyHeadY, qtol(L), ocr, page);
+    if(glued && !row.qtyWhy && row.code && scanNeighboursHas(glued.code, row.code)){ row.qty=glued.qty; row.qtyWhy='× '+glued.qty+' written right after the code'; }
+    rows.push(row);
+  });
+
+  /* table lines that carry amounts but no readable code — never drop them */
+  const tableLike = qtyX!==null || lines.filter(L=>!isTotal(L) && scanCtx(L.toks).money>=2).length>=3;
+  if(tableLike){
+    const lastY = rows.length ? Math.max.apply(null, rows.map(r=>r.yc)) : 1e9;
+    lines.forEach(L=>{
+      if(L.yc<=qtyHeadY || hits.some(h=>h.li===L.i) || isTotal(L)) return;
+      const ctx=scanCtx(L.toks);
+      const hasColQty = qtyX!==null && L.toks.some(k=>/^\d{1,4}(\.0+)?$/.test(k.u) && Math.abs(k.xc-qtyX)<=qtol(L)) && L.toks.length>=3;
+      if(ctx.money<2 && !hasColQty) return;
+      if(rows.length && (L.yc>lastY+8*L.h)) return;                         // far below the table: totals, bank details…
+      const NL=lines[L.i+1], toks=L.toks.slice();
+      if(NL && NL.y0-L.y1<1.3*L.h && !hits.some(h=>h.li===NL.i) && scanCtx(NL.toks).money===0) NL.toks.forEach(t=>toks.push(t));
+      const full=scanCtx(toks);
+      const row={page:pi, cy0:0, cy1:0, y0:L.y0-0.25*L.h, y1:L.y1+1.6*L.h, yc:L.yc, x0:res.codeX?res.codeX[0]:L.toks[0].x0, x1:res.codeX?res.codeX[1]:L.toks[0].x1, lh:L.h,
+                 read:'', code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:0, _ctx:full, _raws:[], orphan:true};
+      const h={i:-1, j:-1, x0:row.x0, x1:row.x1};
+      scanQty(row, L, h, [L], -1e9, 1e9, full, qtyX, qtyHeadY, qtol(L), ocr, page);
+      const ids=scanIdentify(full);
+      if(ids.length===1 || (ids.length>1 && ids[0].score>ids[1].score)){ row.code=ids[0].code; row.alts=ids.slice(1,4).map(x=>x.code); row.status=''; row.notes.unshift('the code on this line could not be read — product found from its description + MRP'); }
+      else { row.status='unknown'; row.alts=ids.slice(0,4).map(x=>x.code); row.notes.unshift('a line of the table with no readable code — type the code'); }
+      rows.push(row);
+    });
+    rows.sort((a,b)=>a.yc-b.yc || a.x0-b.x0);
+  }
+
+  rows.forEach(r=>{ r.px0=px0; r.px1=px1; });
+  /* no heading, several numbers per line → the column that holds small whole
+     numbers on (almost) every line and is not the serial-number column */
+  const need=rows.filter(r=>r._needCol);
+  if(need.length){
+    const cols=[];
+    rows.forEach(r=>(r._ints||[]).filter(n=>n.right).forEach(n=>{
+      let c=cols.filter(k=>Math.abs(k.x-n.xc)<0.03*(page.w||1000)+8)[0];
+      if(!c){ c={x:n.xc, n:0, vals:[]}; cols.push(c); }
+      c.x=(c.x*c.n+n.xc)/(c.n+1); c.n++; c.vals.push(n.v);
+    }));
+    cols.forEach(c=>{ let seq=0; for(let i=1;i<c.vals.length;i++) if(c.vals[i]===c.vals[i-1]+1) seq++; c.serial = c.vals.length>2 && seq>=c.vals.length-2; });
+    const good=cols.filter(c=>!c.serial && c.n>=Math.max(2,0.7*rows.length)).sort((a,b)=>b.n-a.n || a.x-b.x)[0];
+    need.forEach(r=>{
+      const c=good && r._ints.filter(n=>n.right && Math.abs(n.xc-good.x)<0.03*(page.w||1000)+8)[0];
+      if(c){ r.qty=c.v; r.qtyWhy='quantity column'; r.qtyOk=!ocr; }
+      else r.notes.push('several numbers on the line — check the qty');
+    });
+  }
+  /* "1 2 3 4…" before the codes is a serial number, never a quantity */
+  const lefts=rows.map(r=>{ const c=(r._ints||[]).filter(n=>!n.right).sort((a,b)=>a.x0-b.x0)[0]; return c?c.v:null; });
+  let seqN=0, seqD=0;
+  for(let i=1;i<lefts.length;i++){ if(lefts[i]!=null && lefts[i-1]!=null){ seqD++; if(lefts[i]===lefts[i-1]+1) seqN++; } }
+  const serialCol = seqD>=2 && seqN>=0.6*seqD;
+  rows.forEach(r=>{ if(r._leftOnly && (serialCol || rows.length<3 || true)){ if(serialCol){ r.qty=1; r.qtyWhy=''; r._serial=true; } r.qtyOk=false; r.qtyWeak=true; } });
+
+  /* the document's own "Total Qty" — an end-to-end check on every line */
+  if(qtyX!==null){
+    for(let i=lines.length-1;i>=0;i--){
+      const L=lines[i]; if(!isTotal(L)) continue;
+      if(rows.length && L.yc<rows[rows.length-1].yc) break;
+      const c=L.toks.filter(k=>/^\d{1,5}(\.0+)?$/.test(k.u) && Math.abs(k.xc-qtyX)<=1.6*qtol(L)).sort((a,b)=>Math.abs(a.xc-qtyX)-Math.abs(b.xc-qtyX))[0];
+      if(c){ res.totalQty=parseInt(c.u,10); break; }
+    }
+  }
+  return res;
+}
+
+/* quantity for one line item */
+function scanQty(row, L, h, band, bx0, bx1, ctx, qtyX, qtyHeadY, tol, ocr, page){
+  const ints=[];
+  const consider=(k,sameLine)=>{
+    let m=k.u.replace(/\s/g,'').match(/^(\d{1,4})(?:\.0{1,3})?(?:NOS?\.?|PCS?\.?|PC|N|SET|SETS|EA)?$/);
+    if(!m){ m=k.u.replace(/\s/g,'').match(/^(?:X|\*|QTY[:.-]?|-)(\d{1,4})$/); }
+    if(!m) return;
+    const v=parseInt(m[1],10); if(!(v>0)) return;
+    ints.push({v:v, xc:k.xc, x0:k.x0, same:sameLine, right:k.x0>=h.x1-1, unit:/[A-Z]/.test(k.u), raw:k.u});
+  };
+  L.toks.forEach((k,ti)=>{ if(ti<h.i || ti>h.j){ if(k.xc>=bx0 && k.xc<=bx1) consider(k,true); } });
+  if(!ints.length) band.forEach(x=>{ if(x!==L) x.toks.forEach(k=>{ if(k.xc>=bx0 && k.xc<=bx1) consider(k,false); }); });
+  row._ints=ints;
+  /* qty × rate = amount, both printed on the line */
+  const arithOf=v=>{
+    for(let a=0;a<ctx.nums.length;a++) for(let b=0;b<ctx.nums.length;b++){
+      if(a===b) continue;
+      const r=ctx.nums[a], t=ctx.nums[b];
+      if(r>=10 && t>=r && Math.abs(v*r-t)<=Math.max(1, 0.0015*t) && !(v===1 && ctx.nums.filter(z=>Math.abs(z-r)<0.01).length<2)) return true;
+    }
+    return false;
+  };
+  const p=PMAP[row.code], big=ctx.nums.length?Math.max.apply(null,ctx.nums):0;
+  const tooBig=v=>!!(p && ctx.money>=2 && big>0 && v*p.mrp*0.2>big);     // even at 80% off, qty × MRP is far above every amount on the line
+  /* OCR can lose the decimal point of "2.00" and read 200 */
+  const dotOf=n=>(ocr && /^\d{1,2}00$/.test(n.raw)) ? n.v/100 : 0;
+
+  let q=null, qWhy='';
+  const inCol = (qtyX!==null && L.yc>qtyHeadY) ? ints.filter(n=>Math.abs(n.xc-qtyX)<=tol).sort((a,b)=>Math.abs(a.xc-qtyX)-Math.abs(b.xc-qtyX))[0] : null;
+  if(inCol){ q=inCol; qWhy='under the QTY heading'; }
+  const proven=[];
+  ints.forEach(n=>{ if(arithOf(n.v)) proven.push({n:n, v:n.v}); else if(dotOf(n) && arithOf(dotOf(n))) proven.push({n:n, v:dotOf(n)}); });
+  if(proven.length){
+    const a=proven.filter(x=>!q || x.n===q)[0] || proven[0];
+    if(!q || a.n===q || a.v===q.v){ q=a.n; row.qty=a.v; qWhy=(inCol&&a.n===inCol?'under the QTY heading, and ':'')+'qty × rate = amount'; row.qtyOk=true; row.qtyProof=true; }
+    else { row.notes.push('qty under the heading is '+q.v+' but '+a.v+' × rate = amount'); }
+  }
+  if(!q && qtyX!==null && L.yc>qtyHeadY) row.qtyWeak=true;        // there IS a QTY column, but nothing readable in it on this line
+  if(!q && ctx.money>=2){
+    /* the qty itself is unreadable but rate and amount are there: amount ÷ rate */
+    const found={};
+    for(let a=0;a<ctx.nums.length;a++) for(let b=0;b<ctx.nums.length;b++){
+      const r=ctx.nums[a], t=ctx.nums[b]; if(a===b || r<10 || t<=r*1.5) continue;
+      const k=Math.round(t/r); if(k>=2 && k<=999 && Math.abs(k*r-t)<=Math.max(1,0.0015*t) && (!p || r<=p.mrp*1.02)) found[k]=1;
+    }
+    const ks=Object.keys(found);
+    if(ks.length===1){ row.qty=parseInt(ks[0],10); row.qtyWhy='worked out from amount ÷ rate'; row.qtyDerived=true; row.notes.push('qty could not be read — '+ks[0]+' worked out from amount ÷ rate'); row._ints=ints; return; }
+  }
+  if(!q){
+    const right=ints.filter(n=>n.right);
+    if(right.length===1){ q=right[0]; qWhy='only number on the line'; }
+    else if(right.length>1){ row._needCol=true; }
+    else if(ints.length===1 && !ints[0].right){ q=ints[0]; qWhy='number before the code'; row._leftOnly=true; }
+  }
+  if(q && !row.qtyProof){
+    row.qty=q.v;
+    if(!ocr && !row._leftOnly && !row.qtyWeak) row.qtyOk=true;   // exact text: the column / the only number is proof enough
+    if(dotOf(q) && tooBig(q.v) && !tooBig(dotOf(q))){ row.qty=dotOf(q); row.qtyDot=true; row.qtyOk=false; row.notes.push('qty read as '+q.v+' — the decimal point of '+dotOf(q)+'.00 was lost; set to '+dotOf(q)); }
+    else if(tooBig(q.v)){ row.qtyOk=false; row.qtyBad=true; row.notes.push('qty '+q.v+' looks too large for the amount on the line — check'); }
+  }
+  if(q) row.qtyWhy=qWhy;
+}
+
+/* two OCR readings of the same page: a line is trusted only where they agree */
+function scanMergePasses(A, B){
+  const used={};
+  A.forEach(a=>{
+    let m=null, mi=-1;
+    B.forEach((b,i)=>{ if(used[i]) return; const ov=Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0); const xo=Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0); if(ov>0.4*Math.min(a.y1-a.y0,b.y1-b.y0) && xo>0 && (!m || Math.abs(b.yc-a.yc)<Math.abs(m.yc-a.yc))){ m=b; mi=i; } });
+    if(m){
+      used[mi]=1;
+      a.agreeCode = (m.code===a.code && !!m.code); a.agreeQty=(m.qty===a.qty && !!m.qtyWhy && !!a.qtyWhy);
+      if(!a.agreeCode){
+        const aBad=(a.status==='unknown'||a.orphan), mBad=(m.status==='unknown'||m.orphan);
+        if((m.codeOk && !a.codeOk) || (aBad && !mBad)){
+          const keepQ=a.notes.filter(n=>/qty/i.test(n));
+          if(a.code && PMAP[a.code] && a.alts.indexOf(a.code)<0) a.alts.unshift(a.code);
+          a.code=m.code; a.codeOk=m.codeOk; a.status=m.status; a.read=m.read||a.read; a.orphan=m.orphan; a.cy0=m.cy0; a.cy1=m.cy1; a.x0=m.x0; a.x1=m.x1; a._raws=m._raws; a._wrap=m._wrap;
+          a.notes=m.notes.filter(n=>!/qty/i.test(n)).concat(keepQ);
+        }else if(!(mBad && !aBad)){
+          if(m.code && PMAP[m.code] && a.alts.indexOf(m.code)<0 && m.code!==a.code) a.alts.unshift(m.code);
+          if(!a.codeOk || m.codeOk){ a.codeOk=false; a.notes.push('the two readings differ: '+a.code+' / '+m.code); }
+        }
+      }
+      if(!a.agreeQty){
+        if(m.qtyProof && !a.qtyProof){ a.qty=m.qty; a.qtyOk=true; a.qtyProof=true; a.qtyWhy=m.qtyWhy; a.notes=a.notes.filter(n=>!/qty/i.test(n)); }
+        else if(!a.qtyProof && m.qtyWhy && a.qtyWhy && m.qty!==a.qty){ a.qtyOk=false; a.notes.push('qty read as '+a.qty+' and '+m.qty+' — check'); }
+        else if(!a.qtyWhy && m.qtyWhy){ a.qty=m.qty; a.qtyWhy=m.qtyWhy; a.qtyOk=false; }
+      }
+    }else{ a.agreeCode=false; a.agreeQty=false; a.onePass=true; }
+  });
+  B.forEach((b,i)=>{ if(!used[i]){ b.agreeCode=false; b.agreeQty=false; b.onePass=true; A.push(b); } });
+  A.sort((x,y)=>x.yc-y.yc || x.x0-y.x0);
+  return A;
+}
+
+/* final traffic light for a row */
+function scanGrade(r){
+  if(r.status==='unknown' || !PMAP[r.code]){ r.status='unknown'; return r; }
+  let codeGood=r.codeOk, qtyGood=r.qtyOk;
+  if(r.ocr){
+    /* OCR without proof from the line: both readings must agree AND no
+       look-alike code may exist (0/O, 1/I, 5/S …) */
+    if(!codeGood && r.agreeCode && !r.onePass && !r.orphan){
+      const twins=[]; scanNeighbours(r.code,true).forEach((why,c)=>{ if(why==='lookalike') twins.push(c); });
+      if(!twins.length && r.code===r.read) codeGood=true;
+      else if(twins.length){ twins.slice(0,3).forEach(c=>{ if(r.alts.indexOf(c)<0) r.alts.push(c); }); r.notes.push('look-alike code exists: '+twins.slice(0,2).join(', ')); }
+    }
+    if(r.onePass && !r.codeOk) r.notes.push('seen in only one of the two readings');
+    if(!qtyGood && r.agreeQty && r.qtyWhy && !r.qtyBad && !r.qtyDot && !r.qtyWeak && !r.qtyDerived) qtyGood=true;
+    if(!qtyGood && r.qtyWeak && r.qtyWhy) r.notes.push('qty '+r.qty+' was not under the QTY heading — check');
+    else if(!qtyGood && r.qtyWhy && !r.qtyBad && !r.qtyDot && !r.qtyDerived) r.notes.push('qty read by OCR — check');
+  }
+  if(r.orphan) codeGood=false;
+  if(r.qtyWeak || r.qtyDerived) qtyGood=false;
+  if(!r.qtyWhy && !r._noQtyDoc){ r.notes.push(r._serial ? 'no qty on the line (the number is a serial no.) — set to 1' : 'no qty found on the line — set to 1'); qtyGood=false; }
+  if(r._noQtyDoc) qtyGood=true;
+  r.codeGood=codeGood; r.qtyGood=qtyGood;
+  r.status = (codeGood && qtyGood) ? 'ok' : 'check';
+  r.notes=r.notes.filter((n,i,a)=>n && a.indexOf(n)===i);
+  if(r.status==='ok') r.notes=r.notes.filter(n=>!/could not be confirmed|nothing on the line/.test(n));
+  return r;
+}
+
+/* ───────────── reading the file ───────────── */
+function scanProgress(msg, frac){
+  const t=$('scan-progtxt'), b=$('scan-bar');
+  if(t) t.textContent=msg; if(b && frac!=null) b.style.width=Math.round(100*Math.max(0,Math.min(1,frac)))+'%';
+}
+async function scanPdfLib(){
+  if(!window.pdfjsLib){ scanProgress('Loading the PDF reader…', 0.02); await scanLoadScript(SCAN_LIBS.pdf); }
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc=SCAN_LIBS.pdfWorker;
+  return window.pdfjsLib;
+}
+async function scanOcrWorker(){
+  if(SCAN.worker) return SCAN.worker;
+  if(!window.Tesseract){ scanProgress('Loading the text reader (first time only, about 7 MB)…', 0.03); await scanLoadScript(SCAN_LIBS.tess); }
+  SCAN.worker=await window.Tesseract.createWorker('eng', 1, {
+    workerPath:SCAN_LIBS.tessWorker, corePath:SCAN_LIBS.tessCore, langPath:SCAN_LIBS.tessLang,
+    logger:m=>{ if(m && m.status==='recognizing text' && SCAN._ocrBase!=null) scanProgress(SCAN._ocrMsg, SCAN._ocrBase+SCAN._ocrSpan*m.progress); }
+  });
+  return SCAN.worker;
+}
+/* grey + contrast stretch; pass 2 also sharpens the split between ink and paper */
+function scanPrep(src, scale, hard, sx, sy, sw, sh){
+  if(sx==null){ sx=0; sy=0; sw=src.width; sh=src.height; }
+  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(sw*scale)); c.height=Math.max(1,Math.round(sh*scale));
+  const g=c.getContext('2d', {willReadFrequently:true}); g.imageSmoothingQuality='high'; g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  g.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);
+  const im=g.getImageData(0,0,c.width,c.height), d=im.data, hist=new Uint32Array(256);
+  for(let i=0;i<d.length;i+=4){ const v=(d[i]*77+d[i+1]*150+d[i+2]*29)>>8; d[i]=v; hist[v]++; }
+  const n=d.length/4; let lo=0, hi=255, acc=0;
+  for(let v=0;v<256;v++){ acc+=hist[v]; if(acc>0.02*n){ lo=v; break; } }
+  acc=0; for(let v=255;v>=0;v--){ acc+=hist[v]; if(acc>0.25*n){ hi=v; break; } }
+  if(hi-lo<40){ lo=Math.max(0,lo-20); hi=Math.min(255,hi+20); }
+  const k=255/(hi-lo), gamma=hard?1.6:1;
+  for(let i=0;i<d.length;i+=4){ let v=(d[i]-lo)*k; v=v<0?0:v>255?255:v; if(hard) v=255*Math.pow(v/255,gamma); d[i]=d[i+1]=d[i+2]=v; d[i+3]=255; }
+  g.putImageData(im,0,0);
+  return c;
+}
+/* A photo is rarely square to the page. Even 1° of tilt moves the far end of a
+   table row a whole line up or down, so the tilt is measured (the angle at
+   which the text rows are sharpest) and the picture is straightened first. */
+function scanSkew(src){
+  const W=520, k=W/src.width, H=Math.max(1,Math.round(src.height*k));
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const g=c.getContext('2d',{willReadFrequently:true}); g.fillStyle='#fff'; g.fillRect(0,0,W,H); g.drawImage(src,0,0,W,H);
+  const d=g.getImageData(0,0,W,H).data, lum=new Uint8Array(W*H); let sum=0;
+  for(let i=0,j=0;i<d.length;i+=4,j++){ const v=(d[i]*77+d[i+1]*150+d[i+2]*29)>>8; lum[j]=v; sum+=v; }
+  const dark=[];                                   // ink = clearly darker than its neighbourhood
+  const B=24;
+  for(let by=0;by<H;by+=B) for(let bx=0;bx<W;bx+=B){
+    let s=0,n=0; for(let y=by;y<Math.min(H,by+B);y++) for(let x=bx;x<Math.min(W,bx+B);x++){ s+=lum[y*W+x]; n++; }
+    const th=s/n-28;
+    for(let y=by;y<Math.min(H,by+B);y++) for(let x=bx;x<Math.min(W,bx+B);x++){ if(lum[y*W+x]<th) dark.push(x, y); }
+  }
+  if(dark.length<400) return 0;
+  const score=deg=>{
+    const t=Math.tan(deg*Math.PI/180), hist=new Float32Array(H+2*W);
+    for(let i=0;i<dark.length;i+=2){ hist[Math.round(dark[i+1]-dark[i]*t)+W]++; }
+    let s=0; for(let i=0;i<hist.length;i++) s+=hist[i]*hist[i];
+    return s;
+  };
+  let best=0, bs=-1;
+  for(let a=-8;a<=8;a+=0.5){ const s=score(a); if(s>bs){ bs=s; best=a; } }
+  const c0=best; for(let a=c0-0.5;a<=c0+0.5;a+=0.1){ const s=score(a); if(s>bs){ bs=s; best=a; } }
+  return Math.abs(best)<0.15 ? 0 : best;
+}
+function scanRotate(src, deg){
+  const r=deg*Math.PI/180, cs=Math.abs(Math.cos(r)), sn=Math.abs(Math.sin(r));
+  const c=document.createElement('canvas'); c.width=Math.ceil(src.width*cs+src.height*sn); c.height=Math.ceil(src.width*sn+src.height*cs);
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.imageSmoothingQuality='high';
+  g.translate(c.width/2,c.height/2); g.rotate(r); g.drawImage(src,-src.width/2,-src.height/2);
+  return c;
+}
+async function scanOcrPass(canvas, psm, msg, base, span, whitelist){
+  const w=await scanOcrWorker();
+  await w.setParameters({tessedit_pageseg_mode:String(psm), preserve_interword_spaces:'1', user_defined_dpi:'300', tessedit_char_whitelist:whitelist||''});
+  SCAN._ocrMsg=msg; SCAN._ocrBase=base; SCAN._ocrSpan=span;
+  const out=await w.recognize(canvas);
+  SCAN._ocrBase=null;
+  const words=(out.data && out.data.words)||[];
+  return words.map(x=>({s:x.text, x0:x.bbox.x0, y0:x.bbox.y0, x1:x.bbox.x1, y1:x.bbox.y1, conf:x.confidence}));
+}
+/* one more, close-up look at just the code cell of a line that is still in doubt */
+async function scanRescue(canvas, rows, codeX){
+  const todo=rows.filter(r=>!r.codeOk && (r.orphan || r.status==='unknown' || !r.agreeCode));
+  for(let i=0;i<todo.length && !SCAN.cancelled;i++){
+    const r=todo[i];
+    const x0=Math.max(0,(codeX?Math.min(codeX[0],r.x0):r.x0)-0.8*r.lh), x1=Math.min(canvas.width,(codeX?Math.max(codeX[1],r.x1):r.x1)+0.8*r.lh);
+    const top=Math.max(0,r.yc-0.95*r.lh), h=Math.min(canvas.height-top, 3.1*r.lh);
+    if(x1-x0<10 || h<6) continue;
+    const s=Math.max(1.5, Math.min(4, 46/r.lh));
+    let toks=[];
+    try{ toks=await scanOcrPass(scanPrep(canvas, s, true, x0, top, x1-x0, h), 6, 'Taking a closer look at '+todo.length+' unclear code'+(todo.length===1?'':'s')+'…', null, 0, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'); }catch(e){ continue; }
+    const ls=scanLines(toks).map(L=>L.toks.map(t=>t.u.replace(/[^A-Z0-9-]/g,'')).join(''));
+    if(!ls.length) continue;
+    const raws=[];
+    const m0=(ls[0]||'').match(SCAN_CODE_RE);
+    for(let a=0;a<ls.length;a++){
+      const m=ls[a].match(SCAN_CODE_RE); if(!m) continue;
+      raws.push({code:m[0], how:'read'});
+      if(ls[a+1] && /^[A-Z0-9-]{1,16}$/.test(ls[a+1])){ const c=(ls[a]+ls[a+1]).match(SCAN_CODE_RE); if(c && SCAN_CODE_FULL.test(c[0])) raws.push({code:c[0], how:'wrapped'}); }
+      break;
+    }
+    if(!raws.length) continue;
+    const scored=scanResolve(raws, r._ctx, true);
+    if(!scored.length) continue;
+    const best=scored[0];
+    const clear=best.score>=2 && (!scored[1] || best.score-scored[1].score>=1);
+    if(clear || r.status==='unknown' || r.orphan || best.code===r.code){
+      const prev=r.code, wasOrphanGuess=r.orphan && r.code===best.code;
+      const keepQ=r.notes.filter(n=>/qty/i.test(n));
+      r.notes=keepQ; r.read=raws[raws.length-1].code;
+      scanApplyCode(r, scored, r._ctx, true, r.read, raws.length>1);
+      if(prev && PMAP[prev] && prev!==r.code && r.alts.indexOf(prev)<0) r.alts.unshift(prev);
+      if(r.status!=='unknown'){ r.orphan=false; r.onePass=false; r.agreeCode = wasOrphanGuess || best.code===prev || r.codeOk; r.notes.unshift('read again close-up'); }
+    }
+  }
+  try{ const w=await scanOcrWorker(); await w.setParameters({tessedit_char_whitelist:''}); }catch(e){}
+}
+/* one image (canvas) → {rows, canvas}; a tilted picture is straightened first,
+   and the rows / strips then refer to the straightened canvas */
+async function scanImageRows(canvas, pi, label, base, span, qtyXHint){
+  const tilt=scanSkew(canvas);
+  if(tilt) canvas=scanRotate(canvas, -tilt);          // rows that climb to the right are turned clockwise, and vice versa
+  const s1=Math.max(1, Math.min(3, 2400/canvas.width));
+  const t1=await scanOcrPass(scanPrep(canvas, s1, false), 6, label+' — reading (1 of 2)…', base, span*0.46);
+  if(SCAN.cancelled) return {rows:[], canvas:canvas};
+  const s2=Math.max(1, Math.min(3.4, 3000/canvas.width));
+  const t2=await scanOcrPass(scanPrep(canvas, s2, true), 4, label+' — reading again to cross-check (2 of 2)…', base+span*0.46, span*0.46);
+  const un=(toks,s)=>toks.map(k=>({s:k.s, x0:k.x0/s, y0:k.y0/s, x1:k.x1/s, y1:k.y1/s, conf:k.conf}));
+  const RA=scanAnalyzePage({tokens:un(t1,s1), w:canvas.width, h:canvas.height, ocr:true, qtyX:qtyXHint}, pi);
+  const RB=scanAnalyzePage({tokens:un(t2,s2), w:canvas.width, h:canvas.height, ocr:true, qtyX:qtyXHint}, pi);
+  const rows=scanMergePasses(RA.rows, RB.rows);
+  const cx=RA.codeX||RB.codeX;
+  scanProgress(label+' — checking unclear lines…', base+span*0.93);
+  await scanRescue(canvas, rows, cx);
+  return {rows:rows, canvas:canvas, qtyX:RA.qtyX!=null?RA.qtyX:RB.qtyX, totalQty:RA.totalQty!=null?RA.totalQty:RB.totalQty, tilt:tilt,
+          meanConf:Math.max(RA.meanConf||0, RB.meanConf||0), itemLines:Math.max(RA.itemLines||0, RB.itemLines||0)};
+}
+function scanStrip(canvas, r){
+  const pad=Math.max(4, 0.25*(r.y1-r.y0));
+  const y=Math.max(0, Math.floor(r.y0-pad)), h=Math.min(canvas.height-y, Math.ceil(r.y1-r.y0+2*pad));
+  if(h<=2) return '';
+  const X0=Math.max(0, Math.floor((r.px0!=null?r.px0:0)-12)), X1=Math.min(canvas.width, Math.ceil((r.px1!=null?r.px1:canvas.width)+12)), w=Math.max(40, X1-X0);
+  const k=Math.min(1, 1500/w);
+  const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.max(1,Math.round(h*k));
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  g.drawImage(canvas, X0, y, w, h, 0, 0, c.width, c.height);
+  g.translate(-X0*k, 0);
+  /* box the code that was read, so the eye lands on it */
+  if(r.cy1>r.cy0){
+    g.strokeStyle='rgba(214,64,44,0.95)'; g.lineWidth=Math.max(1.5, 2*k);
+    g.strokeRect((r.x0-5)*k, (r.cy0-3-y)*k, (r.x1-r.x0+10)*k, (r.cy1-r.cy0+6)*k);
+  }
+  try{ return c.toDataURL('image/jpeg', 0.72); }catch(e){ return ''; }
+}
+async function scanFile(file){
+  const name=file.name||'pasted image', isPdf=/pdf$/i.test(file.type) || /\.pdf$/i.test(name);
+  let rows=[]; const kinds={}; let totalQty=null, qtyX=null; const Q={conf:[], item:0, got:0};
+  const quality=R=>{ Q.conf.push(R.meanConf||0); Q.item+=R.itemLines||0; Q.got+=R.rows.length; };
+  const finish=(pr, canvas)=>{ pr.forEach(r=>{ r.strip=scanStrip(canvas, r); }); rows=rows.concat(pr); };
+  if(isPdf){
+    const pdfjs=await scanPdfLib();
+    scanProgress('Opening the PDF…', 0.05);
+    const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+    const N=doc.numPages;
+    for(let p=1;p<=N && !SCAN.cancelled;p++){
+      const base=0.06+0.9*(p-1)/N, span=0.9/N;
+      scanProgress('Page '+p+' of '+N+'…', base);
+      const pg=await doc.getPage(p);
+      const vp=pg.getViewport({scale:2});
+      const tc=await pg.getTextContent();
+      const toks=[];
+      tc.items.forEach(it=>{
+        const str=it.str; if(!str || !str.trim()) return;
+        const tx=pdfjs.Util.transform(vp.transform, it.transform);
+        const hgt=Math.hypot(tx[2],tx[3])||10, x=tx[4], yb=tx[5], wpx=it.width*vp.scale;
+        /* an item can hold several words — give each its own box */
+        const L=str.length; let pos=0;
+        str.split(/(\s+)/).forEach(part=>{
+          if(part && part.trim()) toks.push({s:part, x0:x+wpx*pos/L, x1:x+wpx*(pos+part.length)/L, y0:yb-hgt*0.86, y1:yb+hgt*0.14});
+          pos+=part.length;
+        });
+      });
+      let canvas=document.createElement('canvas'); canvas.width=Math.ceil(vp.width); canvas.height=Math.ceil(vp.height);
+      const g=canvas.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,canvas.width,canvas.height);
+      await pg.render({canvasContext:g, viewport:vp}).promise;
+      const chars=toks.reduce((a,t)=>a+t.s.length,0);
+      if(chars>=25){
+        kinds.text=1;
+        const R=scanAnalyzePage({tokens:toks, w:canvas.width, h:canvas.height, ocr:false, qtyX:qtyX}, p);
+        if(R.qtyX!=null) qtyX=R.qtyX; if(R.totalQty!=null) totalQty=R.totalQty;
+        finish(R.rows, canvas);
+      }else{
+        kinds.ocr=1;
+        const R=await scanImageRows(canvas, p, 'Page '+p+' of '+N+' is a scan', base, span, qtyX);
+        if(R.qtyX!=null && !R.tilt) qtyX=R.qtyX; if(R.totalQty!=null) totalQty=R.totalQty;
+        quality(R); finish(R.rows, R.canvas);
+      }
+    }
+  }else{
+    scanProgress('Opening the picture…', 0.04);
+    let bmp;
+    try{ bmp=await createImageBitmap(file, {imageOrientation:'from-image'}); }
+    catch(e){ bmp=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('this file is not a picture the browser can open')); im.src=URL.createObjectURL(file); }); }
+    const k=Math.min(1, 4200/Math.max(bmp.width,bmp.height));
+    const canvas=document.createElement('canvas'); canvas.width=Math.round(bmp.width*k); canvas.height=Math.round(bmp.height*k);
+    const g=canvas.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,canvas.width,canvas.height); g.drawImage(bmp,0,0,canvas.width,canvas.height);
+    kinds.ocr=1;
+    const R=await scanImageRows(canvas, 1, 'Picture', 0.08, 0.88, null);
+    totalQty=R.totalQty;
+    quality(R); finish(R.rows, R.canvas);
+  }
+  /* a document with no quantities at all (a bare list of codes): 1 each, said once */
+  SCAN.noQty = rows.length>0 && rows.every(r=>!r.qtyWhy);
+  if(SCAN.noQty) rows.forEach(r=>{ r._noQtyDoc=true; });
+  rows.forEach(scanGrade);
+  SCAN.totalQty=totalQty;
+  /* a picture too blurred / small to trust: say so rather than quietly return fewer lines */
+  const mc = Q.conf.length ? Math.min.apply(null,Q.conf) : 100;
+  SCAN.poor = kinds.ocr && (mc<72 || Q.got<0.8*Q.item || rows.some(r=>r.soft)) ? {conf:Math.round(mc), item:Q.item, got:Q.got} : null;
+  SCAN.kind = kinds.ocr ? (kinds.text?'mixed':'ocr') : 'text';
+  return rows;
+}
+
+/* ───────────── UI ───────────── */
+function openScan(){
+  $('scan-modal').style.display='flex';
+  const pm=$('scan-pickmsg'); if(pm) pm.style.display='none';
+  scanShow('pick');
+  $('scan-file').value='';
+}
+function closeScan(){
+  SCAN.cancelled=true;
+  $('scan-modal').style.display='none';
+}
+function scanShow(step){
+  ['pick','prog','review'].forEach(s=>{ const el=$('scan-'+s); if(el) el.style.display = (s===step) ? (s==='review'?'flex':'block') : 'none'; });
+  $('scan-foot').style.display = step==='review' ? 'flex' : 'none';
+}
+async function scanStart(file){
+  if(!file || SCAN.busy) return;
+  if(!ALL.length){ toast('Catalogue still loading — try again in a moment'); return; }
+  SCAN.busy=true; SCAN.cancelled=false; SCAN.fileName=file.name||'pasted image';
+  scanShow('prog'); scanProgress('Starting…', 0);
+  $('scan-progname').textContent=SCAN.fileName;
+  try{
+    const rows=await scanFile(file);
+    if(SCAN.cancelled) return;
+    SCAN.rows=rows.map((r,i)=>Object.assign(r, {id:i, on:r.status!=='unknown'}));
+    scanRender();
+    scanShow('review');
+  }catch(e){
+    scanShow('pick');
+    const m=$('scan-pickmsg'); if(m){ m.style.display='block'; m.textContent='⚠ Could not read this file — '+((e&&e.message)||e); }
+  }finally{ SCAN.busy=false; }
+}
+function scanSummary(){
+  const R=SCAN.rows, on=R.filter(r=>r.on && PMAP[r.code]);
+  return { twice:on.filter(r=>r.status==='ok' && r.ocr && !r.edited && !(r.codeOk && (r.qtyProof || r._noQtyDoc))).length,
+           lines:on.length, pcs:on.reduce((a,r)=>a+(parseInt(r.qty,10)||0),0),
+           mrp:on.reduce((a,r)=>a+(PMAP[r.code].mrp||0)*(parseInt(r.qty,10)||0),0),
+           check:R.filter(r=>r.on && r.status==='check').length, unknown:R.filter(r=>r.status==='unknown').length, all:R.length };
+}
+function scanRender(){
+  const body=$('scan-list'), R=SCAN.rows;
+  if(!R.length){
+    body.innerHTML='<div class="scan-empty"><div style="font-size:30px">🔍</div>No product codes could be read in <b>'+esc(SCAN.fileName)+'</b>.<br><span>'+(SCAN.kind==='text'?'Codes look like ALD-CHR-079N — this PDF does not seem to contain any.':'Either there are no codes in this picture, or it is too blurred / too small to read. For a photo: closer, sharper, straight on, codes clearly visible — or use the PDF itself if you have it.')+'</span></div>';
+    $('scan-sum').innerHTML=''; $('scan-add').disabled=true; return;
+  }
+  body.innerHTML=R.map(r=>{
+    const p=PMAP[r.code], st=r.status;
+    const twice = st==='ok' && r.ocr && !r.edited && !(r.codeOk && (r.qtyProof || r._noQtyDoc));
+    const badge = st==='ok' ? (twice ? '<span class="sc-b tw" title="Both readings of the picture agree. There is no MRP, description or amount on this line to prove it with — glance at the strip.">✓ READ TWICE</span>' : '<span class="sc-b ok">✓ VERIFIED</span>') : st==='check' ? '<span class="sc-b ck">⚠ CHECK</span>' : '<span class="sc-b un">'+(r.code?'✕ NOT IN CATALOGUE':'✕ CODE NOT READ')+'</span>';
+    const alts=(st==='ok' ? [] : (r.alts||[])).filter(c=>c!==r.code && PMAP[c]).slice(0,4).map(c=>'<button class="sc-alt" onclick="scanPick('+r.id+',\''+esc(c)+'\')" title="'+esc(PMAP[c].desc||'')+' · MRP ₹'+fmtN(PMAP[c].mrp)+'">'+esc(c)+'</button>').join('');
+    return '<div class="sc-row '+st+(r.on?'':' off')+'" data-id="'+r.id+'">'+
+      (r.strip ? '<div class="sc-stripw"><img class="sc-strip" src="'+r.strip+'" alt="line from the document"></div>' : '')+
+      '<div class="sc-main">'+
+        '<label class="sc-on"><input type="checkbox" '+(r.on?'checked ':'')+(p?'':'disabled ')+'onchange="scanToggle('+r.id+',this.checked)"></label>'+
+        '<div class="sc-codewrap"><input class="sc-code'+(p?'':' bad')+'" value="'+esc(r.code)+'" spellcheck="false" autocomplete="off" oninput="scanEditCode('+r.id+',this)">'+
+          '<div class="sc-desc">'+(p ? esc(p.desc||'')+' · <b>MRP ₹'+fmtN(p.mrp)+'</b>' : '<span class="warn">'+(r.code?'This code is not in the catalogue — correct it or leave the line out':'Type the code shown in the strip above, or leave the line out')+'</span>')+'</div></div>'+
+        '<div class="sc-qty"><span>QTY</span><input type="number" min="1" step="1" inputmode="numeric" value="'+r.qty+'" class="'+(r.qtyGood?'':'ck')+'" oninput="scanEditQty('+r.id+',this)"></div>'+
+        badge+
+      '</div>'+
+      ((r.notes&&r.notes.length) || alts ? '<div class="sc-notes">'+esc((r.notes||[]).filter(Boolean).join(' · '))+(alts?' <span class="sc-altl">Other possible codes:</span> '+alts:'')+'</div>' : '')+
+    '</div>';
+  }).join('');
+  scanRenderSum();
+}
+function scanRenderSum(){
+  const s=scanSummary();
+  const src = SCAN.kind==='text' ? 'Text read exactly from the PDF' : SCAN.kind==='mixed' ? 'PDF text + scanned pages (OCR, read twice)' : 'Read by OCR, twice';
+  $('scan-sum').innerHTML=
+    '<span class="sc-chip"><b>'+s.lines+'</b> line'+(s.lines===1?'':'s')+'</span>'+
+    '<span class="sc-chip"><b>'+s.pcs+'</b> pcs</span>'+
+    '<span class="sc-chip">MRP <b>₹'+fmtN(s.mrp)+'</b></span>'+
+    (s.check ? '<span class="sc-chip ck">⚠ <b>'+s.check+'</b> to check</span>' : '')+
+    (s.lines && !s.check && !s.twice ? '<span class="sc-chip ok">✓ all verified</span>' : '')+
+    (s.twice ? '<span class="sc-chip tw" title="Both readings agree, but this document has nothing on those lines (MRP, description, amount) to prove them with">✓ <b>'+s.twice+'</b> read twice, same result'+(s.twice===s.lines?' — nothing on this document to prove them with, so glance through the strips':'')+'</span>' : '')+
+    (s.unknown ? '<span class="sc-chip un">✕ <b>'+s.unknown+'</b> need a code</span>' : '')+
+    (SCAN.totalQty!=null ? (SCAN.totalQty===s.pcs ? '<span class="sc-chip ok">✓ matches the document\'s Total Qty ('+SCAN.totalQty+')</span>' : '<span class="sc-chip un">✕ document says Total Qty <b>'+SCAN.totalQty+'</b> — these lines add up to <b>'+s.pcs+'</b></span>') : '')+
+    (SCAN.noQty ? '<span class="sc-chip ck">No quantities in this document — each line set to 1</span>' : '')+
+    (SCAN.poor ? '<span class="sc-chip un" style="white-space:normal">⚠ This picture is hard to read (blurred, small or tilted)'+(SCAN.poor.item>SCAN.poor.got?': about <b>'+SCAN.poor.item+'</b> lines look like items but only <b>'+SCAN.poor.got+'</b> could be read':'')+'. Count the lines against the document, or use a sharper picture.</span>' : '')+
+    '<span class="sc-src">'+src+' · compare lines and pcs with the document</span>';
+  const b=$('scan-add'); b.disabled=!s.lines;
+  b.textContent = s.lines ? ('Add '+s.lines+' line'+(s.lines===1?'':'s')+' to quotation') : 'Nothing to add';
+}
+function scanRow(id){ return SCAN.rows.filter(r=>r.id===id)[0]; }
+function scanToggle(id,on){ const r=scanRow(id); if(!r) return; r.on=!!on && !!PMAP[r.code]; const el=document.querySelector('.sc-row[data-id="'+id+'"]'); if(el) el.classList.toggle('off',!r.on); scanRenderSum(); }
+function scanEditCode(id, inp){
+  const r=scanRow(id); if(!r) return;
+  const v=scanClean(inp.value).trim();
+  r.code=v;
+  if(PMAP[v]){ r.status='check'; r.codeGood=true; r.status=(r.qtyGood?'ok':'check'); r.notes=['code set by you']; r.on=true; r.edited=true; }
+  else { r.status='unknown'; r.on=false; }
+  const pos=inp.selectionStart; scanRender();
+  const again=document.querySelector('.sc-row[data-id="'+id+'"] .sc-code'); if(again){ again.focus(); try{ again.setSelectionRange(pos,pos); }catch(e){} }
+}
+function scanPick(id, code){
+  const r=scanRow(id); if(!r || !PMAP[code]) return;
+  const old=r.code; r.alts=(r.alts||[]).filter(c=>c!==code); if(old && PMAP[old]) r.alts.unshift(old);
+  r.code=code; r.codeGood=true; r.status=r.qtyGood?'ok':'check'; r.notes=['code chosen by you']; r.on=true;
+  scanRender();
+}
+function scanEditQty(id, inp){
+  const r=scanRow(id); if(!r) return;
+  const v=parseInt(inp.value,10);
+  if(v>0){ r.qty=v; r.qtyGood=true; inp.classList.remove('ck'); if(PMAP[r.code] && r.codeGood){ r.status='ok'; const el=document.querySelector('.sc-row[data-id="'+id+'"]'); if(el){ el.classList.remove('check'); el.classList.add('ok'); const b=el.querySelector('.sc-b'); if(b){ b.className='sc-b ok'; b.textContent='✓ VERIFIED'; } } } }
+  scanRenderSum();
+}
+function scanAdd(){
+  const rows=SCAN.rows.filter(r=>r.on && PMAP[r.code] && (parseInt(r.qty,10)||0)>0);
+  if(!rows.length) return;
+  const left=rows.filter(r=>r.status==='check').length;
+  if(left && !confirm(left+' line'+(left===1?' is':'s are')+' still marked ⚠ CHECK.\n\nAdd them as they are?')) return;
+  const items=rows.map(r=>({...PMAP[r.code], qty:parseInt(r.qty,10)}));
+  if(S.bathrooms && S.bathrooms.length){
+    /* a bathroom-wise quotation stays bathroom-wise: the lines come in as one more bathroom */
+    const nm=uniqueImportName(SCAN.fileName.replace(/\.[a-z0-9]+$/i,'').slice(0,40) || 'Imported');
+    S.bathrooms.push({name:nm, items:items});
+    rebuildItemsFromBathrooms(); showBathroomModeBar(); renderLoadedPanel();
+    toast(items.length+' lines added as bathroom “'+nm+'”');
+  }else{
+    dropBlankRows();
+    items.forEach(it=>S.items.push(it));           // the same code twice stays two lines
+    toast(items.length+' line'+(items.length===1?'':'s')+' added to the quotation');
+  }
+  cancelInsert(); refreshAll();
+  $('scan-modal').style.display='none';
+}
+function uniqueImportName(base){
+  const taken={}; (S.bathrooms||[]).forEach(b=>{ taken[String(b.name).trim().toUpperCase()]=1; });
+  let c=base, k=2; while(taken[c.toUpperCase()]) c=base+' '+(k++);
+  return c;
+}
+(function wireScan(){
+  const f=$('scan-file'); if(!f) return;
+  f.addEventListener('change', ()=>{ if(f.files && f.files[0]) scanStart(f.files[0]); });
+  const dz=$('scan-drop');
+  if(dz){
+    ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+    ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('over'); }));
+    dz.addEventListener('drop', e=>{ const fl=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(fl) scanStart(fl); });
+  }
+  /* Ctrl+V a screenshot while the box is open */
+  document.addEventListener('paste', e=>{
+    const m=$('scan-modal'); if(!m || m.style.display!=='flex' || SCAN.busy) return;
+    if($('scan-pick').style.display==='none') return;
+    const it=[...(e.clipboardData && e.clipboardData.items || [])].filter(x=>x.kind==='file' && (/^image\//.test(x.type) || /pdf/.test(x.type)))[0];
+    if(it){ e.preventDefault(); scanStart(it.getAsFile()); }
+  });
+})();
 
 /* ════════════════════════════════════════════════════════════════════════
    EXCEL EXPORT  —  Quotation page (code + qty, bathroom-wise when grouped)
