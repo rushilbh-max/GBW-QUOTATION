@@ -1103,6 +1103,47 @@ html, body{
 .sc-altl{color:var(--muted2);margin-left:4px}
 .sc-alt{background:transparent;border:1px solid rgba(201,168,76,0.45);color:var(--gold-l);border-radius:4px;padding:2px 7px;font-family:'Cinzel',serif;font-size:10.5px;font-weight:600;cursor:pointer;margin:2px 2px 0 0}
 .sc-alt:hover{background:rgba(201,168,76,0.15)}
+.scan-filters{padding:9px 18px 8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;display:flex;flex-direction:column;gap:8px;background:rgba(0,0,0,0.18)}
+.sc-frow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sc-fsep{width:1px;height:20px;background:rgba(255,255,255,0.14);margin:0 4px}
+.sc-f{background:transparent;border:1px solid rgba(255,255,255,0.16);border-radius:20px;padding:6px 12px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.4px;color:#C0D4E4;cursor:pointer;white-space:nowrap;transition:all .12s}
+.sc-f b{color:#fff;margin-left:2px}
+.sc-f:hover{border-color:rgba(255,255,255,0.4)}
+.sc-f.zero{opacity:.45}
+.sc-f.at{color:#FFB870;border-color:rgba(231,140,60,0.5)}
+.sc-f.ck{color:#FFB870}
+.sc-f.un{color:#FF9B8F}
+.sc-f.ok{color:#4ADF90}
+.sc-f.dn{color:#E8D08A}
+.sc-f.on{background:rgba(201,168,76,0.2);border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;opacity:1}
+.sc-f.at.on{background:rgba(231,140,60,0.22);border-color:#E78C3C;box-shadow:0 0 0 1px #E78C3C inset}
+.sc-prog{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2)}
+.sc-prog b{color:#fff}
+.sc-progbar{flex:0 0 150px;height:6px;border-radius:3px;background:var(--ink4);overflow:hidden}
+.sc-progbar div{height:100%;background:linear-gradient(90deg,#2A9D60,#4ADF90);transition:width .25s ease}
+.sc-bulk{margin-left:auto;background:transparent;border:1px dashed rgba(255,255,255,0.25);border-radius:5px;padding:5px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;color:#C0D4E4;cursor:pointer}
+.sc-bulk+.sc-bulk{margin-left:0}
+.sc-bulk:hover{border-color:var(--gold);color:var(--gold-l)}
+.sc-no{font-family:'Jost',sans-serif;font-size:10px;font-weight:700;color:var(--muted2);min-width:18px;text-align:right;padding-top:11px}
+.sc-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto}
+.sc-acts{display:flex;gap:6px}
+.sc-act{background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:7px 11px;font-family:'Jost',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#C0D4E4;cursor:pointer;white-space:nowrap}
+.sc-act:hover{border-color:rgba(255,255,255,0.5)}
+.sc-act.ok{background:#2A9D60;border-color:#2A9D60;color:#fff;font-weight:800}
+.sc-act.ok:hover,.sc-act.ok:focus-visible{background:#35B872;outline:2px solid rgba(74,223,144,0.5);outline-offset:1px}
+.sc-b.dn{color:#E8D08A;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.5)}
+.sc-b.sk{color:var(--muted2);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18)}
+.sc-row.done{border-left-color:var(--gold)}
+.sc-row.unknown{border-left-color:#E06060}
+.sc-row.leaving{opacity:0;transform:translateX(24px);transition:opacity .24s ease, transform .24s ease;pointer-events:none}
+.sc-code.ck{border-color:rgba(231,140,60,0.85);box-shadow:0 0 0 1px rgba(231,140,60,0.35)}
+.sc-qty input.ck{box-shadow:0 0 0 1px rgba(231,140,60,0.35)}
+.sc-ask{color:#FFB870;font-weight:700}
+.sc-row.unknown .sc-ask{color:#FF9B8F}
+.scan-empty .se-t{font-family:'Cinzel',serif;font-size:14px;color:#4ADF90;letter-spacing:1px;margin:6px 0}
+.scan-empty a{color:var(--gold-l);text-decoration:underline;cursor:pointer}
+.scan-btn.gold.warn{background:#E78C3C;border-color:#E78C3C}
+@media(max-width:560px){.sc-right{flex-direction:row;align-items:center;width:100%;justify-content:space-between;margin-left:27px}.sc-progbar{flex-basis:90px}.sc-bulk{margin-left:0}}
 .scan-empty{padding:40px 18px;text-align:center;font-family:'Jost',sans-serif;font-size:13px;color:#C0D4E4;line-height:1.7}
 .scan-empty span{font-size:11px;color:var(--muted2)}
 .scan-foot{padding:11px 18px;border-top:1px solid rgba(201,168,76,0.12);background:rgba(201,168,76,0.04);gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
@@ -1780,6 +1821,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
     <div id="scan-review" style="display:none;flex-direction:column;min-height:0;flex:1">
       <div id="scan-sum" class="scan-sum"></div>
+      <div id="scan-filters" class="scan-filters"></div>
       <div id="scan-list" class="scan-list"></div>
     </div>
 
@@ -6007,10 +6049,13 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
   dd.classList.add('open');
 }
 function hideEdCodeDrop(){
-  const dd=$('ed-code-dd'); if(dd){ dd.classList.remove('open'); dd.innerHTML=''; }
+  const dd=$('ed-code-dd'); if(dd){ dd.classList.remove('open'); dd.innerHTML=''; dd.style.zIndex=''; }
   _edActiveInput=null; _edActiveRow=-1; _edTarget='editor'; _edOldCode='';
 }
 function pickEdCode(code){
+  if(_edTarget==='scan'){                           // the Read PDF / Photo review list
+    const id=+_edOldCode; hideEdCodeDrop(); scanSetCode(id, code); return;
+  }
   if(_edTarget==='plist'){
     const at=_edOldCode, inp=_edActiveInput;        // holds the row index for this target
     if(inp) inp.dataset.done='1';                   // stop blur from re-running the swap
@@ -7455,7 +7500,7 @@ function scanMergePasses(A, B){
           a.notes=m.notes.filter(n=>!/qty/i.test(n)).concat(keepQ);
         }else if(!(mBad && !aBad)){
           if(m.code && PMAP[m.code] && a.alts.indexOf(m.code)<0 && m.code!==a.code) a.alts.unshift(m.code);
-          if(!a.codeOk || m.codeOk){ a.codeOk=false; a.notes.push('the two readings differ: '+a.code+' / '+m.code); }
+          if(!a.codeOk || m.codeOk){ a.codeOk=false; if(a.code && m.code) a.notes.push('the two readings differ: '+a.code+' / '+m.code); }
         }
       }
       if(!a.agreeQty){
@@ -7494,6 +7539,7 @@ function scanGrade(r){
   r.codeGood=codeGood; r.qtyGood=qtyGood;
   r.status = (codeGood && qtyGood) ? 'ok' : 'check';
   r.notes=r.notes.filter((n,i,a)=>n && a.indexOf(n)===i);
+  if(r.notes.some(n=>/^qty .*(read as|looks too|was not under|could not be read)/.test(n))) r.notes=r.notes.filter(n=>n!=='qty read by OCR — check');   // the specific reason is enough
   if(r.status==='ok') r.notes=r.notes.filter(n=>!/could not be confirmed|nothing on the line/.test(n));
   return r;
 }
@@ -7729,7 +7775,7 @@ function openScan(){
   $('scan-file').value='';
 }
 function closeScan(){
-  SCAN.cancelled=true;
+  SCAN.cancelled=true; hideEdCodeDrop();
   $('scan-modal').style.display='none';
 }
 function scanShow(step){
@@ -7745,7 +7791,9 @@ async function scanStart(file){
   try{
     const rows=await scanFile(file);
     if(SCAN.cancelled) return;
-    SCAN.rows=rows.map((r,i)=>Object.assign(r, {id:i, on:r.status!=='unknown'}));
+    SCAN.rows=rows.map((r,i)=>Object.assign(r, {id:i, res:'', on:r.status!=='unknown' && !!PMAP[r.code], wasProblem:r.status!=='ok'}));
+    SCAN.rows.forEach(r=>{ r._orig={code:r.code, qty:r.qty, status:r.status, codeGood:!!r.codeGood, qtyGood:!!r.qtyGood, alts:(r.alts||[]).slice(), notes:(r.notes||[]).slice()}; });
+    SCAN.filter = SCAN.rows.some(r=>r.wasProblem) ? 'attention' : 'all';        // open straight on what needs a look
     scanRender();
     scanShow('review');
   }catch(e){
@@ -7753,84 +7801,249 @@ async function scanStart(file){
     const m=$('scan-pickmsg'); if(m){ m.style.display='block'; m.textContent='⚠ Could not read this file — '+((e&&e.message)||e); }
   }finally{ SCAN.busy=false; }
 }
-function scanSummary(){
-  const R=SCAN.rows, on=R.filter(r=>r.on && PMAP[r.code]);
-  return { twice:on.filter(r=>r.status==='ok' && r.ocr && !r.edited && !(r.codeOk && (r.qtyProof || r._noQtyDoc))).length,
-           lines:on.length, pcs:on.reduce((a,r)=>a+(parseInt(r.qty,10)||0),0),
-           mrp:on.reduce((a,r)=>a+(PMAP[r.code].mrp||0)*(parseInt(r.qty,10)||0),0),
-           check:R.filter(r=>r.on && r.status==='check').length, unknown:R.filter(r=>r.status==='unknown').length, all:R.length };
+/* ───────────── review: sort the lines, resolve the problems ─────────────
+   Every line is in exactly one pile:
+     attention → check    (read, but not proven — needs a look)
+               → unknown  (no catalogue code could be made of it)
+     ok        → proven / read twice, nothing to do
+     done      → dealt with by the person: ticked correct, corrected, or left out
+   The chips are the piles; tapping one shows only that pile. A line leaves the
+   "needs attention" view the moment it is resolved and the next one moves up,
+   so the list is worked through top to bottom until it is empty.            */
+function scanBucket(r){
+  if(r.res) return 'done';
+  if(r.status==='unknown' || !PMAP[r.code]) return 'unknown';
+  if(r.status==='check') return 'check';
+  return 'ok';
 }
+function scanIsTwice(r){ return r.status==='ok' && r.ocr && !r.res && !(r.codeOk && (r.qtyProof || r._noQtyDoc)); }
+function scanCounts(){
+  const c={all:0, check:0, unknown:0, ok:0, done:0};
+  SCAN.rows.forEach(r=>{ c.all++; c[scanBucket(r)]++; });
+  c.attention=c.check+c.unknown;
+  c.problems=SCAN.rows.filter(r=>r.wasProblem).length;        // how many needed a look in the first place
+  c.solved=SCAN.rows.filter(r=>r.wasProblem && scanBucket(r)!=='check' && scanBucket(r)!=='unknown').length;
+  return c;
+}
+function scanSummary(){
+  const on=SCAN.rows.filter(r=>r.on && PMAP[r.code]), c=scanCounts();
+  return { twice:on.filter(scanIsTwice).length, lines:on.length,
+           pcs:on.reduce((a,r)=>a+(parseInt(r.qty,10)||0),0),
+           mrp:on.reduce((a,r)=>a+(PMAP[r.code].mrp||0)*(parseInt(r.qty,10)||0),0),
+           check:c.check, unknown:c.unknown, all:c.all, c:c };
+}
+function scanVisible(){
+  const f=SCAN.filter||'all';
+  return SCAN.rows.filter(r=>{
+    const b=scanBucket(r);
+    return f==='all' ? true : f==='attention' ? (b==='check'||b==='unknown') : b===f;
+  });
+}
+function scanSetFilter(f){ SCAN.filter=f; scanRender(); const l=$('scan-list'); if(l) l.scrollTop=0; }
+
 function scanRender(){
   const body=$('scan-list'), R=SCAN.rows;
   if(!R.length){
     body.innerHTML='<div class="scan-empty"><div style="font-size:30px">🔍</div>No product codes could be read in <b>'+esc(SCAN.fileName)+'</b>.<br><span>'+(SCAN.kind==='text'?'Codes look like ALD-CHR-079N — this PDF does not seem to contain any.':'Either there are no codes in this picture, or it is too blurred / too small to read. For a photo: closer, sharper, straight on, codes clearly visible — or use the PDF itself if you have it.')+'</span></div>';
-    $('scan-sum').innerHTML=''; $('scan-add').disabled=true; return;
+    $('scan-sum').innerHTML=''; $('scan-filters').innerHTML=''; $('scan-add').disabled=true; return;
   }
-  body.innerHTML=R.map(r=>{
-    const p=PMAP[r.code], st=r.status;
-    const twice = st==='ok' && r.ocr && !r.edited && !(r.codeOk && (r.qtyProof || r._noQtyDoc));
-    const badge = st==='ok' ? (twice ? '<span class="sc-b tw" title="Both readings of the picture agree. There is no MRP, description or amount on this line to prove it with — glance at the strip.">✓ READ TWICE</span>' : '<span class="sc-b ok">✓ VERIFIED</span>') : st==='check' ? '<span class="sc-b ck">⚠ CHECK</span>' : '<span class="sc-b un">'+(r.code?'✕ NOT IN CATALOGUE':'✕ CODE NOT READ')+'</span>';
-    const alts=(st==='ok' ? [] : (r.alts||[])).filter(c=>c!==r.code && PMAP[c]).slice(0,4).map(c=>'<button class="sc-alt" onclick="scanPick('+r.id+',\''+esc(c)+'\')" title="'+esc(PMAP[c].desc||'')+' · MRP ₹'+fmtN(PMAP[c].mrp)+'">'+esc(c)+'</button>').join('');
-    return '<div class="sc-row '+st+(r.on?'':' off')+'" data-id="'+r.id+'">'+
-      (r.strip ? '<div class="sc-stripw"><img class="sc-strip" src="'+r.strip+'" alt="line from the document"></div>' : '')+
-      '<div class="sc-main">'+
-        '<label class="sc-on"><input type="checkbox" '+(r.on?'checked ':'')+(p?'':'disabled ')+'onchange="scanToggle('+r.id+',this.checked)"></label>'+
-        '<div class="sc-codewrap"><input class="sc-code'+(p?'':' bad')+'" value="'+esc(r.code)+'" spellcheck="false" autocomplete="off" oninput="scanEditCode('+r.id+',this)">'+
-          '<div class="sc-desc">'+(p ? esc(p.desc||'')+' · <b>MRP ₹'+fmtN(p.mrp)+'</b>' : '<span class="warn">'+(r.code?'This code is not in the catalogue — correct it or leave the line out':'Type the code shown in the strip above, or leave the line out')+'</span>')+'</div></div>'+
-        '<div class="sc-qty"><span>QTY</span><input type="number" min="1" step="1" inputmode="numeric" value="'+r.qty+'" class="'+(r.qtyGood?'':'ck')+'" oninput="scanEditQty('+r.id+',this)"></div>'+
-        badge+
-      '</div>'+
-      ((r.notes&&r.notes.length) || alts ? '<div class="sc-notes">'+esc((r.notes||[]).filter(Boolean).join(' · '))+(alts?' <span class="sc-altl">Other possible codes:</span> '+alts:'')+'</div>' : '')+
-    '</div>';
-  }).join('');
+  const list=scanVisible(), f=SCAN.filter||'all';
+  if(!list.length){
+    const c=scanCounts();
+    const msg = (f==='attention'||f==='check'||f==='unknown')
+      ? (c.attention===0
+          ? '<div style="font-size:34px">✅</div><div class="se-t">'+(c.problems?'All '+c.problems+' problem line'+(c.problems===1?' is':'s are')+' resolved':'Nothing needs attention')+'</div><span>Every line is either verified or dealt with by you. Press <b>Add to quotation</b>, or look through <a onclick="scanSetFilter(\'all\')">all '+c.all+' lines</a>.</span>'
+          : '<div class="se-t">Nothing in this pile</div><span>'+c.attention+' line'+(c.attention===1?'':'s')+' still need attention — <a onclick="scanSetFilter(\'attention\')">show them</a>.</span>')
+      : '<div class="se-t">Nothing in this pile</div><span><a onclick="scanSetFilter(\'all\')">Show all '+c.all+' lines</a></span>';
+    body.innerHTML='<div class="scan-empty">'+msg+'</div>';
+  }else{
+    body.innerHTML=list.map(scanRowHTML).join('');
+  }
   scanRenderSum();
 }
+function scanRowHTML(r){
+  const p=PMAP[r.code], b=scanBucket(r), n=SCAN.rows.indexOf(r)+1;
+  let badge;
+  if(b==='done') badge = r.res==='skipped' ? '<span class="sc-b sk">— LEFT OUT</span>' : r.res==='fixed' ? '<span class="sc-b dn">✔ CORRECTED BY YOU</span>' : '<span class="sc-b dn">✔ CHECKED BY YOU</span>';
+  else if(b==='ok') badge = scanIsTwice(r) ? '<span class="sc-b tw" title="Both readings of the picture agree. There is no MRP, description or amount on this line to prove it with — glance at the strip.">✓ READ TWICE</span>' : '<span class="sc-b ok">✓ VERIFIED</span>';
+  else if(b==='check') badge='<span class="sc-b ck">⚠ CHECK</span>';
+  else badge='<span class="sc-b un">'+(r.code?'✕ NOT IN CATALOGUE':'✕ CODE NOT READ')+'</span>';
+  const alts=((b==='ok'||b==='done') ? [] : (r.alts||[])).filter(c=>c!==r.code && PMAP[c]).slice(0,4)
+    .map(c=>'<button class="sc-alt" onclick="scanPick('+r.id+',\''+esc(c)+'\')" title="'+esc(PMAP[c].desc||'')+' · MRP ₹'+fmtN(PMAP[c].mrp)+'">'+esc(c)+'</button>').join('');
+  /* what exactly is in doubt — so the eye goes to the right box */
+  const doubtCode = b==='unknown' || (b==='check' && !r.codeGood);
+  const doubtQty  = b==='check' && !r.qtyGood;
+  const ask = b==='check' ? (doubtCode && doubtQty ? 'Check the code and the qty against the strip' : doubtCode ? 'Check the code against the strip' : 'Check the qty against the strip')
+            : b==='unknown' ? (r.code ? 'Correct the code (type it, or search by name), or leave the line out' : 'Type the code shown in the strip (or search by name), or leave the line out') : '';
+  let acts='';
+  if(b==='check')        acts='<button class="sc-act ok" onclick="scanConfirm('+r.id+')" title="The code and qty shown are right (Enter)">✓ Correct</button><button class="sc-act" onclick="scanSkip('+r.id+')" title="Do not add this line">Leave out</button>';
+  else if(b==='unknown') acts='<button class="sc-act" onclick="scanSkip('+r.id+')" title="Do not add this line">Leave out</button>';
+  else if(b==='done')    acts='<button class="sc-act" onclick="scanUndo('+r.id+')" title="Put this line back in its pile">↶ Undo</button>';
+  return '<div class="sc-row '+b+(r.res==='skipped'?' off':'')+(r.on||b==='unknown'?'':' off')+'" data-id="'+r.id+'">'+
+    (r.strip ? '<div class="sc-stripw"><img class="sc-strip" src="'+r.strip+'" alt="line from the document"></div>' : '')+
+    '<div class="sc-main">'+
+      '<span class="sc-no">'+n+'</span>'+
+      '<label class="sc-on" title="Include this line in the quotation"><input type="checkbox" '+(r.on?'checked ':'')+(p?'':'disabled ')+'onchange="scanToggle('+r.id+',this.checked)"></label>'+
+      '<div class="sc-codewrap"><input class="sc-code'+(p?'':' bad')+(doubtCode&&p?' ck':'')+'" value="'+esc(r.code)+'" data-id="'+r.id+'" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="type the code, or a few letters of the name…" oninput="scanEditCode('+r.id+',this)" onfocus="scanCodeFocus('+r.id+',this)" onkeydown="scanKey(event,'+r.id+')" onblur="scanCodeBlur('+r.id+',this)">'+
+        '<div class="sc-desc">'+(p ? esc(p.desc||'')+' · <b>MRP ₹'+fmtN(p.mrp)+'</b>' : '<span class="warn">Not in the catalogue</span>')+'</div></div>'+
+      '<div class="sc-qty"><span>QTY</span><input type="number" min="1" step="1" inputmode="numeric" value="'+r.qty+'" class="'+(doubtQty?'ck':'')+'" oninput="scanEditQty('+r.id+',this)" onkeydown="scanKey(event,'+r.id+')"></div>'+
+      '<div class="sc-right">'+badge+(acts?'<div class="sc-acts">'+acts+'</div>':'')+'</div>'+
+    '</div>'+
+    (ask || (r.notes&&r.notes.length) || alts ? '<div class="sc-notes">'+(ask?'<b class="sc-ask">'+ask+'.</b> ':'')+esc((r.notes||[]).filter(Boolean).join(' · '))+(alts?' <span class="sc-altl">Tap the right one:</span> '+alts:'')+'</div>' : '')+
+  '</div>';
+}
 function scanRenderSum(){
-  const s=scanSummary();
+  const s=scanSummary(), c=s.c, f=SCAN.filter||'all';
   const src = SCAN.kind==='text' ? 'Text read exactly from the PDF' : SCAN.kind==='mixed' ? 'PDF text + scanned pages (OCR, read twice)' : 'Read by OCR, twice';
   $('scan-sum').innerHTML=
-    '<span class="sc-chip"><b>'+s.lines+'</b> line'+(s.lines===1?'':'s')+'</span>'+
+    '<span class="sc-chip"><b>'+s.lines+'</b> line'+(s.lines===1?'':'s')+' to add</span>'+
     '<span class="sc-chip"><b>'+s.pcs+'</b> pcs</span>'+
     '<span class="sc-chip">MRP <b>₹'+fmtN(s.mrp)+'</b></span>'+
-    (s.check ? '<span class="sc-chip ck">⚠ <b>'+s.check+'</b> to check</span>' : '')+
-    (s.lines && !s.check && !s.twice ? '<span class="sc-chip ok">✓ all verified</span>' : '')+
+    (s.lines && !c.attention && !s.twice && !c.done ? '<span class="sc-chip ok">✓ all verified</span>' : '')+
     (s.twice ? '<span class="sc-chip tw" title="Both readings agree, but this document has nothing on those lines (MRP, description, amount) to prove them with">✓ <b>'+s.twice+'</b> read twice, same result'+(s.twice===s.lines?' — nothing on this document to prove them with, so glance through the strips':'')+'</span>' : '')+
-    (s.unknown ? '<span class="sc-chip un">✕ <b>'+s.unknown+'</b> need a code</span>' : '')+
     (SCAN.totalQty!=null ? (SCAN.totalQty===s.pcs ? '<span class="sc-chip ok">✓ matches the document\'s Total Qty ('+SCAN.totalQty+')</span>' : '<span class="sc-chip un">✕ document says Total Qty <b>'+SCAN.totalQty+'</b> — these lines add up to <b>'+s.pcs+'</b></span>') : '')+
     (SCAN.noQty ? '<span class="sc-chip ck">No quantities in this document — each line set to 1</span>' : '')+
     (SCAN.poor ? '<span class="sc-chip un" style="white-space:normal">⚠ This picture is hard to read (blurred, small or tilted)'+(SCAN.poor.item>SCAN.poor.got?': about <b>'+SCAN.poor.item+'</b> lines look like items but only <b>'+SCAN.poor.got+'</b> could be read':'')+'. Count the lines against the document, or use a sharper picture.</span>' : '')+
-    '<span class="sc-src">'+src+' · compare lines and pcs with the document</span>';
+    '<span class="sc-src">'+src+'</span>';
+  /* the piles */
+  const chip=(key,label,n,cls)=>'<button class="sc-f '+cls+(f===key?' on':'')+(n?'':' zero')+'" onclick="scanSetFilter(\''+key+'\')">'+label+' <b>'+n+'</b></button>';
+  const pct=c.problems ? Math.round(100*c.solved/c.problems) : 100;
+  $('scan-filters').innerHTML=
+    '<div class="sc-frow">'+
+      chip('attention','⚠ Needs attention',c.attention,'at')+
+      chip('check','Check',c.check,'ck')+
+      chip('unknown','Not found',c.unknown,'un')+
+      '<span class="sc-fsep"></span>'+
+      chip('ok','✓ OK',c.ok,'ok')+
+      chip('done','✔ Resolved by you',c.done,'dn')+
+      chip('all','All',c.all,'al')+
+    '</div>'+
+    (c.problems ? '<div class="sc-prog"><div class="sc-progbar"><div style="width:'+pct+'%"></div></div><span>'+(c.attention ? ('<b>'+c.solved+'</b> of <b>'+c.problems+'</b> problem line'+(c.problems===1?'':'s')+' resolved') : ('✓ all <b>'+c.problems+'</b> problem line'+(c.problems===1?'':'s')+' resolved'))+'</span>'+
+      ((f==='attention'||f==='check') && c.check>1 ? '<button class="sc-bulk" onclick="scanConfirmAll()" title="Only after you have compared every one of them with its strip">✓ Mark all '+c.check+' “check” lines correct</button>' : '')+
+      ((f==='attention'||f==='unknown') && c.unknown>1 ? '<button class="sc-bulk" onclick="scanSkipAll()">Leave out all '+c.unknown+' not found</button>' : '')+
+    '</div>' : '');
   const b=$('scan-add'); b.disabled=!s.lines;
-  b.textContent = s.lines ? ('Add '+s.lines+' line'+(s.lines===1?'':'s')+' to quotation') : 'Nothing to add';
+  b.classList.toggle('warn', !!c.attention && !!s.lines);
+  b.textContent = !s.lines ? 'Nothing to add' : ('Add '+s.lines+' line'+(s.lines===1?'':'s')+' to quotation'+(c.attention?' · '+c.attention+' unresolved':''));
 }
 function scanRow(id){ return SCAN.rows.filter(r=>r.id===id)[0]; }
-function scanToggle(id,on){ const r=scanRow(id); if(!r) return; r.on=!!on && !!PMAP[r.code]; const el=document.querySelector('.sc-row[data-id="'+id+'"]'); if(el) el.classList.toggle('off',!r.on); scanRenderSum(); }
+
+/* a line was resolved while a problem pile is on screen: let it slide away,
+   then put the cursor on the next one */
+function scanAfterResolve(id){
+  const f=SCAN.filter||'all', el=document.querySelector('.sc-row[data-id="'+id+'"]');
+  const leaves = el && (f==='attention'||f==='check'||f==='unknown') && scanVisible().every(r=>r.id!==id);
+  if(!leaves){ scanRender(); return; }
+  const next=el.nextElementSibling ? +el.nextElementSibling.dataset.id : (el.previousElementSibling ? +el.previousElementSibling.dataset.id : -1);
+  el.classList.add('leaving'); scanRenderSum();
+  clearTimeout(SCAN._leaveT);
+  SCAN._leaveT=setTimeout(()=>{
+    const top=$('scan-list').scrollTop; scanRender(); $('scan-list').scrollTop=top;
+    const n=document.querySelector('.sc-row[data-id="'+next+'"]');
+    if(n){ const t=n.querySelector('.sc-code.bad, .sc-code.ck, .sc-qty input.ck, .sc-act.ok'); if(t) try{ t.focus({preventScroll:true}); }catch(e){} }
+  }, 260);
+}
+function scanConfirm(id){
+  const r=scanRow(id); if(!r || !PMAP[r.code] || !((parseInt(r.qty,10)||0)>0)) return;
+  r.res='confirmed'; r.on=true; r.codeGood=true; r.qtyGood=true;
+  scanAfterResolve(id);
+}
+function scanSkip(id){
+  const r=scanRow(id); if(!r) return;
+  r.res='skipped'; r.on=false;
+  scanAfterResolve(id);
+}
+function scanUndo(id){
+  const r=scanRow(id); if(!r) return;
+  if(r._orig){ r.code=r._orig.code; r.qty=r._orig.qty; r.status=r._orig.status; r.codeGood=r._orig.codeGood; r.qtyGood=r._orig.qtyGood; r.alts=r._orig.alts.slice(); r.notes=r._orig.notes.slice(); }
+  r.res=''; r.on = r.status!=='unknown' && !!PMAP[r.code];
+  scanRender();
+}
+function scanConfirmAll(){
+  const rows=SCAN.rows.filter(r=>scanBucket(r)==='check');
+  if(!rows.length || !confirm('Mark all '+rows.length+' “check” lines as correct?\n\nDo this only if you have compared each one with its strip.')) return;
+  rows.forEach(r=>{ r.res='confirmed'; r.on=true; r.codeGood=true; r.qtyGood=true; });
+  scanRender();
+}
+function scanSkipAll(){
+  const rows=SCAN.rows.filter(r=>scanBucket(r)==='unknown');
+  if(!rows.length || !confirm('Leave out all '+rows.length+' lines that are not in the catalogue?')) return;
+  rows.forEach(r=>{ r.res='skipped'; r.on=false; });
+  scanRender();
+}
+/* the tick box at the left: in / out of the quotation */
+function scanToggle(id,on){
+  const r=scanRow(id); if(!r) return;
+  if(on){ if(r.res==='skipped'){ scanUndo(id); return; } r.on=!!PMAP[r.code]; }
+  else { r.res='skipped'; r.on=false; }
+  scanAfterResolve(id);
+}
+/* code box: type a code, or a few letters of the name and pick from the catalogue list */
+function scanCodeFocus(id, inp){ inp.select(); }
+function scanCodeBlur(id, inp){
+  setTimeout(()=>{
+    if(_edActiveInput===inp) hideEdCodeDrop();
+    const r=scanRow(id); if(!r) return;
+    if(r.res){ r._typed=false; return; }                       // already ticked / left out by a button
+    if(r._typed && PMAP[r.code]) scanSetCode(id, r.code);      // a valid code was typed and the box was left: that is the answer
+    else if(r._orig && r.code!==r._orig.code && document.activeElement!==inp){ const l=$('scan-list'), t=l.scrollTop; scanRender(); l.scrollTop=t; }
+  }, 220);
+}
 function scanEditCode(id, inp){
   const r=scanRow(id); if(!r) return;
   const v=scanClean(inp.value).trim();
   r.code=v;
-  if(PMAP[v]){ r.status='check'; r.codeGood=true; r.status=(r.qtyGood?'ok':'check'); r.notes=['code set by you']; r.on=true; r.edited=true; }
+  const p=PMAP[v], row=inp.closest('.sc-row');
+  inp.classList.toggle('bad', !p); inp.classList.remove('ck');
+  const d=row && row.querySelector('.sc-desc');
+  if(d) d.innerHTML = p ? esc(p.desc||'')+' · <b>MRP ₹'+fmtN(p.mrp)+'</b>' : '<span class="warn">'+(v?'Not in the catalogue — keep typing, or pick from the list':'Type the code, or a few letters of the name')+'</span>';
+  if(p){ r.codeGood=true; r.status = 'check'; r._typed=true; r.on=true; }
   else { r.status='unknown'; r.on=false; }
-  const pos=inp.selectionStart; scanRender();
-  const again=document.querySelector('.sc-row[data-id="'+id+'"] .sc-code'); if(again){ again.focus(); try{ again.setSelectionRange(pos,pos); }catch(e){} }
+  const dd=$('ed-code-dd'); if(dd) dd.style.zIndex='10060';          // above this box
+  if(v.length>=2) showEdCodeDrop(inp, -1, 'scan', String(id)); else hideEdCodeDrop();
+  const cb=row && row.querySelector('.sc-on input'); if(cb){ cb.disabled=!p; cb.checked=!!p; }
+  scanRenderSum();
 }
-function scanPick(id, code){
+/* a code was chosen (typed + Enter, tapped in the list, or tapped as an alternative) */
+function scanSetCode(id, code){
   const r=scanRow(id); if(!r || !PMAP[code]) return;
-  const old=r.code; r.alts=(r.alts||[]).filter(c=>c!==code); if(old && PMAP[old]) r.alts.unshift(old);
-  r.code=code; r.codeGood=true; r.status=r.qtyGood?'ok':'check'; r.notes=['code chosen by you']; r.on=true;
-  scanRender();
+  const old=r.code; r.alts=(r.alts||[]).filter(c=>c!==code); if(old && PMAP[old] && old!==code) r.alts.unshift(old);
+  r.code=code; r.codeGood=true; r.on=true; r._typed=false;
+  if(r.qtyGood){ r.status='ok'; r.res='fixed'; r.notes=['code set by you']; scanAfterResolve(id); }
+  else { r.status='check'; r.notes=['code set by you'].concat((r.notes||[]).filter(n=>/qty/i.test(n))); scanRender();
+         const q=document.querySelector('.sc-row[data-id="'+id+'"] .sc-qty input'); if(q){ q.focus(); q.select(); } }
 }
+function scanPick(id, code){ scanSetCode(id, code); }
 function scanEditQty(id, inp){
   const r=scanRow(id); if(!r) return;
   const v=parseInt(inp.value,10);
-  if(v>0){ r.qty=v; r.qtyGood=true; inp.classList.remove('ck'); if(PMAP[r.code] && r.codeGood){ r.status='ok'; const el=document.querySelector('.sc-row[data-id="'+id+'"]'); if(el){ el.classList.remove('check'); el.classList.add('ok'); const b=el.querySelector('.sc-b'); if(b){ b.className='sc-b ok'; b.textContent='✓ VERIFIED'; } } } }
+  if(v>0){ r.qty=v; r._qtyTyped=true; }
   scanRenderSum();
+}
+/* Enter in a box = "this line is right": tick it and move to the next */
+function scanKey(e, id){
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const r=scanRow(id); if(!r) return;
+  hideEdCodeDrop();
+  if(!PMAP[r.code]){ toast('“'+(r.code||'—')+'” is not in the catalogue'); return; }
+  if(!((parseInt(r.qty,10)||0)>0)) return;
+  const b=scanBucket(r);
+  if(b==='ok' && !r._typed && !r._qtyTyped) return;
+  r.res = (r._typed || r._qtyTyped || (r._orig && (r._orig.code!==r.code || r._orig.qty!==r.qty))) ? 'fixed' : 'confirmed';
+  r.status='ok'; r.codeGood=true; r.qtyGood=true; r.on=true; r._typed=false; r._qtyTyped=false;
+  scanAfterResolve(id);
 }
 function scanAdd(){
   const rows=SCAN.rows.filter(r=>r.on && PMAP[r.code] && (parseInt(r.qty,10)||0)>0);
   if(!rows.length) return;
-  const left=rows.filter(r=>r.status==='check').length;
-  if(left && !confirm(left+' line'+(left===1?' is':'s are')+' still marked ⚠ CHECK.\n\nAdd them as they are?')) return;
+  const c=scanCounts();
+  if(c.attention){
+    const msg=[];
+    if(c.check)   msg.push(c.check+' line'+(c.check===1?' is':'s are')+' still marked ⚠ CHECK and will be added exactly as read.');
+    if(c.unknown) msg.push(c.unknown+' line'+(c.unknown===1?' is':'s are')+' not in the catalogue and will be LEFT OUT.');
+    if(!confirm(msg.join('\n')+'\n\nAdd the '+rows.length+' line'+(rows.length===1?'':'s')+' anyway?')){ scanSetFilter('attention'); return; }
+  }
   const items=rows.map(r=>({...PMAP[r.code], qty:parseInt(r.qty,10)}));
   if(S.bathrooms && S.bathrooms.length){
     /* a bathroom-wise quotation stays bathroom-wise: the lines come in as one more bathroom */
@@ -7843,7 +8056,7 @@ function scanAdd(){
     items.forEach(it=>S.items.push(it));           // the same code twice stays two lines
     toast(items.length+' line'+(items.length===1?'':'s')+' added to the quotation');
   }
-  cancelInsert(); refreshAll();
+  cancelInsert(); refreshAll(); hideEdCodeDrop();
   $('scan-modal').style.display='none';
 }
 function uniqueImportName(base){
