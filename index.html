@@ -7033,6 +7033,7 @@ const SCAN_LIBS = {
 const SCAN = { rows:[], busy:false, cancelled:false, worker:null, fileName:'', kind:'' };
 const SCAN_CODE_RE  = /[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{2,16}/;
 const SCAN_CODE_FULL= /^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{2,16}$/;
+const SCAN_PREFIX_RE= /^[A-Z0-9]{3}(-[A-Z0-9]{0,3}(-[A-Z0-9]{0,16})?)?$/;      // any beginning of a code
 
 function scanLoadScript(src){
   return new Promise((res,rej)=>{
@@ -7141,10 +7142,25 @@ function scanFindCodes(L){
         else if(after==='' || /^-?$/.test(after)) best={raw:m[0], i:i, j:j, x0:L.toks[i].x0, x1:tk.x1, conf:Math.min.apply(null, L.toks.slice(i,j+1).map(x=>x.conf==null?100:x.conf))};
       }else if(!/^[A-Z0-9]{0,3}(-[A-Z0-9]{0,3}(-[A-Z0-9]{0,16})?)?-?$/.test(join.replace(/^.*[^A-Z0-9-]/,''))) break;
     }
-    /* a code cut at a hyphen at the end of the cell: "ALD-CHR-" then the rest below */
+    /* the BEGINNING of a code whose cell is narrower than the code. Quotation
+       software wraps such a code over several lines and may break it anywhere,
+       with spaces inside:  "SHA-" / "CH R-" / "455L4 00"  =  SHA-CHR-455L400.
+       The pieces on this line are joined with the spaces removed; the lines
+       below are added in scanCell(). */
     if(!best){
       const w=L.toks[i].u.replace(/[^A-Z0-9-]/g,'');
-      if(/^[A-Z0-9]{3}-[A-Z0-9]{3}-$/.test(w) || /^[A-Z0-9]{3}-$/.test(w)) best={raw:w, i:i, j:i, x0:L.toks[i].x0, x1:L.toks[i].x1, conf:L.toks[i].conf==null?100:L.toks[i].conf, partial:true};
+      if(/^[A-Z0-9]{3}-/.test(w) && SCAN_PREFIX_RE.test(w) && /^[A-Z0-9-]+[.,:;]?$/.test(L.toks[i].u)){
+        let acc=w, j=i; const steps=[];
+        for(let k=i+1;k<L.toks.length && k<i+4;k++){
+          const tk=L.toks[k];
+          if(used[k] || tk.x0-L.toks[k-1].x1 > 0.75*L.h || !/^[A-Z0-9-]{1,16}$/.test(tk.u)) break;
+          const nx=(acc+tk.u).replace(/--+/g,'-');
+          if(!SCAN_PREFIX_RE.test(nx)) break;
+          if(SCAN_CODE_FULL.test(acc)) steps.push(acc);
+          acc=nx; j=k;
+        }
+        best={raw:acc, i:i, j:j, x0:L.toks[i].x0, x1:L.toks[j].x1, conf:Math.min.apply(null, L.toks.slice(i,j+1).map(x=>x.conf==null?100:x.conf)), partial:!SCAN_CODE_FULL.test(acc), start:true, steps:steps};
+      }
     }
     if(best){ for(let k=best.i;k<=best.j;k++) used[k]=1; best.line=L; hits.push(best); }
   }
@@ -7227,7 +7243,28 @@ function scanResolve(raws, ctx, ocr){
   scored.sort((a,b)=>b.score-a.score || rank[a.how]-rank[b.how] || b.code.length-a.code.length);
   return scored;
 }
-function scanApplyCode(row, scored, ctx, ocr, rawShown, hadWrap){
+function scanApplyCode(row, scored, ctx, ocr, rawShown, hadWrap, cell){
+  cell=cell||{full:'', text:'', strict:false};
+  /* the whole cell is one catalogue code and the line agrees with it at least
+     as well as with any other reading → that is the code. (Variants that only
+     add letters — …400 / …400MI — often cost the same, so the MRP alone
+     cannot separate them; what is printed does.) */
+  /* Text taken from a PDF is exact. What is printed, if it is a catalogue code,
+     is the code — a shorter / longer / look-alike code may take its place only
+     when the MRP on the line is that other code's and not this one's. (Variants
+     of one product — …400 / …400MI, …35953 / …35953BIUFSM — share most of their
+     description and often their price, so those cannot overrule the print.) */
+  if(!ocr && scored.length>1){
+    const want = hadWrap ? cell.full : (scored.filter(x=>x.how==='read')[0]||{}).code;
+    const k = want ? scored.findIndex(x=>x.code===want) : -1;
+    /* a wrapped cell read to its end leaves no doubt at all about what is printed */
+    if(k>0 && ((hadWrap && cell.strict) || scored[0].score-scored[k].score<3)){ const f=scored.splice(k,1)[0]; scored.unshift(f); }
+  }
+  /* OCR: the same, but only when the MRP on the line is this code's — proof that it was read right */
+  if(ocr && hadWrap && cell.strict && cell.full && scored.length>1){
+    const k=scored.findIndex(x=>x.code===cell.full);
+    if(k>0 && scored[k].score>=3){ const f=scored.splice(k,1)[0]; scored.unshift(f); }
+  }
   const best=scored[0]||null, second=scored[1]||null;
   const canVerify = ctx.nums.length>0 || Object.keys(ctx.words).length>=2;
   row.codeOk=false; row.alts=[];
@@ -7235,18 +7272,35 @@ function scanApplyCode(row, scored, ctx, ocr, rawShown, hadWrap){
   if(!best){ row.code=rawShown; row.status='unknown'; row.notes.unshift('not in your catalogue'); return; }
   row.status=''; row.code=best.code; row.alts=scored.slice(1,5).map(s=>s.code);
   const direct=scored.filter(s=>s.how==='read'||s.how==='wrapped');
-  const clear = best.score>=2 && (!second || best.score-second.score>=1);
+  const isDirect = best.how==='read'||best.how==='wrapped';
+  const isFull = hadWrap ? (!!cell.full && best.code===cell.full) : best.how==='read';
+  /* in a wrapped cell everything printed in it belongs to the code: a code made
+     of only part of the cell, or a "nearly the same" code, is never accepted
+     without a person looking at it */
+  let partOnly = cell.strict && !isFull;
+  if(partOnly && ocr && cell.full && !isDirect){ const how=scanNeighbours(cell.full, true).get(best.code); if(how==='lookalike' || how==='1char') partOnly=false; }   // the whole cell, one character misread
+  const rivals = (!ocr && isFull && isDirect) ? scored.filter(s=>s!==best && (s.how==='read'||s.how==='wrapped'))
+               : (ocr && isFull && isDirect && cell.strict && best.score>=3) ? scored.filter(s=>s!==best && (s.how==='lookalike'||s.how==='1char'))
+               : scored.slice(1);
+  const clear = best.score>=2 && (!rivals.length || best.score-rivals[0].score>=1);
   const N=[];
-  if(clear){
+  if(clear && !partOnly){
     row.codeOk=true; N.push(best.why.join(' + '));
-    if(best.how==='wrapped') N.push('code continued on the next line');
+    if(best.how==='wrapped') N.push('code was wrapped over '+(((cell.kOf||{})[best.code]||1)+1)+' lines — joined');
     else if(best.how!=='read') N.push('read as '+rawShown+' — corrected');
-  }else if(!ocr && direct.length===1 && (best.how==='read'||best.how==='wrapped') && !(hadWrap && scored.some(s=>s.how==='longer'))){
+  }else if(!ocr && !partOnly && isDirect && (direct.length===1 ? (isFull || !(hadWrap && scored.some(s=>s.how==='longer'))) : (isFull && cell.strict))){
     row.codeOk = true;                                    // exact text, only one way to read it
-    if(best.how==='wrapped') N.push('code continued on the next line');
+    if(best.score>=2) N.push(best.why.join(' + '));
+    if(best.how==='wrapped') N.push('code was wrapped over '+(((cell.kOf||{})[best.code]||1)+1)+' lines — joined');
     if(canVerify && best.score===0) N.push('MRP / description on the line differ from the catalogue');
   }else{
-    if(best.how!=='read' && best.how!=='wrapped') N.push('read as '+rawShown+' — closest catalogue code');
+    if(partOnly && !ocr){
+      /* exact text, and it is not a catalogue code: never put a different product in its place */
+      row.code=cell.text||rawShown; row.status='unknown'; row.alts=scored.slice(0,4).map(x=>x.code);
+      row.notes=['not in your catalogue — add it to the sheet, or tap the nearest code if that is the same product'].concat(row.notes); return;
+    }
+    if(partOnly) N.push('the document shows '+(cell.text||rawShown)+', which is not in your catalogue — '+best.code+' is only the closest');
+    else if(!isDirect) N.push('read as '+rawShown+' — closest catalogue code');
     else if(direct.length>1) N.push('code may continue on the next line — pick the right one');
     else N.push(canVerify ? 'could not be confirmed from MRP / description' : 'nothing on the line to confirm it with');
   }
@@ -7266,13 +7320,82 @@ function scanIdentify(ctx){
   return out;
 }
 
+/* The rest of a code cell: the lines directly under the first one, in the same
+   column (centred or left-aligned like it), made only of code characters.
+   Returns [{s: everything below joined so far — spaces removed, line, x0, x1, toks}]. */
+function scanCell(h, lines, hits){
+  const L=h.line, H=L.h, cx=(h.x0+h.x1)/2, out=[];
+  let prev=L, acc='';
+  for(let n=h.li+1; n<lines.length && out.length<5; n++){
+    const NL=lines[n];
+    if(NL.y0-prev.y1 > 1.0*H) break;                                     // not the next line of this cell
+    if(hits.some(x=>x.li===NL.i && x.x0<h.x1+H && x.x1>h.x0-H)) break;   // the next item starts here
+    const runs=[]; let run=null;
+    NL.toks.forEach((t,ti)=>{
+      const ok=/^[A-Z0-9-]{1,16}$/.test(t.u), near=ti>0 && t.x0-NL.toks[ti-1].x1 <= 0.75*H;
+      if(!ok){ if(run && near) run.dirty=true; run=null; return; }
+      if(run && near){ run.toks.push(t); run.x1=t.x1; }
+      else { run={toks:[t], x0:t.x0, x1:t.x1, dirty: ti>0 && near}; runs.push(run); }
+    });
+    const inCol=r=>{ const rc=(r.x0+r.x1)/2; return Math.abs(rc-cx)<=1.0*H || Math.abs(r.x0-h.x0)<=0.6*H || (rc>h.x0-0.6*H && rc<h.x1+0.6*H); };
+    const pick=runs.filter(r=>!r.dirty && r.toks.length<=3 && inCol(r) && r.toks.map(t=>t.u).join('').length<=16)[0];
+    if(!pick){
+      if(NL.toks.some(t=>t.x1>h.x0-0.6*H && t.x0<h.x1+0.6*H)) break;     // something else is printed under the code
+      continue;
+    }
+    acc+=pick.toks.map(t=>t.u).join('');
+    out.push({s:acc, line:NL, x0:pick.x0, x1:pick.x1, toks:pick.toks});
+    prev=NL;
+  }
+  return out;
+}
+
 /* ───────────── the analysis ─────────────
    page = {tokens:[{s,x0,y0,x1,y1,conf?}], w, h, ocr:bool}                    */
 function scanAnalyzePage(page, pi){
   const lines=scanLines(page.tokens), ocr=!!page.ocr, rows=[];
-  const hits=[];
+  let hits=[];
   lines.forEach((L,li)=>{ L.i=li; scanFindCodes(L).forEach(h=>{ h.li=li; hits.push(h); }); });
-  const res={rows:rows, lines:lines, orphans:[], qtyX:null, totalQty:null, codeX:null};
+  /* every code with the whole of its cell: the lines wrapped below it are
+     joined on, spaces removed. A mere beginning ("CUS-", "NON-AC") that never
+     grows into a code is not a code and is dropped here. */
+  const K0=scanKeys();
+  hits.forEach(h=>{
+    h.cell=scanCell(h, lines, hits);
+    h.full=(h.raw+(h.cell.length?h.cell[h.cell.length-1].s:'')).replace(/--+/g,'-');
+    h.cands=[];
+    if(!h.partial) h.cands.push({code:h.raw, how:'read'});
+    (h.steps||[]).forEach(c=>h.cands.push({code:c, how:'read'}));
+    h.cell.forEach((f,k)=>{ const c=(h.raw+f.s).replace(/--+/g,'-'); if(SCAN_CODE_FULL.test(c)) h.cands.push({code:c, how:'wrapped', k:k+1}); });
+    h.fullOk=SCAN_CODE_FULL.test(h.full);
+    if(h.start){
+      const z=h.full.replace(/-/g,'');
+      h.keep = h.cands.some(c=>PMAP[c.code]) || (h.fullOk && !!(K0.pre[z.slice(0,3)] || K0.fin[z.slice(3,6)]));
+    }else h.keep=true;
+  });
+  hits=hits.filter(h=>h.keep);
+  /* does this page wrap its codes? (then text under a code is part of the code) */
+  const pageWraps=hits.some(h=>h.cell.length && PMAP[h.full] && !(!h.partial && PMAP[h.raw]));
+  const res={rows:rows, lines:lines, orphans:[], qtyX:null, totalQty:null, codeX:null, marks:[], totalMrp:null};
+  /* the document's own grand totals, and the "<BATHROOM> TOTAL:" line that closes each section */
+  lines.forEach((L,li)=>{
+    const T=L.toks;
+    for(let a=0;a<T.length-1;a++){
+      const lab=T[a].u.replace(/[^A-Z]/g,''), nx=T[a+1].u.replace(/[^A-Z]/g,'');
+      if(lab!=='TOTAL' || !/^(QTY|QUANTITY|MRP)$/.test(nx)) continue;
+      const isQ=nx!=='MRP', want=isQ ? /^\d{1,5}(\.0+)?$/ : /^\d[\d,]*\.\d{2}$/;
+      let v=T.slice(a+2, a+6).filter(k=>want.test(k.u))[0];
+      const NL=lines[li+1];
+      if(!v && NL && NL.y0-L.y1<1.2*L.h) v=NL.toks.filter(k=>want.test(k.u) && k.x0>=T[a].x0-1.5*L.h && k.x0<=T[a+1].x1+1.5*L.h)[0];
+      if(v){ if(isQ) res.totalQty=parseInt(v.u,10); else res.totalMrp=parseFloat(v.u.replace(/,/g,'')); }
+    }
+    const txt=T.map(k=>String(k.s).trim()).join(' ');
+    const m=/^(.*[A-Za-z0-9].*?)\s+TOTAL\s*:/i.exec(txt);
+    if(m){
+      let nm=m[1].replace(/\s+/g,' ').trim().replace(/\s*-\s*\d+\s*-$/,'').replace(/[\s-]+$/,'').trim();
+      if(nm && !/^(GRAND|SUB|NET|GROSS|THE)?$/i.test(nm) && nm.length<=60) res.marks.push({y:L.yc, name:nm.toUpperCase()});
+    }
+  });
   if(ocr){
     const cs=page.tokens.filter(k=>k.conf!=null && String(k.s).trim().length>1).map(k=>k.conf);
     res.meanConf = cs.length ? cs.reduce((a,b)=>a+b,0)/cs.length : 0;
@@ -7284,10 +7407,12 @@ function scanAnalyzePage(page, pi){
   let qtyX=null, qtyHeadY=-1;
   const firstHitY = hits.length ? Math.min.apply(null, hits.map(h=>h.line.yc)) : 1e9;
   lines.forEach(L=>{
-    if(qtyX!==null || L.yc>=firstHitY || isTotal(L)) return;          // the heading sits above the first item ("Total Qty" is not it)
+    const headish=L.toks.filter(k=>/^(MRP|RATE|RATE\/UNIT|AMOUNT|AMT|DESCRIPTION|CODE|CAT|ITEM|HSN|PARTICULARS|DISC|IMAGE|GST)\b/.test(k.u)).length>=2;
+    if(qtyX!==null || L.yc>=firstHitY || (isTotal(L) && !headish)) return;          // the heading sits above the first item ("Total Qty" is not it)
     L.toks.forEach(k=>{
       if(qtyX===null && /^(QTY|QTY\.|QTY\.?\(?NOS\.?\)?|QUANTITY|QNTY|QTY:|NOS\.?|PCS\.?)$/.test(k.u.replace(/\s/g,''))){ qtyX=k.xc; qtyHeadY=L.yc; }
     });
+    if(qtyX!==null && qtyHeadY===L.yc){ const m=L.toks.filter(k=>/^M\.?R\.?P\.?$/.test(k.u))[0]; if(m) res.mrpX=m.xc; }
     /* OCR may smudge the heading itself ("Qry", "Quy"): accept it on a line that is clearly the table heading */
     if(qtyX===null && ocr && L.toks.filter(k=>/^(MRP|RATE|AMOUNT|DESCRIPTION|CODE|ITEM|HSN|PARTICULARS|DISC|TOTAL)/.test(k.u)).length>=2){
       const k=L.toks.filter(t=>/^[QO0][A-Z]{1,2}[YV]\.?$/.test(t.u))[0];
@@ -7295,6 +7420,7 @@ function scanAnalyzePage(page, pi){
     }
   });
   if(qtyX===null && page.qtyX!=null){ qtyX=page.qtyX; qtyHeadY=-1; }   // heading is on an earlier page
+  if(res.mrpX==null && page.mrpX!=null) res.mrpX=page.mrpX;
   res.qtyX=qtyX;
   const qtol=L=>Math.max(2.2*L.h, 0.045*(page.w||1000));
   if(!hits.length && qtyX===null) return res;
@@ -7309,8 +7435,10 @@ function scanAnalyzePage(page, pi){
     /* the band of the page that belongs to this line item */
     const nextSame=hits.slice(hi+1).filter(x=>x.li>h.li)[0];
     const top=L.y0-0.25*L.h;
-    let bottom=nextSame ? nextSame.line.y0-0.2*nextSame.line.h : L.y1+3.2*L.h;
-    bottom=Math.min(bottom, L.y1+5*L.h);
+    const cell=h.cell, cellY1=cell.length ? cell[cell.length-1].line.y1 : L.y1;
+    const cellToks=[]; cell.forEach(f=>f.toks.forEach(t=>cellToks.push(t)));
+    let bottom=nextSame ? nextSame.line.y0-0.2*nextSame.line.h : cellY1+3.2*L.h;
+    bottom=Math.min(bottom, cellY1+5*L.h);
     const band=lines.filter(x=>x.yc>=top && x.yc<bottom && !(x!==L && isTotal(x)));
     const sameLineCodes=hits.filter(x=>x.li===h.li);
     /* when two codes share a line (two-column lists) each only owns its side */
@@ -7323,33 +7451,33 @@ function scanAnalyzePage(page, pi){
     const ctxToks=[]; band.forEach(x=>x.toks.forEach(k=>{
       if(x===L && L.toks.indexOf(k)>=h.i && L.toks.indexOf(k)<=h.j) return;
       if(k.xc<bx0 || k.xc>bx1) return;
+      if(cellToks.indexOf(k)>=0) return;                       // a piece of the code itself
       ctxToks.push(k);
     }));
     const ctx=scanCtx(ctxToks);
 
-    /* the rest of a code that wrapped onto the next line(s) of its cell */
-    const frags=[]; let acc='';
-    for(let k=1;k<=2;k++){
-      const NL=lines[h.li+k]; if(!NL || NL.y0-L.y1>1.3*L.h*k) break;
-      if(hits.some(x=>x.li===NL.i && x.x0<h.x1 && x.x1>h.x0)) break;
-      const under=NL.toks.filter(t=>t.xc>h.x0-0.6*L.h && t.xc<h.x1+0.6*L.h && /^[A-Z0-9-]{1,16}$/.test(t.u));
-      if(!under.length) break;
-      acc+=under.map(t=>t.u).join('');
-      frags.push(acc);
-    }
-    const raws=[]; let glued=null, row0read='';
-    if(!h.partial) raws.push({code:h.raw, how:'read'});
-    frags.forEach(f=>{ const c=(h.raw+f).replace(/--+/g,'-'); if(SCAN_CODE_FULL.test(c)) raws.push({code:c, how:'wrapped'}); });
+    const raws=h.cands.slice(); let glued=null, row0read='';
     if(ocr && !h.partial && !PMAP[h.raw]){
       glued=scanUnglue(h.raw); if(glued) raws.unshift({code:glued.code, how:'read'});
       else if(/X$/.test(h.raw) && PMAP[h.raw.slice(0,-1)]){ raws.length=0; raws.push({code:h.raw.slice(0,-1), how:'read'}); row0read=h.raw.slice(0,-1); }   // "CODE x 2" with the x stuck to the code
     }
 
-    const row={page:pi, cy0:L.y0, cy1:L.y1, y0:top, y1:Math.max(L.y1+0.3*L.h, Math.min(bottom, L.y1+2.6*L.h)), yc:L.yc, x0:h.x0, x1:h.x1, lh:L.h,
-               read:row0read || (h.raw+(h.partial&&frags.length?frags[frags.length-1]:'')), code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:h.conf, _ctx:ctx, _raws:raws, _wrap:frags.length>0};
+    const cx0=Math.min.apply(null,[h.x0].concat(cell.map(f=>f.x0))), cx1=Math.max.apply(null,[h.x1].concat(cell.map(f=>f.x1)));
+    const row={page:pi, cy0:L.y0, cy1:cellY1, y0:top, y1:Math.max(cellY1+0.3*L.h, Math.min(bottom, L.y1+2.6*L.h)), yc:L.yc, x0:cx0, x1:cx1, lh:L.h,
+               read:row0read || ((h.partial || (cell.length && h.fullOk && (pageWraps || !PMAP[h.raw]))) ? h.full : h.raw), code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:h.conf, _ctx:ctx, _raws:raws, _wrap:cell.length>0,
+               _cell:{full:h.fullOk?h.full:'', text:h.full, strict:cell.length>0 && (pageWraps || !!h.partial), kOf:h.cands.reduce((o,c)=>{ if(c.k) o[c.code]=c.k; return o; },{})}};
     const scored=scanResolve(raws, ctx, ocr);
     if(h.soft && !scored.length && !/-/.test(L.toks[h.i].u)) return;         // a word that merely looked a bit like a code
-    scanApplyCode(row, scored, ctx, ocr, row.read, row._wrap);
+    scanApplyCode(row, scored, ctx, ocr, row.read, row._wrap, row._cell);
+    /* which lines of the page this item has used up */
+    row._lines=[L]; cell.forEach((f,k)=>{ const c=(h.raw+f.s).replace(/--+/g,'-'); if(row.code && row.code.length>=c.length && row.code.lastIndexOf(c,0)===0) row._lines.push(f.line); });
+    row._hitLine=L; row._bottom=bottom;
+    /* the MRP printed under the MRP heading, when it is not the one in the catalogue: worth knowing, the sheet may be out of date */
+    if(!ocr && res.mrpX!=null && PMAP[row.code] && PMAP[row.code].mrp>=50){
+      const tol=qtol(L), m=ctxToks.filter(k=>/^\d[\d,]*\.\d{2}$/.test(k.u) && Math.abs(k.xc-res.mrpX)<=tol && k.yc<=cellY1+1.6*L.h).sort((a,b)=>Math.abs(a.xc-res.mrpX)-Math.abs(b.xc-res.mrpX))[0];
+      const v=m ? parseFloat(m.u.replace(/,/g,'')) : NaN;
+      if(v>0 && Math.abs(v-PMAP[row.code].mrp)>0.5){ row.docMrp=v; row.notes.push('MRP on the document ₹'+fmtN(v)+' — your catalogue has ₹'+fmtN(PMAP[row.code].mrp)); }
+    }
     if(h.soft){ row.soft=true; if(row.status!=='unknown' && !row.codeOk) row.notes.unshift('badly printed / blurred code — rebuilt from '+L.toks[h.i].s); }
     scanQty(row, L, h, band, bx0, bx1, ctx, qtyX, qtyHeadY, qtol(L), ocr, page);
     if(glued && !row.qtyWhy && row.code && scanNeighboursHas(glued.code, row.code)){ row.qty=glued.qty; row.qtyWhy='× '+glued.qty+' written right after the code'; }
@@ -7360,17 +7488,34 @@ function scanAnalyzePage(page, pi){
   const tableLike = qtyX!==null || lines.filter(L=>!isTotal(L) && scanCtx(L.toks).money>=2).length>=3;
   if(tableLike){
     const lastY = rows.length ? Math.max.apply(null, rows.map(r=>r.yc)) : 1e9;
+    const usedLines=[]; rows.forEach(r=>(r._lines||[]).forEach(x=>usedLines.push(x)));
+    const curOnly=k=>/^(INR|RS\.?|₹|RS\.?:?)$/.test(k.u);
+    /* "INR" on the item's line and the figure under it: the same row, not a new one */
+    const underCur=(HL,X)=>{
+      const cur=HL.toks.filter(curOnly); if(!cur.length) return false;
+      const mon=X.toks.filter(k=>/\d\.\d{2}/.test(k.u)); if(!mon.length) return false;
+      return mon.every(m=>cur.some(c=>c.x0<m.x1+0.5*HL.h && c.x1>m.x0-0.5*HL.h));
+    };
+    const underCurrency=X=>rows.some(r=>{ const HL=r._hitLine; return !!HL && X.yc>HL.yc && X.yc<r._bottom && underCur(HL,X); });
+    const lone=(L,k)=>{ const i=L.toks.indexOf(k), a=L.toks[i-1], b=L.toks[i+1]; return (!a || k.x0-a.x1>1.0*L.h) && (!b || b.x0-k.x1>1.0*L.h); };   // a cell of its own, not a word in a sentence
+    const isHeadLine=X=>!!X && X.toks.some(k=>/^(QTY|QTY\.|QUANTITY|QNTY)$/.test(k.u)) && X.toks.filter(k=>/^(MRP|RATE|RATE\/UNIT|AMOUNT|AMT|DESCRIPTION|CODE|CAT|ITEM|HSN|PARTICULARS|DISC|IMAGE|GST)\b/.test(k.u)).length>=2;
+    const hs=hits.map(h=>h.line.h).sort((a,b)=>a-b), rowH=hs.length ? hs[hs.length>>1] : 0;
     lines.forEach(L=>{
       if(L.yc<=qtyHeadY || hits.some(h=>h.li===L.i) || isTotal(L)) return;
+      if(usedLines.indexOf(L)>=0 || underCurrency(L)) return;
+      /* a section title ("MASTER BATHROOM 2 -") or the heading row repeated on a new page is not an item */
       const ctx=scanCtx(L.toks);
-      const hasColQty = qtyX!==null && L.toks.some(k=>/^\d{1,4}(\.0+)?$/.test(k.u) && Math.abs(k.xc-qtyX)<=qtol(L)) && L.toks.length>=3;
+      if(isHeadLine(L) || (ctx.money<2 && (isHeadLine(lines[L.i+1]) || isHeadLine(lines[L.i+2]) || isHeadLine(lines[L.i+3]) || (rowH && L.h>1.3*rowH)))) return;
+      const hasColQty = qtyX!==null && L.toks.some(k=>/^\d{1,4}(\.0+)?$/.test(k.u) && Math.abs(k.xc-qtyX)<=qtol(L) && lone(L,k)) && L.toks.length>=3;
       if(ctx.money<2 && !hasColQty) return;
       if(rows.length && (L.yc>lastY+8*L.h)) return;                         // far below the table: totals, bank details…
       const NL=lines[L.i+1], toks=L.toks.slice();
-      if(NL && NL.y0-L.y1<1.3*L.h && !hits.some(h=>h.li===NL.i) && scanCtx(NL.toks).money===0) NL.toks.forEach(t=>toks.push(t));
+      const contd = !!NL && NL.y0-L.y1<1.3*L.h && !hits.some(h=>h.li===NL.i) && underCur(L,NL);     // "INR" here, the figures on the line below
+      if(NL && NL.y0-L.y1<1.3*L.h && !hits.some(h=>h.li===NL.i) && (contd || scanCtx(NL.toks).money===0)) NL.toks.forEach(t=>toks.push(t));
       const full=scanCtx(toks);
       const row={page:pi, cy0:0, cy1:0, y0:L.y0-0.25*L.h, y1:L.y1+1.6*L.h, yc:L.yc, x0:res.codeX?res.codeX[0]:L.toks[0].x0, x1:res.codeX?res.codeX[1]:L.toks[0].x1, lh:L.h,
-                 read:'', code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:0, _ctx:full, _raws:[], orphan:true};
+                 read:'', code:'', alts:[], notes:[], codeOk:false, qty:1, qtyOk:false, ocr:ocr, conf:0, _ctx:full, _raws:[], orphan:true, _hitLine:contd?L:null, _bottom:contd?NL.y1+0.1*L.h:0};
+      if(contd) row.y1=NL.y1+0.6*L.h;
       const h={i:-1, j:-1, x0:row.x0, x1:row.x1};
       scanQty(row, L, h, [L], -1e9, 1e9, full, qtyX, qtyHeadY, qtol(L), ocr, page);
       const ids=scanIdentify(full);
@@ -7413,7 +7558,7 @@ function scanAnalyzePage(page, pi){
       const L=lines[i]; if(!isTotal(L)) continue;
       if(rows.length && L.yc<rows[rows.length-1].yc) break;
       const c=L.toks.filter(k=>/^\d{1,5}(\.0+)?$/.test(k.u) && Math.abs(k.xc-qtyX)<=1.6*qtol(L)).sort((a,b)=>Math.abs(a.xc-qtyX)-Math.abs(b.xc-qtyX))[0];
-      if(c){ res.totalQty=parseInt(c.u,10); break; }
+      if(c){ if(res.totalQty==null) res.totalQty=parseInt(c.u,10); break; }
     }
   }
   return res;
@@ -7679,6 +7824,7 @@ async function scanImageRows(canvas, pi, label, base, span, qtyXHint){
   scanProgress(label+' — checking unclear lines…', base+span*0.93);
   await scanRescue(canvas, rows, cx);
   return {rows:rows, canvas:canvas, qtyX:RA.qtyX!=null?RA.qtyX:RB.qtyX, totalQty:RA.totalQty!=null?RA.totalQty:RB.totalQty, tilt:tilt,
+          marks:(RA.marks&&RA.marks.length)?RA.marks:(RB.marks||[]), totalMrp:RA.totalMrp!=null?RA.totalMrp:RB.totalMrp,
           meanConf:Math.max(RA.meanConf||0, RB.meanConf||0), itemLines:Math.max(RA.itemLines||0, RB.itemLines||0)};
 }
 function scanStrip(canvas, r){
@@ -7700,7 +7846,8 @@ function scanStrip(canvas, r){
 }
 async function scanFile(file){
   const name=file.name||'pasted image', isPdf=/pdf$/i.test(file.type) || /\.pdf$/i.test(name);
-  let rows=[]; const kinds={}; let totalQty=null, qtyX=null; const Q={conf:[], item:0, got:0};
+  let rows=[]; const kinds={}; let totalQty=null, totalMrp=null, qtyX=null, mrpX=null; const Q={conf:[], item:0, got:0}; const marks=[];
+  const meta=(R,p)=>{ (R.marks||[]).forEach(m=>marks.push({page:p, y:m.y, name:m.name})); if(R.totalMrp!=null) totalMrp=R.totalMrp; };
   const quality=R=>{ Q.conf.push(R.meanConf||0); Q.item+=R.itemLines||0; Q.got+=R.rows.length; };
   const finish=(pr, canvas)=>{ pr.forEach(r=>{ r.strip=scanStrip(canvas, r); }); rows=rows.concat(pr); };
   if(isPdf){
@@ -7732,14 +7879,14 @@ async function scanFile(file){
       const chars=toks.reduce((a,t)=>a+t.s.length,0);
       if(chars>=25){
         kinds.text=1;
-        const R=scanAnalyzePage({tokens:toks, w:canvas.width, h:canvas.height, ocr:false, qtyX:qtyX}, p);
-        if(R.qtyX!=null) qtyX=R.qtyX; if(R.totalQty!=null) totalQty=R.totalQty;
-        finish(R.rows, canvas);
+        const R=scanAnalyzePage({tokens:toks, w:canvas.width, h:canvas.height, ocr:false, qtyX:qtyX, mrpX:mrpX}, p);
+        if(R.qtyX!=null) qtyX=R.qtyX; if(R.mrpX!=null) mrpX=R.mrpX; if(R.totalQty!=null) totalQty=R.totalQty;
+        meta(R,p); finish(R.rows, canvas);
       }else{
         kinds.ocr=1;
         const R=await scanImageRows(canvas, p, 'Page '+p+' of '+N+' is a scan', base, span, qtyX);
         if(R.qtyX!=null && !R.tilt) qtyX=R.qtyX; if(R.totalQty!=null) totalQty=R.totalQty;
-        quality(R); finish(R.rows, R.canvas);
+        meta(R,p); quality(R); finish(R.rows, R.canvas);
       }
     }
   }else{
@@ -7753,13 +7900,21 @@ async function scanFile(file){
     kinds.ocr=1;
     const R=await scanImageRows(canvas, 1, 'Picture', 0.08, 0.88, null);
     totalQty=R.totalQty;
-    quality(R); finish(R.rows, R.canvas);
+    meta(R,1); quality(R); finish(R.rows, R.canvas);
   }
   /* a document with no quantities at all (a bare list of codes): 1 each, said once */
   SCAN.noQty = rows.length>0 && rows.every(r=>!r.qtyWhy);
   if(SCAN.noQty) rows.forEach(r=>{ r._noQtyDoc=true; });
   rows.forEach(scanGrade);
-  SCAN.totalQty=totalQty;
+  SCAN.totalQty=totalQty; SCAN.totalMrp=totalMrp;
+  /* bathrooms of the document: each "<NAME> TOTAL:" line closes the lines above it */
+  SCAN.sections=[];
+  if(marks.length){
+    const seen={};
+    marks.forEach(m=>{ let n=m.name, k=2; while(seen[n]) n=m.name+' ('+(k++)+')'; seen[n]=1; m.name=n; });
+    rows.forEach(r=>{ const m=marks.filter(x=>x.page>r.page || (x.page===r.page && x.y>r.yc))[0]; r.sec=m?m.name:''; });
+    SCAN.sections=marks.map(m=>m.name).filter(n=>rows.some(r=>r.sec===n));
+  }
   /* a picture too blurred / small to trust: say so rather than quietly return fewer lines */
   const mc = Q.conf.length ? Math.min.apply(null,Q.conf) : 100;
   SCAN.poor = kinds.ocr && (mc<72 || Q.got<0.8*Q.item || rows.some(r=>r.soft)) ? {conf:Math.round(mc), item:Q.item, got:Q.got} : null;
@@ -7794,6 +7949,7 @@ async function scanStart(file){
     SCAN.rows=rows.map((r,i)=>Object.assign(r, {id:i, res:'', on:r.status!=='unknown' && !!PMAP[r.code], wasProblem:r.status!=='ok'}));
     SCAN.rows.forEach(r=>{ r._orig={code:r.code, qty:r.qty, status:r.status, codeGood:!!r.codeGood, qtyGood:!!r.qtyGood, alts:(r.alts||[]).slice(), notes:(r.notes||[]).slice()}; });
     SCAN.filter = SCAN.rows.some(r=>r.wasProblem) ? 'attention' : 'all';        // open straight on what needs a look
+    SCAN.keepSec = SCAN.sections.length>0 && ((S.bathrooms && S.bathrooms.length>0) || liveItemCount()===0);
     scanRender();
     scanShow('review');
   }catch(e){
@@ -7857,7 +8013,16 @@ function scanRender(){
       : '<div class="se-t">Nothing in this pile</div><span><a onclick="scanSetFilter(\'all\')">Show all '+c.all+' lines</a></span>';
     body.innerHTML='<div class="scan-empty">'+msg+'</div>';
   }else{
-    body.innerHTML=list.map(scanRowHTML).join('');
+    let lastSec=null;
+    body.innerHTML=list.map(r=>{
+      let head='';
+      if(SCAN.sections && SCAN.sections.length && (r.sec||'')!==lastSec){
+        lastSec=r.sec||'';
+        const all=SCAN.rows.filter(x=>(x.sec||'')===lastSec);
+        head='<div class="sc-sechead" style="padding:9px 14px 5px;font-size:11px;font-weight:700;letter-spacing:.08em;color:#C9A84C;border-top:1px solid rgba(201,168,76,0.18);margin-top:4px">🛁 '+esc(lastSec||'OTHER LINES')+' <span style="opacity:.6;font-weight:500;letter-spacing:0">· '+all.length+' line'+(all.length===1?'':'s')+' · '+all.reduce((a,x)=>a+(x.on?(parseInt(x.qty,10)||0):0),0)+' pcs</span></div>';
+      }
+      return head+scanRowHTML(r);
+    }).join('');
   }
   scanRenderSum();
 }
@@ -7902,6 +8067,8 @@ function scanRenderSum(){
     (s.lines && !c.attention && !s.twice && !c.done ? '<span class="sc-chip ok">✓ all verified</span>' : '')+
     (s.twice ? '<span class="sc-chip tw" title="Both readings agree, but this document has nothing on those lines (MRP, description, amount) to prove them with">✓ <b>'+s.twice+'</b> read twice, same result'+(s.twice===s.lines?' — nothing on this document to prove them with, so glance through the strips':'')+'</span>' : '')+
     (SCAN.totalQty!=null ? (SCAN.totalQty===s.pcs ? '<span class="sc-chip ok">✓ matches the document\'s Total Qty ('+SCAN.totalQty+')</span>' : '<span class="sc-chip un">✕ document says Total Qty <b>'+SCAN.totalQty+'</b> — these lines add up to <b>'+s.pcs+'</b></span>') : '')+
+    (SCAN.totalMrp!=null ? (Math.abs(SCAN.totalMrp-s.mrp)<1 ? '<span class="sc-chip ok">✓ matches the document\'s Total MRP (₹'+fmtN(SCAN.totalMrp)+')</span>' : '<span class="sc-chip ck" title="The lines to add, at your catalogue MRP, do not add up to the Total MRP printed on the document: a line is missing / left out, or a rate in your sheet differs from the document">document says Total MRP <b>₹'+fmtN(SCAN.totalMrp)+'</b> — these lines at your catalogue MRP: <b>₹'+fmtN(s.mrp)+'</b></span>') : '')+
+    (SCAN.sections && SCAN.sections.length ? '<label class="sc-chip" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="Add the lines bathroom-wise, exactly as the document groups them"><input type="checkbox" id="scan-keepsec" '+(SCAN.keepSec?'checked ':'')+'onchange="SCAN.keepSec=this.checked" style="accent-color:#C9A84C;margin:0;appearance:auto;-webkit-appearance:checkbox;width:14px;height:14px;flex:none;padding:0"> Keep the <b>'+SCAN.sections.length+'</b> bathroom'+(SCAN.sections.length===1?'':'s')+' of the document</label>' : '')+
     (SCAN.noQty ? '<span class="sc-chip ck">No quantities in this document — each line set to 1</span>' : '')+
     (SCAN.poor ? '<span class="sc-chip un" style="white-space:normal">⚠ This picture is hard to read (blurred, small or tilted)'+(SCAN.poor.item>SCAN.poor.got?': about <b>'+SCAN.poor.item+'</b> lines look like items but only <b>'+SCAN.poor.got+'</b> could be read':'')+'. Count the lines against the document, or use a sharper picture.</span>' : '')+
     '<span class="sc-src">'+src+'</span>';
@@ -8045,7 +8212,19 @@ function scanAdd(){
     if(!confirm(msg.join('\n')+'\n\nAdd the '+rows.length+' line'+(rows.length===1?'':'s')+' anyway?')){ scanSetFilter('attention'); return; }
   }
   const items=rows.map(r=>({...PMAP[r.code], qty:parseInt(r.qty,10)}));
-  if(S.bathrooms && S.bathrooms.length){
+  const fileBase=SCAN.fileName.replace(/\.[a-z0-9]+$/i,'').slice(0,40) || 'Imported';
+  if(SCAN.sections && SCAN.sections.length && SCAN.keepSec){
+    /* bathroom-wise, as the document has it */
+    const groups=[], at={};
+    rows.forEach((r,i)=>{ const k=r.sec||''; if(at[k]==null){ at[k]=groups.length; groups.push({name:k, items:[]}); } groups[at[k]].items.push(items[i]); });
+    if(!(S.bathrooms && S.bathrooms.length)){
+      dropBlankRows();
+      S.bathrooms = S.items.length ? [{name:'EARLIER LINES', items:S.items.slice()}] : [];   // lines already in the quotation stay, as a bathroom of their own
+    }
+    groups.forEach(g=>{ S.bathrooms.push({name:uniqueImportName(g.name || fileBase), items:g.items}); });
+    rebuildItemsFromBathrooms(); showBathroomModeBar(); renderLoadedPanel();
+    toast(items.length+' lines added in '+groups.length+' bathroom'+(groups.length===1?'':'s'));
+  }else if(S.bathrooms && S.bathrooms.length){
     /* a bathroom-wise quotation stays bathroom-wise: the lines come in as one more bathroom */
     const nm=uniqueImportName(SCAN.fileName.replace(/\.[a-z0-9]+$/i,'').slice(0,40) || 'Imported');
     S.bathrooms.push({name:nm, items:items});
