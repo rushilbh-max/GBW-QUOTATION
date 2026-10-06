@@ -3751,7 +3751,6 @@ function renderPreview(){
               <span style="font-family:'Cinzel',serif;font-size:15px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#0A2A55;-webkit-print-color-adjust:exact;print-color-adjust:exact">${esc(bath.name)}</span>
               <span style="font-family:'Cinzel',serif;font-size:16px;color:#C9A84C;line-height:1">✦</span>
             </div>
-            <span style="font-family:'Jost',sans-serif;font-size:10px;font-weight:700;color:#0A2A55;letter-spacing:.5px">${bath.items.length} product(s) &nbsp;·&nbsp; ${bQty} pcs</span>
           </div>
         </td>
       </tr>`;
@@ -3762,24 +3761,29 @@ function renderPreview(){
         allRows+=makeItemRow(item,srCounter);
       });
 
-      // Per-bathroom Best Price Total row
-      allRows+=`<tr style="background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;page-break-inside:avoid;break-inside:avoid">
-        <td colspan="5" style="padding:10px 14px;text-align:right;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#0A2A55;font-weight:700">
-          ${esc(bath.name)} — Subtotal
-        </td>
-        <td style="padding:10px 8px;text-align:center">
-          <div style="font-family:'Jost',sans-serif;font-size:10px;font-weight:500;color:#888">MRP</div>
-          <div style="font-family:'Jost',sans-serif;font-size:13px;font-weight:600;color:#555">₹${fmtN(bMRP)}</div>
-        </td>
-        ${GST_COLS?'<td style="padding:10px 8px;text-align:center"></td><td style="padding:10px 8px;text-align:center"></td>':''}
-        <td style="padding:10px 8px;text-align:center"></td>
-        <td style="padding:10px 10px;text-align:center">
-          <div style="background:#1A2535;border-radius:4px;padding:6px 10px;display:inline-block;min-width:80px">
-            <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:2px">Best Price</div>
-            <div style="font-family:'Jost',sans-serif;font-size:15px;font-weight:700;color:#E8D08A;letter-spacing:.3px">₹${fmtN(bBest)}</div>
-          </div>
-        </td>
-      </tr>`;
+      // Per-bathroom TOTAL band — closes the set: products · qty · total MRP · total Best Price.
+      // One full-width cell, so it lines up the same in the 8-column and the 10-column (GST) layout
+      // and never depends on a column being wide enough for a large figure.
+      const setBox=(lbl,val,sub,dark)=>'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:'+(dark?'118':'96')+'px;padding:7px 12px;border-radius:5px;'
+          +(dark?'background:#1A2535;border:1px solid #1A2535;':'background:#FFFFFF;border:1px solid #D8C898;')+'-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+        +'<span style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;margin-bottom:3px;color:'+(dark?'#C9A84C':'#7A6830')+'">'+lbl+'</span>'
+        +'<span style="font-family:\'Jost\',sans-serif;font-size:'+(dark?'16':'14')+'px;font-weight:700;letter-spacing:.3px;white-space:nowrap;line-height:1.15;color:'+(dark?'#E8D08A':'#1A2535')+'">'+val+'</span>'
+        +'<span style="font-family:\'Jost\',sans-serif;font-size:8px;white-space:nowrap;margin-top:2px;color:'+(dark?'#C9A84C':'#7A6830')+'">'+sub+'</span>'
+        +'</div>';
+      allRows+='<tr class="p-set-total" style="background:#F5F0E8;border-top:1px solid #D8C898;border-bottom:3px solid #C9A84C;page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+        +'<td colspan="'+NCOL+'" style="padding:10px 12px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
+        +  '<div style="text-align:left;min-width:0">'
+        +    '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#7A6830;margin-bottom:3px">Set Total</div>'
+        +    '<div style="font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0A2A55;line-height:1.35;overflow-wrap:anywhere">'+esc(bath.name)+'</div>'
+        +  '</div>'
+        +  '<div style="display:flex;align-items:stretch;gap:8px;flex-shrink:0">'
+        +    setBox('Total Qty', bQty, 'pcs', false)
+        +    setBox('Total MRP', '₹'+fmtN(bMRP), 'list price', false)
+        +    setBox('Best Price', '₹'+fmtN(bBest), (GST_COLS?'incl. GST':'for this set'), true)
+        +  '</div>'
+        +'</div>'
+        +'</td></tr>';
     });
     $('p-tbody').innerHTML=allRows;
     // Show bathroom summary
