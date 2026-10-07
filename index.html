@@ -643,6 +643,10 @@ textarea.c-inp{resize:none;height:72px}
 
 <style id="front-page-border-fix">
 
+/* Paper is WHITE everywhere. Only the cover is dark, and it carries its own
+   black behind the picture — a dark page background would show through every
+   gap: the space left at the foot of a page when a row moves to the next one,
+   the end of the last page, and any row without a colour of its own. */
 html, body{
     margin:0 !important;
     padding:0 !important;
@@ -655,9 +659,12 @@ html, body{
     padding:0 !important;
     border:none !important;
     box-shadow:none !important;
-    background:#000 !important;
     overflow:hidden !important;
 }
+.ppage{ background:#FFFFFF !important; }
+.p-cover, .cover-wrapper{ background:#000 !important; }
+.p-bath-summary td{ background:#FFFFFF; }
+.p-bath-summary .bath-total-row td{ background:#1A2535 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 .p-cover{
     width:100% !important;
@@ -691,7 +698,7 @@ html, body{
     html, body{
         margin:0 !important;
         padding:0 !important;
-        background:#000 !important;
+        background:#FFFFFF !important;
     }
 
     .p-cover{
@@ -4286,10 +4293,14 @@ body{background:#fff;font-family:'Jost',sans-serif;margin:0;padding:0}
 
 <style id="front-page-border-fix">
 
+/* Paper is WHITE everywhere. Only the cover is dark, and it carries its own
+   black behind the picture — a dark page background would show through every
+   gap: the space left at the foot of a page when a row moves to the next one,
+   the end of the last page, and any row without a colour of its own. */
 html, body{
     margin:0 !important;
     padding:0 !important;
-    background:#000 !important;
+    background:#FFFFFF !important;
 }
 
 .ppage,
@@ -4298,9 +4309,12 @@ html, body{
     padding:0 !important;
     border:none !important;
     box-shadow:none !important;
-    background:#000 !important;
     overflow:hidden !important;
 }
+.ppage{ background:#FFFFFF !important; }
+.p-cover, .cover-wrapper{ background:#000 !important; }
+.p-bath-summary td{ background:#FFFFFF; }
+.p-bath-summary .bath-total-row td{ background:#1A2535 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
 .p-cover{
     width:100% !important;
@@ -4334,7 +4348,7 @@ html, body{
     html, body{
         margin:0 !important;
         padding:0 !important;
-        background:#000 !important;
+        background:#FFFFFF !important;
     }
 
     .p-cover{
@@ -5009,7 +5023,7 @@ function doPrintMRP(){
   + '<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700;800&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>'
   + '<style>'
   + '*{box-sizing:border-box;margin:0;padding:0}'
-  + 'html,body{margin:0!important;padding:0!important;background:#000!important}'
+  + 'html,body{margin:0!important;padding:0!important;background:#FFFFFF!important}'
   + 'body{font-family:\'Jost\',sans-serif}'
   + '@page{margin:8mm 6mm;size:A4 portrait}'
   + '@page:first{margin:0;size:A4 portrait}'
@@ -5017,7 +5031,7 @@ function doPrintMRP(){
   + '.cover-wrapper{width:100%;height:100vh;min-height:297mm;position:relative;overflow:hidden;line-height:0;page-break-after:always;break-after:page;background:#000}'
   + '.cover-wrapper img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border:none}'
   /* page shell */
-  + '.mpage{background:#FEFCF7;width:100%;position:relative}'
+  + '.mpage{background:#FFFFFF;width:100%;position:relative}'
   + '.p-gold-top{height:4px;background:linear-gradient(90deg,#8B6914,#C9A84C,#E8D08A,#C9A84C,#8B6914);display:block}'
   + '.p-gold-bottom{height:3px;background:linear-gradient(90deg,#8B6914,#C9A84C,#E8D08A,#C9A84C,#8B6914)}'
   /* header */
