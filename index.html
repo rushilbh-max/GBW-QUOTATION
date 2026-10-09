@@ -4203,7 +4203,7 @@ function printName(){
 function coverCSS(){
   return ''
   +'.gc{position:absolute;inset:0;container-type:size;line-height:1.25;color:#EFE6D2;font-family:\'Jost\',sans-serif;pointer-events:none;font-variant-numeric:lining-nums;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-  +'.gc *{box-sizing:border-box;margin:0;padding:0}'+'.gc-deco{position:absolute;inset:0;width:100%;height:100%;overflow:visible}'
+  +'.gc *{box-sizing:border-box;margin:0;padding:0}'+'.gc img{position:static!important;inset:auto!important;max-width:none!important;object-fit:contain!important}'+'.gc-deco{position:absolute;inset:0;width:100%;height:100%;overflow:visible}'
   +'.gc-col{position:absolute;left:8.6cqw;width:47.5cqw;top:5.6cqh;bottom:5.4cqh;display:flex;flex-direction:column;justify-content:space-between}'
   +'.gc-lock{display:flex;align-items:center;gap:3cqw;width:max-content}'
   +'.gc-lock .l1{height:9.9cqw;width:auto;display:block;filter:drop-shadow(0 0 .8cqw rgba(240,184,94,.10))}'
@@ -4371,7 +4371,7 @@ function buildBrandedPrintHTML(){
 @page{margin:10mm 8mm;size:A4 portrait}
 body{background:#fff;font-family:'Jost',sans-serif;margin:0;padding:0}
 .cover-wrapper{page:cover-page;width:210mm;height:297mm;overflow:hidden;display:block;line-height:0;page-break-after:always;break-after:page}
-.cover-wrapper img{width:100%;height:100%;display:block;object-fit:cover}
+.cover-wrapper > img{width:100%;height:100%;display:block;object-fit:cover}
 .ppage{background:#FEFCF7;max-width:100%;position:relative}
 .ppage::before{content:'';position:absolute;top:0;left:0;width:50px;height:50px;border-top:2px solid #C9A84C;border-left:2px solid #C9A84C}
 .ppage::after{content:'';position:absolute;bottom:0;right:0;width:50px;height:50px;border-bottom:2px solid #C9A84C;border-right:2px solid #C9A84C}
@@ -5200,7 +5200,7 @@ function doPrintMRP(){
   + '@page:first{margin:0;size:A4 portrait}'
   /* cover */
   + '.cover-wrapper{width:210mm;height:297mm;position:relative;overflow:hidden;line-height:0;page-break-after:always;break-after:page;background:#000}'
-  + '.cover-wrapper img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border:none}'
+  + '.cover-wrapper > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border:none}'
   /* page shell */
   + '.mpage{background:#FFFFFF;width:100%;position:relative}'
   + '.p-gold-top{height:4px;background:linear-gradient(90deg,#8B6914,#C9A84C,#E8D08A,#C9A84C,#8B6914);display:block}'
