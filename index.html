@@ -375,6 +375,7 @@ tr.rmoved td{animation:rowFlash .9s ease}
 #ed-code-dd .ecd-col.on b{color:#0D1520}
 #ed-code-dd .ecd-none,#ed-code-dd .ecd-more{padding:12px 14px;font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2)}
 #ed-code-dd .ecd-more{padding:8px 14px;font-size:12px;border-top:1px solid rgba(255,255,255,0.05)}
+#ed-code-dd.up{box-shadow:0 -12px 40px rgba(0,0,0,0.6)}
 #ed-code-dd .sr.hl{background:rgba(201,168,76,0.16);box-shadow:inset 3px 0 0 var(--gold)}
 /* pictures: big enough to check the quotation by eye; tap one to see it full size */
 .pl-img,.pl-img-ph{width:48px!important;height:48px!important}
@@ -2040,7 +2041,19 @@ const PRODUCTS_RAW=[];
 const IMAGE_MAP={};
 const STOCK_MAP={};                          // code → available stock qty (from "GBW STOCK" tab)
 const getStock=code=>{ const v=STOCK_MAP[code]; return (v===undefined||v===null)?null:v; };  // null = unknown/not in stock sheet
-let ALL=PRODUCTS_RAW.map(r=>({code:r[0],desc:r[1],brand:r[2]||'',sdp:r[3]||0,nrp:r[4],mrp:r[5],hsn:r[6]||'',gst:r[7]||0,sdp_net:r[8],nrp_basic:r[9]||0,sdp_basic:r[10]||0}));
+/* A name saved as UTF-8 but read as Windows-1252 turns "Ø240mm" into "Ã˜240mm".
+   Put such names back; anything that isn't that kind of damage is left as it is. */
+const _CP1252={0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,0x0153:0x9C,0x017E:0x9E,0x0178:0x9F};
+function fixMojibake(t){
+  t=String(t==null?'':t);
+  if(!/[\u00C2-\u00F4][\u0080-\u00BF\u0152-\u2122]/.test(t)) return t;
+  return t.replace(/[\u00C2-\u00F4][\u0080-\u00BF\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC\u2013-\u2122]{1,3}/g, m=>{
+    const b=[];
+    for(const ch of m){ const c=ch.charCodeAt(0); if(c<256) b.push(c); else if(_CP1252[c]!=null) b.push(_CP1252[c]); else return m; }
+    try{ return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(b)); }catch(e){ return m; }
+  });
+}
+let ALL=PRODUCTS_RAW.map(r=>({code:r[0],desc:fixMojibake(r[1]),brand:r[2]||'',sdp:r[3]||0,nrp:r[4],mrp:r[5],hsn:r[6]||'',gst:r[7]||0,sdp_net:r[8],nrp_basic:r[9]||0,sdp_basic:r[10]||0}));
 let PMAP={};ALL.forEach(p=>{PMAP[p.code]=p;});
 
 const S={items:[],disc:0,mode:'NRP',brandDisc:{},charges:{cartage:0,install:0},stockOverrides:{},stockFilter:'ALL'};   // brandDisc: BRAND → its own %, charges: rupees added after the products total   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
@@ -3985,10 +3998,13 @@ function plistRowsHTML(){
 function wirePlistCodeInputs(){
   document.querySelectorAll('#items-list .pl-code-inp').forEach(inp=>{
     inp.addEventListener('focus',e=>{ e.target.select(); showEdCodeDrop(e.target,-1,'plist',e.target.dataset.i); });
-    inp.addEventListener('input',e=>{ const el=e.target; clearTimeout(el._sdt); el._sdt=setTimeout(()=>{ if(document.activeElement===el) showEdCodeDrop(el,-1,'plist',el.dataset.i); },110); });
+    inp.addEventListener('input',e=>{ const el=e.target; clearTimeout(el._sdt); el._sdt=setTimeout(()=>{ el._sdt=null; if(document.activeElement===el) showEdCodeDrop(el,-1,'plist',el.dataset.i); },110); });
     inp.dataset.old=inp.value;
     inp.addEventListener('keydown',e=>{
       const el=e.target;
+      if(el._sdt && (e.key==='Enter'||e.key==='ArrowDown'||e.key==='ArrowUp')){   // typed faster than the list refreshes: bring it up to date first
+        clearTimeout(el._sdt); el._sdt=null; showEdCodeDrop(el,-1,'plist',el.dataset.i);
+      }
       if((e.key==='ArrowDown'||e.key==='ArrowUp') && edDropOpen()){ e.preventDefault(); edDropMove(e.key==='ArrowDown'?1:-1); return; }
       if(e.key==='Enter'){
         e.preventDefault();
@@ -4020,12 +4036,17 @@ function swapItemCodeAt(idx, raw, goNext){
   const nc=String(raw||'').trim().toUpperCase();
   if(!nc || nc===oldCode){ refreshList(); return; } // unchanged or cleared — just repaint
   const p=PMAP[nc];
-  if(!p){ toast('“'+nc+'” is not in the catalogue'); refreshList(); if(!oldCode) focusPlistRow(idx); return; }
-
-  const wasBlank=isBlankRow(row);
   /* the cursor may already be in another line (a click there finished this edit) — it stays there */
   const ae=document.activeElement, tr=ae && ae.closest ? ae.closest('#items-list tr.pl-row') : null;
   const keep=(tr && +tr.dataset.gi!==idx) ? {gi:+tr.dataset.gi, sel:ae.classList.contains('pl-code-inp')?'.pl-code-inp':(ae.matches('.pl-qty input')?'.pl-qty input':'')} : null;
+  if(!p){
+    toast('“'+nc+'” is not in the catalogue');
+    const own=document.querySelector('#items-list .pl-code-inp[data-i="'+idx+'"]');
+    if(own && keep){ own.value=oldCode; return; }          // put the old code back, leave the cursor where it is
+    refreshList(); if(!oldCode) focusPlistRow(idx); return;
+  }
+
+  const wasBlank=isBlankRow(row);
   const n0=S.items.length;
   let next=-1;                                      // the empty line to carry on typing in
   if(bathMode()){
@@ -6498,6 +6519,7 @@ function applyProductsCSV(text){
   const rows = parseCSV(text).filter(r=>r.some(c=>String(c).trim()!==''));
   const arr  = buildProductsFromRows(rows);
   if(!arr.length) throw new Error('0 valid product rows');
+  arr.forEach(p=>{ p.desc=fixMojibake(p.desc); });
   ALL = arr;
   PMAP = {}; ALL.forEach(p=>{ PMAP[p.code]=p; });
   return arr.length;
@@ -6931,12 +6953,16 @@ function smartSearch(raw, colour){
     const st=getStock(p.code);
     if(st!==null && st>0) score+=5;
     if(IMAGE_MAP[p.code]) score+=2;
-    hits.push({p:p, s:score, col:k.col.toUpperCase()});
+    hits.push({p:p, s:score, col:k.col.toUpperCase(), inS:(st!==null && st>0)?1:0});
   }
   const cnt={}; hits.forEach(h=>{ if(h.col) cnt[h.col]=(cnt[h.col]||0)+1; });
   const cols=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).map(c=>({c:c, n:cnt[c]}));
   const shown=colour ? hits.filter(h=>h.col===colour) : hits;
-  shown.sort((a,b)=>b.s-a.s);
+  if(colour){
+    /* one finish picked: browse it like a shelf — the exact code typed (if any) first,
+       then everything in stock, then the rest; each from the highest MRP down */
+    shown.sort((a,b)=>((b.s>=1000)-(a.s>=1000)) || (b.inS-a.inS) || ((b.p.mrp||0)-(a.p.mrp||0)));
+  } else shown.sort((a,b)=>b.s-a.s);
   return {res:shown.slice(0,40).map(h=>h.p), cols:cols, total:hits.length, shownN:shown.length};
 }
 let _edColour='', _edColInput=null;
@@ -6965,12 +6991,23 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
       (R.shownN>R.res.length ? '<div class="ecd-more">'+(R.shownN-R.res.length)+' more — type a little more to narrow it down</div>' : '');
   }
   if(_edTarget==='plist'){ const f=dd.querySelector('[data-pick]'); if(f) f.classList.add('hl'); }
-  const r=input.getBoundingClientRect();
-  const w=Math.min(Math.max(r.width, window.innerWidth>900?480:320), window.innerWidth-12);
-  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-w-6))+'px';
-  dd.style.top=(r.bottom+4)+'px';
-  dd.style.width=w+'px';
   dd.classList.add('open');
+  placeEdCodeDrop(dd, input);
+}
+/* Under the code box when there is room; near the bottom of the screen it
+   opens UPWARDS instead, so the whole list is always on screen. */
+function placeEdCodeDrop(dd, input){
+  const r=input.getBoundingClientRect(), vw=window.innerWidth, vh=window.innerHeight;
+  const w=Math.min(Math.max(r.width, vw>900?480:320), vw-12);
+  dd.style.left=Math.max(6,Math.min(r.left, vw-w-6))+'px';
+  dd.style.width=w+'px';
+  const want=Math.min(440, Math.round(vh*0.62));
+  const below=vh-r.bottom-12, above=r.top-12;
+  const up=below<want && above>below;               // not enough room below for the full list → whichever side has more
+  dd.style.maxHeight=Math.max(150, Math.min(want, up?above:below))+'px';
+  dd.classList.toggle('up', up);
+  if(up){ dd.style.top='auto'; dd.style.bottom=(vh-r.top+4)+'px'; }
+  else  { dd.style.bottom='auto'; dd.style.top=(r.bottom+4)+'px'; }
 }
 function edPickColour(c){
   _edColour=c||'';
@@ -9182,8 +9219,7 @@ function repositionEdCodeDrop(){
   if(!dd||!dd.classList.contains('open')||!_edActiveInput) return;
   const r=_edActiveInput.getBoundingClientRect();
   if(r.bottom<0||r.top>window.innerHeight){ hideEdCodeDrop(); return; }   // input scrolled out of view
-  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
-  dd.style.top=(r.bottom+4)+'px';
+  placeEdCodeDrop(dd, _edActiveInput);
 }
 (function wireFindQuotes(){
   const fb=$('fq-search');
