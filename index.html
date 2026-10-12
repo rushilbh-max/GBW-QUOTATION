@@ -367,6 +367,14 @@ tr.rmoved td{animation:rowFlash .9s ease}
 .up-target label{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-l)}
 .up-target select{flex:1;min-width:160px;background:var(--ink3);color:var(--gold-l);border:1px solid rgba(201,168,76,0.5);border-radius:5px;padding:7px 8px;font-family:'Jost',sans-serif;font-size:12px;font-weight:700;outline:none;text-transform:uppercase}
 /* the picker under a code box: the line Enter will take */
+#ed-code-dd .ecd-cols{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:8px 10px;background:#141D29;border-bottom:1px solid rgba(201,168,76,0.3)}
+#ed-code-dd .ecd-cl{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold);margin-right:3px}
+#ed-code-dd .ecd-col{background:transparent;border:1px solid rgba(255,255,255,0.18);color:#C0D4E4;border-radius:12px;padding:3px 9px;font-family:'Jost',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap}
+#ed-code-dd .ecd-col b{color:var(--muted2);font-weight:600;margin-left:2px}
+#ed-code-dd .ecd-col.on{background:var(--gold);border-color:var(--gold);color:#0D1520}
+#ed-code-dd .ecd-col.on b{color:#0D1520}
+#ed-code-dd .ecd-none,#ed-code-dd .ecd-more{padding:12px 14px;font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2)}
+#ed-code-dd .ecd-more{padding:8px 14px;font-size:12px;border-top:1px solid rgba(255,255,255,0.05)}
 #ed-code-dd .sr.hl{background:rgba(201,168,76,0.16);box-shadow:inset 3px 0 0 var(--gold)}
 /* pictures: big enough to check the quotation by eye; tap one to see it full size */
 .pl-img,.pl-img-ph{width:48px!important;height:48px!important}
@@ -2450,9 +2458,7 @@ function runSearch(q){
     if(IMAGE_MAP[p.code])  return 1;     // has image → next
     return 2;                            // everything else
   };
-  const res=ALL.filter(p=>p.code.toLowerCase().includes(ql)||p.desc.toLowerCase().includes(ql))
-    .sort((a,b)=>rank(a)-rank(b))
-    .slice(0,20);
+  const res=smartSearch(q,'').res.slice(0,20);
   buildDD(res,q);
 }
 function buildDD(res,q){
@@ -3979,7 +3985,7 @@ function plistRowsHTML(){
 function wirePlistCodeInputs(){
   document.querySelectorAll('#items-list .pl-code-inp').forEach(inp=>{
     inp.addEventListener('focus',e=>{ e.target.select(); showEdCodeDrop(e.target,-1,'plist',e.target.dataset.i); });
-    inp.addEventListener('input',e=>showEdCodeDrop(e.target,-1,'plist',e.target.dataset.i));
+    inp.addEventListener('input',e=>{ const el=e.target; clearTimeout(el._sdt); el._sdt=setTimeout(()=>{ if(document.activeElement===el) showEdCodeDrop(el,-1,'plist',el.dataset.i); },110); });
     inp.dataset.old=inp.value;
     inp.addEventListener('keydown',e=>{
       const el=e.target;
@@ -3987,7 +3993,7 @@ function wirePlistCodeInputs(){
       if(e.key==='Enter'){
         e.preventDefault();
         const v=String(el.value||'').trim().toUpperCase();
-        if(!(v && PMAP[v])){ const pick=edDropChoice(); if(pick){ pickEdCode(pick); return; } }
+        if(!(v && PMAP[v])){ const pick=edDropChoice(); if(pick){ pickEdCode(pick); return; } if(edDropShown()){ toast('No product found for “'+v+'”'); return; } }
         el.dataset.next='1'; el.blur();
       }
       if(e.key==='Escape'){ el.value=el.dataset.old; hideEdCodeDrop(); el.blur(); }
@@ -6879,18 +6885,100 @@ function edStockInfo(code,qty){
 
 /* ── floating catalogue picker for the editor code field ── */
 let _edActiveInput=null, _edActiveRow=-1, _edTarget='editor', _edOldCode='';
+/* ── SMART SEARCH ──
+   • dashes / spaces / dots don't matter: CHR35233, chr 35233, kup-chr35233 all
+     find KUP-CHR-35233NKPM
+   • several words = all of them must match, in any order, against the code,
+     the name, the brand or the colour: "233 bch", "basin mixer gold"
+   • best matches first: the exact code, then codes starting with what was
+     typed, then codes containing it, then name matches — in stock and with a
+     picture before the rest
+   • the colour chips above the list narrow it to one finish (CHR, BCH, GLD…) */
+const _alnum = t => String(t||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function colourOf(code){
+  const p=String(code||'').toUpperCase().split('-');
+  return (p.length>=3 && /^[A-Z]{2,4}$/.test(p[1])) ? p[1] : '';
+}
+function _skey(p){
+  if(p._sk && p._sk.c===p.code) return p._sk;
+  return (p._sk={c:p.code, n:_alnum(p.code), d:String(p.desc||'').toLowerCase(), b:String(p.brand||'').toLowerCase(), col:colourOf(p.code).toLowerCase()});
+}
+function smartSearch(raw, colour){
+  const q=String(raw||'').trim().toLowerCase(); if(!q) return {res:[], cols:[]};
+  const qn=_alnum(q);
+  const toks=q.split(/\s+/).filter(Boolean).map(t=>({t:t, n:_alnum(t), re:new RegExp('(^|[^a-z0-9])'+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-z0-9]|$)')}));
+  const hits=[];
+  for(const p of ALL){
+    const k=_skey(p);
+    let score=0, ok=true;
+    if(qn && k.n===qn) score=1000;
+    else if(qn && k.n.startsWith(qn)) score=600;
+    else if(qn && qn.length>=2 && k.n.includes(qn)) score=400;
+    else {
+      for(const x of toks){
+        const inD=k.d.includes(x.t), word=inD && x.re.test(k.d);   // a whole word of the name ("2" in "2 way")
+        if(x.n && x.n.length>=3 && k.n.includes(x.n)) score+=40;
+        else if(word) score+=15;
+        else if(x.n && k.n.includes(x.n)) score+=5;     // a short bit of the code
+        else if(inD) score+=10;
+        else if(x.t.length>=3 && k.b.includes(x.t)) score+=8;
+        else { ok=false; break; }
+        if(word) score+=3;
+      }
+      if(ok && !score) ok=false;
+    }
+    if(!ok) continue;
+    const st=getStock(p.code);
+    if(st!==null && st>0) score+=5;
+    if(IMAGE_MAP[p.code]) score+=2;
+    hits.push({p:p, s:score, col:k.col.toUpperCase()});
+  }
+  const cnt={}; hits.forEach(h=>{ if(h.col) cnt[h.col]=(cnt[h.col]||0)+1; });
+  const cols=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).map(c=>({c:c, n:cnt[c]}));
+  const shown=colour ? hits.filter(h=>h.col===colour) : hits;
+  shown.sort((a,b)=>b.s-a.s);
+  return {res:shown.slice(0,40).map(h=>h.p), cols:cols, total:hits.length, shownN:shown.length};
+}
+let _edColour='', _edColInput=null;
+(function warmSearch(){                    // build the search keys once, in quiet moments, so the first search is instant
+  const go=()=>{ let i=0; const step=dl=>{ const L=ALL; while(i<L.length && (!dl || dl.timeRemaining()>2)){ _skey(L[i++]); if(!dl && i%5000===0) break; } if(i<L.length) (window.requestIdleCallback||setTimeout)(step); }; (window.requestIdleCallback||setTimeout)(step); };
+  if(document.readyState==='complete') setTimeout(go,1500); else window.addEventListener('load',()=>setTimeout(go,1500));
+})();
 function showEdCodeDrop(input,rowIdx,target,oldCode){
+  if(input!==_edColInput){ _edColour=''; _edColInput=input; }
   _edActiveInput=input; _edActiveRow=rowIdx;
   _edTarget=target||'editor'; _edOldCode=oldCode||'';
   const dd=$('ed-code-dd'); if(!dd) return;
-  const q=String(input.value||'').trim().toLowerCase();
-  let res=[];
-  if(q){
-    const rank=p=>{ const st=getStock(p.code); if(st!==null&&st>0)return 0; if(IMAGE_MAP[p.code])return 1; return 2; };
-    res=ALL.filter(p=>p.code.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)).sort((a,b)=>rank(a)-rank(b)).slice(0,25);
+  const q=String(input.value||'').trim();
+  if(!q){ _edColour=''; hideEdCodeDrop(); _edColInput=input; return; }
+  const R=smartSearch(q, _edColour);
+  if(!R.total){
+    dd.innerHTML='<div class="ecd-none">No product found for “'+esc(q)+'”</div>';
+  } else {
+    const chips=R.cols.length>1 || _edColour
+      ? '<div class="ecd-cols"><span class="ecd-cl">Colour</span>'+
+          '<button class="ecd-col'+(_edColour?'':' on')+'" data-col="">All <b>'+R.total+'</b></button>'+
+          R.cols.slice(0,14).map(c=>'<button class="ecd-col'+(c.c===_edColour?' on':'')+'" data-col="'+esc(c.c)+'">'+esc(c.c)+' <b>'+c.n+'</b></button>').join('')+
+        '</div>'
+      : '';
+    dd.innerHTML=chips+(R.res.length ? renderEdResults(R.res) : '<div class="ecd-none">No '+esc(_edColour)+' product for “'+esc(q)+'”</div>')+
+      (R.shownN>R.res.length ? '<div class="ecd-more">'+(R.shownN-R.res.length)+' more — type a little more to narrow it down</div>' : '');
   }
-  if(!res.length){ hideEdCodeDrop(); return; }
-  dd.innerHTML=res.map(p=>{
+  if(_edTarget==='plist'){ const f=dd.querySelector('[data-pick]'); if(f) f.classList.add('hl'); }
+  const r=input.getBoundingClientRect();
+  const w=Math.min(Math.max(r.width, window.innerWidth>900?480:320), window.innerWidth-12);
+  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-w-6))+'px';
+  dd.style.top=(r.bottom+4)+'px';
+  dd.style.width=w+'px';
+  dd.classList.add('open');
+}
+function edPickColour(c){
+  _edColour=c||'';
+  if(_edActiveInput) showEdCodeDrop(_edActiveInput,_edActiveRow,_edTarget,_edOldCode);
+  const dd=$('ed-code-dd'); if(dd) dd.scrollTop=0;
+}
+function renderEdResults(res){
+  return res.map(p=>{
     const url=(getCustomProducts()[p.code]||{}).img||IMAGE_MAP[p.code]||'';
     const st=getStock(p.code);
     const tag = (st!==null&&st>0)?'<span class="sr-stock-in">✓ '+fmtN(st)+'</span>':(st!==null?'<span class="sr-stock-out">✕ 0</span>':'<span class="sr-stock-unk">—</span>');
@@ -6899,14 +6987,9 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
       '<div style="flex:1;min-width:0"><div class="sr-code">'+esc(p.code)+'</div><div class="sr-desc">'+esc(p.desc)+'</div>'+
       '<div class="sr-meta"><span class="sr-mrp">MRP ₹'+fmtN(p.mrp)+'</span>'+tag+'</div></div></div>';
   }).join('');
-  if(_edTarget==='plist'){ const f=dd.querySelector('[data-pick]'); if(f) f.classList.add('hl'); }
-  const r=input.getBoundingClientRect();
-  dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
-  dd.style.top=(r.bottom+4)+'px';
-  dd.style.width=Math.min(Math.max(r.width,260), window.innerWidth-12)+'px';
-  dd.classList.add('open');
 }
 function edDropOpen(){ const dd=$('ed-code-dd'); return !!(dd && dd.classList.contains('open') && dd.querySelector('[data-pick]')); }
+function edDropShown(){ const dd=$('ed-code-dd'); return !!(dd && dd.classList.contains('open')); }
 function edDropMove(d){
   const dd=$('ed-code-dd'); if(!dd) return;
   const r=[...dd.querySelectorAll('[data-pick]')]; if(!r.length) return;
@@ -9136,10 +9219,10 @@ makeRowDrag($('items-list'), {rowSel:'.pl-tbl tbody tr.pl-row', move:(a,b)=>{ co
   if(dd){
     // preventDefault on mousedown keeps focus on the code input (so the list & its
     // scrollbar stay usable instead of the input blurring and closing the list).
-    dd.addEventListener('mousedown',e=>{ e.preventDefault(); const b=e.target.closest('[data-pick]'); if(b) pickEdCode(b.dataset.pick); });
+    dd.addEventListener('mousedown',e=>{ e.preventDefault(); const c=e.target.closest('[data-col]'); if(c){ edPickColour(c.dataset.col); return; } const b=e.target.closest('[data-pick]'); if(b) pickEdCode(b.dataset.pick); });
     dd.addEventListener('touchstart',()=>{ _edTouchMoved=false; },{passive:true});
     dd.addEventListener('touchmove',()=>{ _edTouchMoved=true; },{passive:true});   // a scroll, not a tap
-    dd.addEventListener('touchend',e=>{ if(_edTouchMoved) return; const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
+    dd.addEventListener('touchend',e=>{ if(_edTouchMoved) return; const c=e.target.closest('[data-col]'); if(c){ e.preventDefault(); edPickColour(c.dataset.col); return; } const b=e.target.closest('[data-pick]'); if(b){ e.preventDefault(); pickEdCode(b.dataset.pick); } });
   }
   // Reposition (not hide) the list when the page/editor scrolls; ignore scrolls that
   // happen *inside* the list itself so the dropdown can be scrolled normally.
