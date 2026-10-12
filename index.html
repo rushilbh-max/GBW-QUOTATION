@@ -916,6 +916,54 @@ html, body{
 .se-searchwrap{position:relative;z-index:60}
 #se-quote-dd{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:10px;box-shadow:0 16px 44px rgba(0,0,0,0.6);max-height:min(56vh,440px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;z-index:60;display:none}
 #se-quote-dd.open{display:block}
+/* ── one page for plain and bathroom-wise quotations ── */
+.bb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.32)}
+.bb.flat{background:transparent;border:1px dashed rgba(201,168,76,0.28)}
+.bb .bb-t{font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--gold-l);margin-right:2px;white-space:nowrap}
+.bb.flat .bb-t{color:var(--muted2);font-weight:700}
+.bb .bb-hint{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2)}
+.bb .bb-to{display:flex;align-items:center;gap:6px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2)}
+.bb .bb-to select{background:var(--ink3);color:var(--gold-l);border:1px solid rgba(201,168,76,0.5);border-radius:5px;padding:6px 8px;font-family:'Jost',sans-serif;font-size:12px;font-weight:700;max-width:220px;outline:none;text-transform:uppercase}
+.bb .bb-btn{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#C0D4E4;border-radius:5px;padding:6px 11px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.bb .bb-btn.gold{border-color:rgba(201,168,76,0.7);color:var(--gold-l);background:rgba(201,168,76,0.12)}
+.bb .bb-btn.ghost{border-color:transparent;color:var(--muted2)}
+.bb .bb-btn:hover{border-color:var(--gold);color:var(--gold-l)}
+.bb .bb-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pl-tbl tbody tr.pl-bhead td{position:static;background:linear-gradient(90deg,rgba(201,168,76,0.13),rgba(201,168,76,0.04));border-top:2px solid rgba(201,168,76,0.45);border-bottom:1px solid rgba(201,168,76,0.25);padding:7px 8px;white-space:normal;cursor:pointer}
+.pl-tbl tbody tr.pl-bhead:hover td{background:linear-gradient(90deg,rgba(201,168,76,0.18),rgba(201,168,76,0.06))}
+.pl-tbl tbody tr.pl-bhead.act td{background:linear-gradient(90deg,rgba(201,168,76,0.26),rgba(201,168,76,0.07));border-top-color:var(--gold);box-shadow:inset 4px 0 0 var(--gold)}
+.pl-tbl tbody tr.pl-bhead:not(:first-child) td{border-top-width:2px}
+.bh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;left:8px}
+.bh-col{background:transparent;border:none;color:var(--gold);font-size:14px;width:22px;height:26px;cursor:pointer;padding:0}
+.bh-no{font-family:'Jost',sans-serif;font-size:11px;font-weight:800;color:#0D1520;background:var(--gold);border-radius:4px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.bh-name{background:transparent;border:none;border-bottom:1px dashed rgba(201,168,76,0.45);color:var(--gold-l);font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:2px 2px;min-width:120px;width:auto;field-sizing:content;max-width:340px;outline:none}
+.bh-name:focus{border-bottom:1px solid var(--gold);background:rgba(0,0,0,0.25)}
+.bh-tag{font-family:'Jost',sans-serif;font-size:9px;font-weight:800;letter-spacing:.8px;color:#0D1520;background:var(--gold-l);border-radius:3px;padding:2px 6px}
+.bh-meta{font-family:'Jost',sans-serif;font-size:10.5px;color:var(--muted2)}
+.bh-meta b{color:#D8E4EC;font-weight:700}
+.bh-acts{display:flex;gap:6px;margin-left:auto}
+.bh-acts button{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#C0D4E4;border-radius:5px;padding:5px 9px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.4px;cursor:pointer;white-space:nowrap}
+.bh-acts button.bh-add{border-color:rgba(201,168,76,0.7);color:var(--gold-l)}
+.bh-acts button.del{color:#E06060;border-color:rgba(224,96,96,0.4)}
+.pl-tbl tbody tr.pl-bempty td{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);padding:12px 14px;white-space:normal;font-style:italic}
+.pl-tbl tbody tr.pl-bempty td b{color:var(--gold-l);font-style:normal}
+.pl-stk{font-family:'Jost',sans-serif;font-size:10px;font-weight:700;text-align:center}
+.pl-stk.ok{color:#4ADF90}.pl-stk.no{color:#FF9B8F}.pl-stk.unk{color:var(--muted2)}
+.plv-tip{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-left:auto;text-align:right}
+.px-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;align-items:center;justify-content:center;padding:16px}
+.px-card{background:var(--ink2);border:1px solid rgba(201,168,76,0.3);border-radius:10px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.px-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.15);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.px-head button{background:transparent;border:none;color:var(--muted2);font-size:22px;cursor:pointer;line-height:1}
+.px-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0}
+.px-sub{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);line-height:1.5}
+#gq-modal #se-quote-dd{display:block;position:static;max-height:min(52vh,420px);box-shadow:none}
+@media(max-width:560px){ .bh{max-width:calc(100vw - 46px);box-sizing:border-box;row-gap:3px} .bh-br{flex-basis:100%;height:0} .bh-money{display:none} .bh-acts{margin-left:auto} .bh-acts button{padding:5px 8px} .bh-name{min-width:0;max-width:200px} .plv-tip{display:none} .bb .bb-to select{max-width:150px}
+  /* phone: the tools sit on one line that slides sideways, so the list keeps the screen */
+  #tool-row{flex-wrap:nowrap!important;overflow-x:auto;justify-content:flex-start!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  #tool-row::-webkit-scrollbar{display:none}
+  #tool-row button{flex:none;padding:7px 10px!important;font-size:10px!important;letter-spacing:.6px!important;white-space:nowrap}
+  .bb{gap:6px;padding:6px 8px;margin-top:6px} .bb .bb-btn{padding:5px 8px;font-size:9.5px} .bb .bb-t{font-size:10.5px} .bb .bb-hint{display:none}
+  .bb .bb-acts{flex-basis:100%;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch} .bb .bb-acts::-webkit-scrollbar{display:none} .bb .bb-acts .bb-btn{flex:none} }
 .qd-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background .12s}
 .qd-row:last-child{border-bottom:none}
 .qd-row:active,.qd-row:hover{background:rgba(201,168,76,0.09)}
@@ -1215,7 +1263,6 @@ html, body{
 <!-- TABS -->
 <div id="tabs">
   <button class="tab on" onclick="showScreen('builder')">Products</button>
-  <button class="tab" onclick="showScreen('search')">Search&nbsp;&amp;&nbsp;Edit</button>
   <button class="tab" onclick="showScreen('quotes')">Find&nbsp;Quotes</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
@@ -1280,7 +1327,7 @@ html, body{
       <input type="text" id="search-inp" placeholder="Search by code, name or brand…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div id="search-dd"></div>
     </div>
-    <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap">
+    <div id="tool-row" style="margin-top:8px;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap">
       <button onclick="$('upload-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
         ⬆ Upload Code List
       </button>
@@ -1288,17 +1335,17 @@ html, body{
         📄 Read PDF / Photo
       </button>
       <button onclick="$('bathroom-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
-        🛁 Bathroom Wise
+        🛁 Bathroom-wise File
+      </button>
+      <button onclick="openGQ()" title="Add a ready bathroom set from the GQUOTE sheet — it comes in as a new bathroom" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
+        📋 Bathroom Sets
       </button>
       <button onclick="openImageAudit()" style="background:transparent;border:1px solid rgba(231,180,100,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:#E8C070;cursor:pointer" title="Load-test every product image — lists items with no URL and with broken URLs">
         🖼 Missing Images
       </button>
     </div>
-    <!-- Bathroom mode indicator -->
-    <div id="bathroom-mode-bar" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:8px 12px;margin-top:6px;display:none;align-items:center;justify-content:space-between">
-      <span style="font-family:'Jost',sans-serif;font-size:11px;font-weight:700;color:var(--gold)">🛁 Bathroom Mode Active</span>
-      <button onclick="clearBathrooms()" style="background:transparent;border:none;color:#E06060;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✕ Clear</button>
-    </div>
+    <!-- Plain / bathroom-wise: what the search box adds to -->
+    <div id="bath-bar" class="bb flat"></div>
     <!-- Insert position banner -->
     <div id="insert-banner">
       <span class="ib-txt" id="insert-banner-txt">Inserting…</span>
@@ -1412,65 +1459,35 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   </div>
 </div>
 
-<!-- SEARCH & EDIT -->
-<div id="screen-search" class="screen">
-  <div class="se-scroll">
-    <div class="se-head">Search &amp; Edit Saved Quotations</div>
-    <div class="se-sub">Search a saved bathroom quote, edit its codes &amp; quantities, name it, then load it into the quotation. Add more bathrooms the same way.</div>
-
-    <div class="se-searchwrap">
-      <div class="se-searchbar">
-        <span class="ic">⌕</span>
-        <input id="se-search-box" placeholder="Search a quotation by name…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
-      </div>
-      <div id="se-quote-dd"></div>
-    </div>
-
-    <div class="se-toolbar">
-      <span class="se-status" id="se-status">Loading saved quotations…</span>
-      <button class="se-btn" onclick="syncQuotes(true)">↻ Refresh</button>
-    </div>
-
-    <!-- EDITOR -->
-    <div id="se-editor">
-      <div class="se-ed-head">
-        <div class="se-head" id="se-ed-title" style="border:none;padding:0;text-align:left">Editing Quotation</div>
-        <div id="se-ed-mode"></div>
-        <div class="se-ed-namewrap">
-          <label>Bathroom name (for this quote)</label>
-          <input id="se-bath-name" placeholder="e.g. Master Bathroom" autocomplete="off">
+<!-- READY BATHROOM SETS (GQUOTE sheet) -->
+<div id="gq-modal" class="px-modal" style="display:none" onclick="if(event.target===this) closeGQ()">
+  <div class="px-card">
+    <div class="px-head"><span>📋 Add a ready bathroom set</span><button onclick="closeGQ()" title="Close">×</button></div>
+    <div class="px-body">
+      <div class="px-sub">Pick a set from the GQUOTE sheet. It is added to this quotation as a new bathroom — change its products, quantities and name right on the Products page.</div>
+      <div class="se-searchwrap">
+        <div class="se-searchbar">
+          <span class="ic">⌕</span>
+          <input id="se-search-box" placeholder="Search a set by name…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
         </div>
+        <div id="se-quote-dd"></div>
       </div>
-      <div class="se-ed-tblwrap">
-        <table class="ed-tbl">
-          <thead><tr>
-            <th style="width:48px;text-align:center">#</th>
-            <th style="width:40px">Img</th>
-            <th>Product</th>
-            <th style="text-align:right;width:72px">Total</th>
-            <th style="text-align:center;width:54px">Stock</th>
-            <th class="ed-ctrl-h" style="width:172px">Qty &nbsp;·&nbsp; Row</th>
-          </tr></thead>
-          <tbody id="se-ed-body"></tbody>
-        </table>
-      </div>
-      <div class="se-ed-summary" id="se-ed-summary"></div>
-      <div class="se-ed-actions">
-        <button class="se-btn" onclick="addEditRow()">+ Add row</button>
-        <button class="se-btn red" onclick="closeEditor()">Cancel</button>
-        <button class="se-btn gold" id="se-ed-save" style="flex:1" onclick="loadBathroomToQuotation()">➕ Add this bathroom to Quotation</button>
+      <div class="se-toolbar">
+        <span class="se-status" id="se-status">Loading saved quotations…</span>
+        <button class="se-btn" onclick="syncQuotes(true)">↻ Refresh</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- LOADED BATHROOMS -->
-    <div id="se-loaded">
-      <div class="se-loaded-h">
-        <span class="t" id="se-loaded-t">Loaded into quotation</span>
-        <button class="se-btn red" style="padding:6px 10px" onclick="clearLoadedQuotation()">Clear all</button>
-      </div>
-      <div class="se-loaded-hint" id="se-loaded-hint">Drag ⠿ to put the bathrooms in the order they should print.</div>
+<!-- ARRANGE BATHROOMS -->
+<div id="arr-modal" class="px-modal" style="display:none" onclick="if(event.target===this) closeArrange()">
+  <div class="px-card">
+    <div class="px-head"><span>⇅ Order of the bathrooms</span><button onclick="closeArrange()" title="Close">×</button></div>
+    <div class="px-body">
+      <div class="px-sub">Drag ⠿ to put the bathrooms in the order they should print.</div>
       <div id="se-loaded-list"></div>
-      <button class="se-btn gold" onclick="goPreview()">🧾 Go to Quotation →</button>
+      <button class="se-btn gold" onclick="closeArrange()">Done</button>
     </div>
   </div>
 </div>
@@ -1992,8 +2009,9 @@ function setMode(m){
 }
 
 // ── SCREENS ──
-const SCREEN_ORDER=['builder','search','quotes','customer','summary','stock','editor','preview'];
+const SCREEN_ORDER=['builder','quotes','customer','summary','stock','editor','preview'];
 function showScreen(id){
+  if(id==='search') id='builder';                    // the old Search & Edit page is now part of Products
   if(id!=='builder'){
     const n=dropBlankRows();
     if(n){ toast(n+' empty line'+(n===1?'':'s')+' removed'); refreshAll(); }
@@ -2003,7 +2021,6 @@ function showScreen(id){
   if(id==='summary') renderSummary();
   if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
-  if(id==='search') renderSearchPage();
   if(id==='quotes') renderQuotesPage();
 }
 
@@ -2068,7 +2085,7 @@ function renderSummary(){
   const totalItems = S.items.reduce((a,i)=>a+i.qty,0);
   $('summary-item-info').textContent = `${S.items.length} product${S.items.length!==1?'s':''} · ${totalItems} piece${totalItems!==1?'s':''}`;
 }
-function goPreview(){ dropBlankRows(); renderPreview(); showScreen('preview'); setTimeout(autoHealQuoteImages, 300); }
+function goPreview(){ dropBlankRows(); dropEmptyBathrooms(); renderPreview(); showScreen('preview'); setTimeout(autoHealQuoteImages, 300); }
 
 // ── STOCK AVAILABILITY ──────────────────────────────────────────────
 // Auto status: AVAILABLE when GBW stock is known AND >= order qty; otherwise NOT AVAILABLE.
@@ -2405,12 +2422,7 @@ function toast(msg){
 }
 
 // Collapse bathroom grouping into a flat builder quote (keeps the flattened items).
-function enterFlatFromBuilder(){
-  if(S.bathrooms && S.bathrooms.length){
-    S.bathrooms=[];
-    showBathroomModeBar();
-  }
-}
+function enterFlatFromBuilder(){ /* kept for old callers — a bathroom-wise quotation now stays bathroom-wise */ }
 
 /* The same product can legitimately appear on several lines of one quotation —
    the same tap in two areas of a bathroom, for instance. So nothing here ever
@@ -2418,8 +2430,19 @@ function enterFlatFromBuilder(){
    works on a row INDEX, not on the product code. */
 function addItem(code){
   const p=PMAP[code];if(!p)return;
-  enterFlatFromBuilder();
   const dup=S.items.some(i=>i.code===code);
+  if(bathMode()){
+    let b=activeBath(), at=b.items.length;
+    if(insertFrom){ const loc=locateRow(insertFrom.row); if(loc){ b=loc.b; at=insertFrom.pos==='above'?loc.i:loc.i+1; } }
+    b.items.splice(at,0,{...p,qty:1});
+    ACTIVE_BATH=b; COLLAPSED.delete(b);
+    rebuildItemsFromBathrooms();
+    _rowFlash.pl=firstRowOf(b)+at;
+    toast((dup?'Added '+code+' as a new line — it is already in the quote':'Added '+code)+' → '+b.name);
+    cancelInsert();
+    sI.value='';closeDD();refreshAll();
+    return;
+  }
   if(insertAt!==null){
     const at=Math.max(0,Math.min(insertAt,S.items.length));
     S.items.splice(at,0,{...p,qty:1});
@@ -2468,15 +2491,32 @@ function blankRow(){
 }
 function liveItemCount(){ return (S.items||[]).filter(i=>!isBlankRow(i)).length; }
 function dropBlankRows(){
+  if(bathMode()){
+    let n=0; S.bathrooms.forEach(b=>{ const k=b.items.length; b.items=b.items.filter(i=>!isBlankRow(i)); n+=k-b.items.length; });
+    rebuildItemsFromBathrooms(); return n;
+  }
   if(!S.items||!S.items.length) return 0;
   const before=S.items.length;
   S.items=S.items.filter(i=>!isBlankRow(i));
   return before-S.items.length;
 }
+/* a bathroom left with no products is not printed or saved */
+function dropEmptyBathrooms(){
+  if(!bathMode()) return 0;
+  const k=S.bathrooms.length; S.bathrooms=S.bathrooms.filter(b=>b.items.some(i=>!isBlankRow(i)));
+  rebuildItemsFromBathrooms(); return k-S.bathrooms.length;
+}
 function insertBlankAt(idx,pos){
-  enterFlatFromBuilder();
   idx=parseInt(idx,10);
   if(!S.items) S.items=[];
+  if(bathMode()){
+    const loc=locateRow(idx); if(!loc) return;
+    loc.b.items.splice(pos==='above'?loc.i:loc.i+1, 0, blankRow());
+    rebuildItemsFromBathrooms();
+    cancelInsert(); refreshAll();
+    focusPlistRow(pos==='above'?idx:idx+1);
+    return;
+  }
   const at=Math.max(0,Math.min(pos==='above'?idx:idx+1,S.items.length));
   S.items.splice(at,0,blankRow());
   cancelInsert();
@@ -2491,18 +2531,22 @@ function focusPlistRow(i){
 }
 
 function setQtyAt(idx,n){
-  enterFlatFromBuilder();
   idx=parseInt(idx,10); n=parseInt(n)||0;
   if(!S.items||!S.items[idx]) return;
-  if(n<=0) S.items.splice(idx,1); else S.items[idx].qty=n;
+  if(bathMode()){
+    const loc=locateRow(idx); if(!loc) return;
+    if(n<=0) loc.b.items.splice(loc.i,1); else loc.b.items[loc.i].qty=n;
+    rebuildItemsFromBathrooms();
+  }
+  else if(n<=0) S.items.splice(idx,1); else S.items[idx].qty=n;
   pruneStockOverrides();
   refreshAll();
 }
 function delItemAt(idx){
-  enterFlatFromBuilder();
   idx=parseInt(idx,10);
   if(!S.items||!S.items[idx]) return;
-  S.items.splice(idx,1);
+  if(bathMode()){ const loc=locateRow(idx); if(!loc) return; loc.b.items.splice(loc.i,1); rebuildItemsFromBathrooms(); }
+  else S.items.splice(idx,1);
   pruneStockOverrides();
   refreshAll();
 }
@@ -2511,7 +2555,7 @@ function delItemAt(idx){
 function setQty(code,n){ setQtyAt(S.items.findIndex(i=>i.code===code), n); }
 function delItem(code){ delItemAt(S.items.findIndex(i=>i.code===code)); }
 function beginInsert(code,pos){ beginInsertAt(S.items.findIndex(i=>i.code===code), pos); }
-function clearAll(){S.items=[];S.bathrooms=[];S.stockOverrides={};S.stockFilter='ALL';resetCharges();cancelInsert();showBathroomModeBar();refreshAll();if(_boxOpen('bw-box')) renderBrandBox();if(_boxOpen('chg-box')) toggleChargeBox(false);}
+function clearAll(){S.items=[];S.bathrooms=[];ACTIVE_BATH=null;COLLAPSED.clear();S.stockOverrides={};S.stockFilter='ALL';resetCharges();cancelInsert();showBathroomModeBar();refreshAll();if(_boxOpen('bw-box')) renderBrandBox();if(_boxOpen('chg-box')) toggleChargeBox(false);}
 $('f-disc').addEventListener('input',function(){S.disc=parseFloat(this.value)||0; NET_SET=0; setDiscNote(); refreshAll(); if(_netOpen()) renderNetOpts(); if(_boxOpen('bw-box')) renderBrandBox(); _rerenderPreviewIfOpen();});
 
 /* The % can carry many decimals (it is worked out from a net amount); the box
@@ -2840,20 +2884,7 @@ function setDiscNote(){
 // ── BATHROOM MODE ──────────────────────────────────────────────────
 S.bathrooms = []; // [{name, items:[{code,qty,desc,mrp,nrp,sdp,sdp_net}]}]
 
-function showBathroomModeBar(){
-  const bar=$('bathroom-mode-bar');
-  if(S.bathrooms.length>0){
-    bar.style.display='flex';
-    bar.querySelector('span').textContent='🛁 '+S.bathrooms.length+' bathroom(s) · '+S.bathrooms.reduce((a,b)=>a+b.items.length,0)+' products';
-  } else {
-    bar.style.display='none';
-  }
-}
 
-function clearBathrooms(){
-  S.bathrooms=[];S.items=[];
-  showBathroomModeBar();refreshAll();
-}
 
 function closeBathroomModal(){
   $('bathroom-modal').style.display='none';
@@ -2964,10 +2995,11 @@ function importBathroomRows(rows){
     bathroomMap[bath].items.push({...p,qty});
     found++;
   });
-  S.bathrooms=order.map(n=>bathroomMap[n]);
-  // Also flatten into S.items for backward compat (one line per line)
-  S.items=[];
-  S.bathrooms.forEach(b=>b.items.forEach(i=>S.items.push({...i})));
+  if(order.length){
+    groupExistingLines();
+    order.forEach(n=>{ const b=bathroomMap[n]; b.name=uniqueBathName(b.name); S.bathrooms.push(b); ACTIVE_BATH=b; });
+    rebuildItemsFromBathrooms();
+  }
   return{found,notFound};
 }
 
@@ -3061,10 +3093,12 @@ function importRows(rows){
     if(code==='CODE'||code==='ITEM CODE'||code==='PRODUCT CODE') return;
     const p=PMAP[code];
     if(p){
-      S.items.push({...p,qty});
+      if(bathMode()) activeBath().items.push({...p,qty});      // a bathroom-wise quotation: into the bathroom being filled
+      else S.items.push({...p,qty});
       found++;
     } else { notFound.push(code); }
   });
+  if(bathMode()) rebuildItemsFromBathrooms();
   return {found, notFound};
 }
 
@@ -3713,6 +3747,11 @@ try{ localStorage.removeItem('gbw_plist_view_v1'); }catch(e){}
 
 function plistViewBar(){
   let pcs=0; S.items.forEach(i=>{ if(!isBlankRow(i)) pcs+=i.qty; });
+  if(bathMode()){
+    const n=liveItemCount();
+    return '<div class="pl-viewbar"><span class="plv-info">'+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s')+' · '+n+' product line'+(n===1?'':'s')+' · '+pcs+' pcs</span>'+
+      '<span class="plv-tip">Tap a bathroom’s heading to add products to it · drag ⠿ to move a line, even into another bathroom</span></div>';
+  }
   const n=liveItemCount(), blanks=S.items.length-n;
   return '<div class="pl-viewbar">'+
     '<span class="plv-info">'+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs'+
@@ -3728,9 +3767,14 @@ function plistRowsHTML(){
     '<th style="width:58px;text-align:right">MRP</th>'+
     '<th style="width:64px;text-align:right">Best</th>'+
     '<th style="width:70px;text-align:right">Total</th>'+
+    '<th style="width:54px;text-align:center">Stock</th>'+
     '<th class="pl-ctrl-h" style="width:178px">Qty &nbsp;·&nbsp; Row</th>'+
     '</tr></thead><tbody>';
+  const heads={}, hidden={};
+  if(bathMode()){ let k=0; S.bathrooms.forEach((b,bi)=>{ heads[k]=(heads[k]||'')+bathHeadHTML(b,bi); if(COLLAPSED.has(b)) for(let j=0;j<b.items.length;j++) hidden[k+j]=1; k+=b.items.length; }); heads.end=''; if(heads[k]!=null) heads.end=heads[k]; }
   html+=S.items.map((item,i)=>{
+    const head=heads[i]||'';
+    if(hidden[i]) return head;
     const empty=isBlankRow(item);
     const price=empty?0:bp(item);
     const url=empty?'':(IMAGE_MAP[item.code]||'');
@@ -3742,7 +3786,8 @@ function plistRowsHTML(){
     const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
     const cls=[hot?'ins-here':'', empty?'blank':''].filter(Boolean).join(' ');
     const multi=S.items.length>1;
-    return '<tr class="'+cls+(i===_rowFlash.pl?' rmoved':'')+'">'+
+    const si=empty?{cls:'unk',txt:'—'}:edStockInfo(item.code,item.qty);
+    return head+'<tr class="pl-row '+cls+(i===_rowFlash.pl?' rmoved':'')+'" data-gi="'+i+'">'+
       '<td class="pl-sr">'+(multi?'<button class="row-grip" data-grip="'+i+'" title="Drag to move this line (or ↑ ↓ keys)" aria-label="Drag line '+(i+1)+' to reorder">⠿</button>':'')+
         '<span class="row-srn">'+(hot?'<span style="color:var(--gold)">'+mark+'</span>':(i+1))+'</span></td>'+
       '<td>'+img+'</td>'+
@@ -3756,6 +3801,7 @@ function plistRowsHTML(){
       '<td class="'+(empty?'pl-dash':'pl-mrp')+'">'+(empty?'—':fmtN(item.mrp))+'</td>'+
       '<td class="'+(empty?'pl-dash':'pl-best')+'">'+(empty?'—':fmtN(price))+'</td>'+
       '<td class="'+(empty?'pl-dash':'pl-tot')+'">'+(empty?'—':fmtN(price*item.qty))+'</td>'+
+      '<td class="pl-stk '+si.cls+'" title="GBW stock">'+si.txt+'</td>'+
       '<td class="pl-ctrl"><div class="pl-ctrl-inner">'+
         '<span class="pl-qty">'+
           '<button onclick="setQtyAt('+i+','+(item.qty-1)+')" title="Less">−</button>'+
@@ -3768,7 +3814,7 @@ function plistRowsHTML(){
           '<button class="del" onclick="delItemAt('+i+')" title="Remove">✕</button>'+
         '</span>'+
       '</div></td></tr>';
-  }).join('');
+  }).join('')+(heads.end||'');
   return html+'</tbody></table></div>';
 }
 
@@ -3805,8 +3851,8 @@ function swapItemCodeAt(idx, raw){
   const p=PMAP[nc];
   if(!p){ toast('“'+nc+'” is not in the catalogue'); refreshList(); return; }
 
-  enterFlatFromBuilder();                           // editing a row breaks bathroom grouping
-  S.items[idx]={...p, qty:row.qty};                 // swap in place — other lines untouched
+  if(bathMode()){ const loc=locateRow(idx); if(!loc) return; loc.b.items[loc.i]={...p, qty:row.qty}; rebuildItemsFromBathrooms(); }
+  else S.items[idx]={...p, qty:row.qty};            // swap in place — other lines untouched
   pruneStockOverrides();
   cancelInsert();
   refreshAll();
@@ -3942,12 +3988,8 @@ function moveItemTo(from, to){
     else at = to>from ? ref.i+1 : ref.i;
     dstBath.items.splice(Math.max(0,Math.min(dstBath.items.length,at)),0,item);
     if(dstBath!==srcBath) note=' — now in “'+dstBath.name+'”';
-    const emptied=S.bathrooms.filter(b=>!b.items.length);
-    if(emptied.length){ S.bathrooms=S.bathrooms.filter(b=>b.items.length); note+=' (“'+emptied[0].name+'” had no lines left and was removed)'; }
-    if(typeof EDIT_REF!=='undefined' && EDIT_REF && S.bathrooms.indexOf(EDIT_REF)<0){ EDIT_REF=null; }
     rebuildItemsFromBathrooms();
-    showBathroomModeBar();
-    if(typeof renderLoadedPanel==='function'){ syncEditorMode(); renderLoadedPanel(); }
+    renderLoadedPanel();
   }else{
     const it=S.items.splice(from,1)[0];
     S.items.splice(to,0,it);
@@ -3957,21 +3999,18 @@ function moveItemTo(from, to){
   refreshAll();
   toast('Line moved to no. '+(to+1)+note);
 }
-/* Search & Edit editor rows */
-function edMoveRowTo(from, to){
-  if(!EDIT || !EDIT.rows[from]) return;
-  to=Math.max(0, Math.min(EDIT.rows.length-1, to));
-  if(to===from){ renderQuoteEditor(); return; }
-  const r=EDIT.rows.splice(from,1)[0];
-  EDIT.rows.splice(to,0,r);
-  hideEdCodeDrop();
-  _rowFlash.ed=to;
-  renderQuoteEditor();
-}
 
+let _listPending=false;
 function refreshList(){
   const list=$('items-list');
-  if(!S.items.length){
+  showBathroomModeBar();
+  /* a bathroom name is being typed: a refresh from elsewhere (a sync finishing,
+     a price change) must not throw the half-typed name away — it waits until
+     the name box is left */
+  const a=document.activeElement;
+  if(a && a.classList && a.classList.contains('bh-name') && list.contains(a)){ _listPending=true; return; }
+  _listPending=false;
+  if(!S.items.length && !bathMode()){
     list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Search above to add products</div></div>';
     return;
   }
@@ -3979,6 +4018,239 @@ function refreshList(){
   _rowFlash.pl=-1;
   wirePlistCodeInputs();
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ONE PAGE FOR EVERY QUOTATION — plain or bathroom-wise
+   ────────────────────────────────────────────────────────────────────────
+   The Products page is the only place a quotation is built and edited.
+   A plain quotation is one list. A bathroom-wise quotation is the same list
+   cut into sections, one per bathroom, each with its own heading — and every
+   line works exactly the same in both: type / search a code, − qty +,
+   ↑ ↓ empty line, ✕, drag ⠿. Nothing ever un-groups a quotation by itself.
+
+   S.bathrooms holds the sections; S.items is always the same line OBJECTS
+   laid end to end (never copies), so a change made through either one is
+   the same change.                                                         */
+let ACTIVE_BATH=null;                     // the section that the search box adds to
+const COLLAPSED=new Set();                // sections folded shut on screen (by reference)
+function bathMode(){ return !!(S.bathrooms && S.bathrooms.length); }
+function activeBath(){
+  if(!bathMode()) return null;
+  if(!ACTIVE_BATH || S.bathrooms.indexOf(ACTIVE_BATH)<0) ACTIVE_BATH=S.bathrooms[S.bathrooms.length-1];
+  return ACTIVE_BATH;
+}
+/* line number in S.items → its section and place in it */
+function locateRow(idx){
+  let k=0;
+  for(const b of S.bathrooms||[]){ const n=b.items.length; if(idx<k+n) return {b:b, i:idx-k}; k+=n; }
+  return null;
+}
+function firstRowOf(b){ let k=0; for(const x of S.bathrooms){ if(x===b) return k; k+=x.items.length; } return -1; }
+function bathName(s){ return String(s||'').replace(/\s+/g,' ').trim().toUpperCase(); }
+function uniqueBathName(name, except){
+  const base=bathName(name)||'BATHROOM';
+  const taken={}; (S.bathrooms||[]).forEach(b=>{ if(b!==except) taken[bathName(b.name)]=1; });
+  if(!taken[base]) return base;
+  let k=2; while(taken[base+' '+k]) k++;
+  return base+' '+k;
+}
+/* the lines of a plain quotation become the first section when the first
+   bathroom is made, so nothing already typed is lost or left outside */
+function groupExistingLines(){
+  if(bathMode()) return;
+  const live=(S.items||[]).filter(i=>!isBlankRow(i));
+  S.bathrooms = live.length ? [{name:'BATHROOM 1', items:live}] : [];
+}
+function afterStructureChange(){
+  if(bathMode()) rebuildItemsFromBathrooms();
+  pruneStockOverrides();
+  cancelInsert();
+  refreshAll();
+  renderLoadedPanel();
+}
+
+/* ── sections ── */
+function addBathroom(){
+  groupExistingLines();
+  const b={name:uniqueBathName('BATHROOM '+(S.bathrooms.length+1)), items:[]};
+  S.bathrooms.push(b);
+  ACTIVE_BATH=b; COLLAPSED.delete(b);
+  afterStructureChange();
+  /* put the cursor straight into its name, ready to be typed over */
+  setTimeout(()=>{
+    const inp=document.querySelector('#items-list .bh-name[data-bi="'+S.bathrooms.indexOf(b)+'"]');
+    if(inp){ inp.scrollIntoView({block:'center'}); inp.focus(); inp.select(); }
+  },60);
+  toast('New bathroom added — type its name');
+}
+function setActiveBath(bi){
+  const b=(S.bathrooms||[])[+bi]; if(!b) return;
+  if(ACTIVE_BATH===b) return;
+  ACTIVE_BATH=b;
+  refreshList();
+}
+function addToBathroom(bi){
+  const b=(S.bathrooms||[])[+bi]; if(!b) return;
+  ACTIVE_BATH=b; COLLAPSED.delete(b);
+  cancelInsert(); refreshList();
+  const s=$('search-inp'); if(s){ s.focus(); s.scrollIntoView({block:'nearest'}); }
+  toast('Search a product — it goes into “'+b.name+'”');
+}
+function renameBathroom(bi, raw){
+  const b=(S.bathrooms||[])[+bi]; if(!b) return;
+  const nm=bathName(raw);
+  if(!nm){ const inp=document.querySelector('#items-list .bh-name[data-bi="'+(+bi)+'"]'); if(inp) inp.value=b.name; return; }   // emptied: keep the old name
+  const u=uniqueBathName(nm, b);
+  const inp=document.querySelector('#items-list .bh-name[data-bi="'+(+bi)+'"]'); if(inp) inp.value=u;
+  if(u===b.name) return;
+  b.name=u;
+  showBathroomModeBar(); renderLoadedPanel();
+  if(u!==nm) toast('“'+nm+'” is already used — named “'+u+'”');
+}
+function toggleBathCollapse(bi){
+  const b=(S.bathrooms||[])[+bi]; if(!b) return;
+  if(COLLAPSED.has(b)) COLLAPSED.delete(b); else COLLAPSED.add(b);
+  refreshList();
+}
+function setAllCollapsed(on){ (S.bathrooms||[]).forEach(b=>{ if(on) COLLAPSED.add(b); else COLLAPSED.delete(b); }); refreshList(); }
+function removeBathroom(bi){
+  const b=(S.bathrooms||[])[+bi]; if(!b) return;
+  const n=b.items.filter(i=>!isBlankRow(i)).length;
+  if(n && !confirm('Remove “'+b.name+'” and its '+n+' product line'+(n===1?'':'s')+' from the quotation?')) return;
+  S.bathrooms.splice(+bi,1);
+  COLLAPSED.delete(b);
+  if(!S.bathrooms.length) S.items=[];
+  afterStructureChange();
+  toast('“'+b.name+'” removed');
+}
+function removeLoadedBathroom(i){ removeBathroom(i); }
+/* back to one plain list, in the same order */
+function ungroupAll(){
+  if(!bathMode()) return;
+  if(!confirm('Make this a plain quotation?\n\nAll '+S.bathrooms.length+' bathrooms are joined into one list, in the same order. Nothing is deleted.')) return;
+  const all=[]; S.bathrooms.forEach(b=>b.items.forEach(it=>{ if(!isBlankRow(it)) all.push(it); }));
+  S.bathrooms=[]; S.items=all; ACTIVE_BATH=null; COLLAPSED.clear();
+  afterStructureChange();
+  toast('Now a plain quotation — '+all.length+' lines');
+}
+function clearBathrooms(){ clearAll(); }
+
+/* ── ready-made bathroom sets from the GQUOTE sheet ── */
+function openGQ(){
+  const m=$('gq-modal'); if(!m) return;
+  m.style.display='flex';
+  const s=$('se-search-box'); if(s){ s.value=''; }
+  renderSearchResults();
+  setTimeout(()=>{ if(s) s.focus(); },60);
+  if(!QUOTES.length) syncQuotes(false);
+}
+function closeGQ(){ const m=$('gq-modal'); if(m) m.style.display='none'; }
+/* picking a set adds it as a new bathroom, ready to change right here */
+function loadQuoteIntoEditor(idx){
+  const q=QUOTES[idx]; if(!q) return;
+  groupExistingLines();
+  const items=[]; let miss=0;
+  q.items.forEach(it=>{ const p=PMAP[it.code]; if(p) items.push({...p, qty:it.qty}); else miss++; });
+  const b={name:uniqueBathName(q.name), items:items};
+  S.bathrooms.push(b);
+  ACTIVE_BATH=b; COLLAPSED.delete(b);
+  closeGQ();
+  afterStructureChange();
+  setTimeout(()=>{
+    const h=document.querySelector('#items-list tr.pl-bhead[data-bi="'+S.bathrooms.indexOf(b)+'"]');
+    if(h) h.scrollIntoView({block:'start', behavior:'smooth'});
+  },60);
+  toast('“'+b.name+'” added — '+items.length+' products'+(miss?' · '+miss+' code'+(miss===1?'':'s')+' not in catalogue left out':''));
+}
+
+/* ── arrange: drag the bathrooms into the order they should print ── */
+function openArrange(){ const m=$('arr-modal'); if(!m) return; renderLoadedPanel(); m.style.display='flex'; }
+function closeArrange(){ const m=$('arr-modal'); if(m) m.style.display='none'; }
+function renderLoadedPanel(){
+  const list=$('se-loaded-list'); if(!list) return;
+  const a=S.bathrooms||[];
+  if(!a.length){ list.innerHTML='<div class="se-loaded-hint">No bathrooms.</div>'; return; }
+  const n=a.length;
+  list.innerHTML=a.map((b,i)=>{
+    let pcs=0,mrp=0; b.items.forEach(it=>{ if(!isBlankRow(it)){ pcs+=it.qty; mrp+=it.mrp*it.qty; } });
+    return '<div class="se-loaded-item'+(b===_bathFlash?' moved':'')+'" data-bi="'+i+'">'+
+      (n>1 ? '<button class="li-grip" data-grip="'+i+'" title="Drag to change the order (or use the ↑ ↓ keys)" aria-label="Drag '+esc(b.name)+' to reorder">⠿</button>' : '')+
+      '<span class="li-pos">'+(i+1)+'</span>'+
+      '<div class="li-l"><div class="li-name">'+esc(b.name)+'</div>'+
+      '<div class="li-meta">'+b.items.filter(x=>!isBlankRow(x)).length+' products · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
+    '</div>';
+  }).join('');
+  _bathFlash=null;
+}
+function _bathroomsChanged(){ afterStructureChange(); }
+
+/* ── the bar under the search box ── */
+function showBathroomModeBar(){
+  const bar=$('bath-bar'); if(!bar) return;
+  const s=$('search-inp');
+  if(!bathMode()){
+    bar.className='bb flat';
+    bar.innerHTML='<span class="bb-t">Plain quotation</span>'+
+      '<button class="bb-btn gold" onclick="addBathroom()" title="Make this quotation bathroom-wise">＋ Add Bathroom</button>'+
+      '<span class="bb-hint">for a bathroom-wise quotation</span>';
+    if(s) s.placeholder='Search by code, name or brand…';
+    return;
+  }
+  const ab=activeBath(), a=S.bathrooms;
+  bar.className='bb';
+  bar.innerHTML='<span class="bb-t">🛁 '+a.length+' bathroom'+(a.length===1?'':'s')+'</span>'+
+    '<label class="bb-to">Adding to <select onchange="setActiveBath(this.value)">'+
+      a.map((b,i)=>'<option value="'+i+'"'+(b===ab?' selected':'')+'>'+esc(b.name)+'</option>').join('')+
+    '</select></label>'+
+    '<span class="bb-acts">'+
+    '<button class="bb-btn gold" onclick="addBathroom()">＋ Add Bathroom</button>'+
+    (a.length>1 ? '<button class="bb-btn" onclick="openArrange()" title="Drag the bathrooms into the order they should print">⇅ Arrange</button>' : '')+
+    (a.length>1 ? '<button class="bb-btn" onclick="setAllCollapsed('+(a.every(b=>COLLAPSED.has(b))?'false':'true')+')">'+(a.every(b=>COLLAPSED.has(b))?'▾ Open all':'▸ Fold all')+'</button>' : '')+
+    '<button class="bb-btn ghost" onclick="ungroupAll()" title="Join all bathrooms into one plain list">Make plain</button>'+
+    '</span>';
+  if(s) s.placeholder='Search a product to add to “'+ab.name+'”…';
+}
+
+/* ── one bathroom's heading inside the list ── */
+function bathHeadHTML(b, bi){
+  const live=b.items.filter(i=>!isBlankRow(i));
+  let pcs=0, mrp=0, best=0; live.forEach(it=>{ pcs+=it.qty; mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; });
+  const act=(b===activeBath()), col=COLLAPSED.has(b);
+  return '<tr class="pl-bhead'+(act?' act':'')+(col?' col':'')+'" data-bi="'+bi+'"><td colspan="8"><div class="bh">'+
+      '<button class="bh-col" onclick="toggleBathCollapse('+bi+')" title="'+(col?'Show':'Hide')+' its lines">'+(col?'▸':'▾')+'</button>'+
+      '<span class="bh-no">'+(bi+1)+'</span>'+
+      '<input class="bh-name" value="'+esc(b.name)+'" data-bi="'+bi+'" spellcheck="false" autocomplete="off" title="Tap to rename">'+
+      (act ? '<span class="bh-tag" title="The search box adds products here">✚ ADDING HERE</span>' : '')+
+      '<span class="bh-br"></span>'+
+      '<span class="bh-meta"><b>'+live.length+'</b> product'+(live.length===1?'':'s')+' · <b>'+pcs+'</b> pcs<span class="bh-money"> · MRP ₹'+fmtN(mrp)+' · Best <b>₹'+fmtN(best)+'</b></span></span>'+
+      '<span class="bh-acts">'+
+        '<button class="bh-add" onclick="addToBathroom('+bi+')" title="Add products to this bathroom">＋ Add product</button>'+
+        '<button onclick="duplicateLoadedBathroom('+bi+')" title="Make a copy of this bathroom">⧉ Copy</button>'+
+        '<button class="del" onclick="removeBathroom('+bi+')" title="Remove this bathroom">✕</button>'+
+      '</span>'+
+    '</div></td></tr>'+
+    (!col && !b.items.length ? '<tr class="pl-bempty"><td colspan="8">No products yet — tap <b>＋ Add product</b>, or search above.</td></tr>' : '');
+}
+(function wireBathHeads(){
+  const list=$('items-list'); if(!list) return;
+  /* a tap on a heading makes that bathroom the one the search box adds to */
+  list.addEventListener('click', e=>{
+    const h=e.target.closest && e.target.closest('tr.pl-bhead'); if(!h) return;
+    if(e.target.closest('button,input,select')) return;
+    setActiveBath(h.dataset.bi);
+  });
+  list.addEventListener('focusin', e=>{ const inp=e.target.closest && e.target.closest('.bh-name'); if(inp){ inp.dataset.old=inp.value; inp.select(); } });
+  list.addEventListener('keydown', e=>{
+    const inp=e.target.closest && e.target.closest('.bh-name'); if(!inp) return;
+    if(e.key==='Enter'){ e.preventDefault(); inp.blur(); }
+    if(e.key==='Escape'){ inp.value=inp.dataset.old||inp.value; inp.blur(); }
+  });
+  list.addEventListener('focusout', e=>{
+    const inp=e.target.closest && e.target.closest('.bh-name'); if(!inp) return;
+    renameBathroom(inp.dataset.bi, inp.value);
+    if(_listPending) setTimeout(()=>{ const a=document.activeElement; if(_listPending && !(a && a.classList && a.classList.contains('bh-name'))) refreshList(); }, 220);
+  });
+})();
 
 // ── RENDER PREVIEW ──
 function renderPreview(){
@@ -5858,13 +6130,6 @@ const FINISH_SEED = ['CHR','GMP','GBP','BGP','BCH','SSF','ANT','BLM','GLD','RSG'
 function saveTabState(){ try{ localStorage.setItem(CACHE_QTABS,JSON.stringify({tabs:GQUOTE_TABS,manual:QTABS_MANUAL})); }catch(e){} }
 const CACHE_QUOTES= 'gbw_quotes_v1';
 let   QUOTES = [];     // [{name, tab, items:[{code,qty}]}]  (areas flattened per quotation)
-let   EDIT   = null;   // working copy in the editor: {name, rows:[{code,qty}]}
-/* When re-editing a bathroom that is already loaded into the quotation we keep a
-   REFERENCE to that bathroom object (not its index) — the index can shift when
-   other bathrooms are removed, and the whole array can be rebuilt by the builder
-   or a bathroom-wise import. indexOf() then tells us safely whether the target
-   still exists; if it doesn't, saving falls back to "add as new". */
-let   EDIT_REF = null;
 let   _quotesSyncing = false;
 
 function cacheGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -6330,8 +6595,6 @@ function quoteMRP(q){ let m=0; q.items.forEach(it=>{ const p=PMAP[it.code]; if(p
 function quotePcs(q){ let n=0; q.items.forEach(it=>n+=it.qty); return n; }
 
 /* ── search page render ── */
-function renderSearchPage(){ syncEditorMode(); renderSearchResults(); renderLoadedPanel(); closeQuoteDD(); }
-
 // Build the scrollable quotation dropdown (does not force it open).
 function renderSearchResults(){
   const dd=$('se-quote-dd'); if(!dd) return;
@@ -6357,184 +6620,21 @@ function closeQuoteDD(){ const dd=$('se-quote-dd'); if(dd) dd.classList.remove('
 
 /* ── editor ── */
 /* Index of the loaded bathroom currently being re-edited, or -1 for "add new". */
-function editTargetIndex(){
-  if(!EDIT_REF || !S.bathrooms || !S.bathrooms.length) return -1;
-  return S.bathrooms.indexOf(EDIT_REF);
-}
 
 /* Repaint the editor chrome (title / banner / save button) for the current mode. */
-function syncEditorMode(){
-  const ti=editTargetIndex(), editing=ti>=0;
-  if(!editing) EDIT_REF=null;                       // drop a stale reference
-  const box=$('se-ed-mode');
-  if(box){
-    if(editing){
-      box.style.display='flex';
-      box.innerHTML='<div class="em-t">✎ Re-editing bathroom '+(ti+1)+'<i>'+esc(S.bathrooms[ti].name)+'</i>'+
-        '<small>Saving replaces it in place, keeping its position.</small></div>'+
-        '<button class="se-btn em-b" style="padding:6px 10px" onclick="stopReEdit()">Add as new</button>';
-    }else{
-      box.style.display='none'; box.innerHTML='';
-    }
-  }
-  const t=$('se-ed-title'); if(t) t.textContent = editing ? 'Re-editing Loaded Bathroom' : 'Editing Quotation';
-  const b=$('se-ed-save'); if(b) b.innerHTML = editing ? '💾 Save changes' : '➕ Add this bathroom to Quotation';
-}
 
 /* Leave re-edit mode but keep everything typed — the next save appends instead. */
-function stopReEdit(){
-  if(editTargetIndex()<0) return;
-  EDIT_REF=null;
-  syncEditorMode(); renderLoadedPanel();
-  toast('This will now be added as a NEW bathroom');
-}
 
 /* Pull an already-loaded bathroom back into the editor. */
-function editLoadedBathroom(i){
-  const b=(S.bathrooms||[])[i];
-  if(!b){ toast('That bathroom is no longer in the quotation'); renderLoadedPanel(); return; }
-  EDIT_REF=b;
-  EDIT={ name:b.name, rows:b.items.map(it=>({code:it.code, qty:Math.max(0,parseInt(it.qty)||0)})) };
-  const nm=$('se-bath-name'); if(nm) nm.value=b.name;
-  const sb=$('se-search-box'); if(sb) sb.value='';
-  closeQuoteDD(); hideEdCodeDrop();
-  const ed=$('se-editor'); if(ed) ed.style.display='flex';
-  renderQuoteEditor();
-  syncEditorMode();
-  renderLoadedPanel();
-  if(ed) ed.scrollIntoView({behavior:'smooth',block:'start'});
-  toast('Editing “'+b.name+'” — '+b.items.length+' products');
-}
 
-function loadQuoteIntoEditor(idx){
-  const q=QUOTES[idx]; if(!q) return;
-  let ti=editTargetIndex();
-  if(ti>=0){
-    const bn=S.bathrooms[ti].name;
-    const replace=confirm('You are re-editing the loaded bathroom “'+bn+'”.\n\n'+
-      'OK — replace its contents with “'+q.name+'” (keeps its position and name)\n'+
-      'Cancel — add “'+q.name+'” as a NEW bathroom instead');
-    if(!replace){ EDIT_REF=null; ti=-1; }
-  }
-  const nameToUse = ti>=0 ? S.bathrooms[ti].name : q.name;   // re-edit keeps the bathroom's own name
-  EDIT={ name:nameToUse, rows:q.items.map(it=>({code:it.code,qty:it.qty})) };
-  const nm=$('se-bath-name'); if(nm) nm.value=nameToUse;
-  const sb=$('se-search-box'); if(sb) sb.value='';
-  closeQuoteDD();
-  $('se-editor').style.display='flex';
-  renderQuoteEditor();
-  syncEditorMode();
-  renderLoadedPanel();
-  $('se-editor').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function closeEditor(){
-  EDIT=null; EDIT_REF=null;
-  hideEdCodeDrop();
-  $('se-editor').style.display='none';
-  syncEditorMode(); renderLoadedPanel();
-}
-function addEditRow(){
-  if(!EDIT){ EDIT_REF=null; EDIT={name:($('se-bath-name')&&$('se-bath-name').value)||'New bathroom', rows:[]}; $('se-editor').style.display='flex'; syncEditorMode(); }
-  EDIT.rows.push({code:'',qty:1});
-  renderQuoteEditor();
-}
-function edSetQty(i,n){
-  if(!EDIT||!EDIT.rows[i]) return;
-  EDIT.rows[i].qty=Math.max(0,parseInt(n,10)||0);
-  renderQuoteEditor();
-}
-function edInsertRow(i,dir){ if(!EDIT) return; const at=dir<0?i:i+1; EDIT.rows.splice(at,0,{code:'',qty:1}); renderQuoteEditor(); }
-function edDeleteRow(i){ if(!EDIT) return; EDIT.rows.splice(i,1); renderQuoteEditor(); }
 
 function edStockInfo(code,qty){
   const st=getStock(code);
   if(st===null) return {cls:'unk',txt:'—'};
   return (st>=qty)?{cls:'ok',txt:'✓ '+fmtN(st)}:{cls:'no',txt:'✕ '+fmtN(st)};
 }
-function renderQuoteEditor(){
-  if(!EDIT) return;
-  const tb=$('se-ed-body'); if(!tb) return;
-  tb.innerHTML=EDIT.rows.map((row,i)=>{
-    const p=PMAP[row.code];
-    const missing=row.code && !p;
-    const url=IMAGE_MAP[row.code]||'';
-    const img=url?'<img class="ed-img" src="'+url+'" onerror="this.style.display=\'none\'"/>':'<div class="ed-img-ph">—</div>';
-    const mrp=p?p.mrp:0;
-    const si=edStockInfo(row.code,row.qty);
-    return '<tr'+(i===_rowFlash.ed?' class="rmoved"':'')+'>'+
-      '<td class="ed-sr">'+(EDIT.rows.length>1?'<button class="row-grip" data-grip="'+i+'" title="Drag to move this line (or ↑ ↓ keys)" aria-label="Drag line '+(i+1)+' to reorder">⠿</button>':'')+
-        '<span class="row-srn">'+(i+1)+'</span></td>'+
-      '<td>'+img+'</td>'+
-      '<td class="ed-prod">'+
-        '<input class="code'+(missing?' warn':'')+'" data-i="'+i+'" data-f="code" value="'+esc(row.code)+'" autocomplete="off" autocapitalize="characters" placeholder="type or search a code…">'+
-        '<div class="ed-name">'+esc(p?p.desc:(missing?'⚠ not in catalogue':'empty line'))+'</div>'+
-      '</td>'+
-      '<td class="ed-tot">₹'+fmtN(mrp*row.qty)+'</td>'+
-      '<td class="ed-stk '+si.cls+'">'+si.txt+'</td>'+
-      '<td class="ed-ctrl"><div class="ed-ctrl-inner">'+
-        '<span class="ed-qty">'+
-          '<button onclick="edSetQty('+i+','+(row.qty-1)+')" title="Less">−</button>'+
-          '<input class="qty" type="number" min="0" data-i="'+i+'" data-f="qty" value="'+row.qty+'" inputmode="numeric">'+
-          '<button onclick="edSetQty('+i+','+(row.qty+1)+')" title="More">+</button>'+
-        '</span>'+
-        '<span class="ed-acts">'+
-          '<button onclick="edInsertRow('+i+',-1)" title="Insert row above">↑</button>'+
-          '<button onclick="edInsertRow('+i+',1)" title="Insert row below">↓</button>'+
-          '<button class="del" onclick="edDeleteRow('+i+')" title="Delete row">✕</button>'+
-        '</span>'+
-      '</div></td></tr>';
-  }).join('');
-  _rowFlash.ed=-1;
-  tb.querySelectorAll('input').forEach(inp=>{
-    const f=inp.dataset.f;
-    if(f==='qty'){ inp.addEventListener('input',onEdQty); inp.addEventListener('change',onEdQty); }
-    if(f==='code'){
-      inp.addEventListener('input',e=>{ const i=+e.target.dataset.i; if(EDIT.rows[i]){ EDIT.rows[i].code=String(e.target.value||'').trim().toUpperCase(); } showEdCodeDrop(e.target,i); renderEditorSummary(); });
-      inp.addEventListener('change',()=>renderQuoteEditor());
-      // select the whole code on focus, like the Products rows, so typing a
-      // new one replaces it instead of appending to it
-      inp.addEventListener('focus',e=>{ e.target.select(); showEdCodeDrop(e.target,+e.target.dataset.i); });
-      inp.addEventListener('blur',e=>setTimeout(()=>{ if(_edActiveInput===e.target) hideEdCodeDrop(); },180));
-    }
-  });
-  renderEditorSummary();
-}
-function onEdQty(e){
-  const i=+e.target.dataset.i; if(!EDIT||!EDIT.rows[i]) return;
-  EDIT.rows[i].qty=Math.max(0,parseInt(e.target.value)||0);
-  const tr=e.target.closest('tr');
-  if(tr){ const p=PMAP[EDIT.rows[i].code]; const mrp=p?p.mrp:0;
-    const tot=tr.querySelector('.ed-tot'); if(tot) tot.textContent='₹'+fmtN(mrp*EDIT.rows[i].qty);
-    const sc=tr.querySelector('.ed-stk'); if(sc){ const si=edStockInfo(EDIT.rows[i].code,EDIT.rows[i].qty); sc.className='ed-stk '+si.cls; sc.textContent=si.txt; }
-  }
-  renderEditorSummary();
-}
 
 /* collapse the editor rows to resolved product items (dup codes summed) */
-function editorResolvedItems(){
-  if(!EDIT) return [];
-  // One line per editor row — the same tap listed twice stays two lines.
-  const out=[];
-  EDIT.rows.forEach(row=>{
-    const code=String(row.code||'').trim().toUpperCase();
-    const qty=Math.max(0,parseInt(row.qty)||0);
-    if(!code||qty<=0) return;
-    const p=PMAP[code];
-    const base=p?{...p}:{code,desc:code,brand:'',sdp:0,nrp:0,mrp:0,hsn:'',gst:0,sdp_net:0};
-    out.push({...base, qty});
-  });
-  return out;
-}
-function renderEditorSummary(){
-  if(!EDIT) return;
-  const items=editorResolvedItems();
-  let mrp=0,best=0,pcs=0,miss=0;
-  items.forEach(it=>{ mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; pcs+=it.qty; if(!PMAP[it.code])miss++; });
-  const el=$('se-ed-summary'); if(!el) return;
-  el.innerHTML='<span><b>'+items.length+'</b> products</span><span><b>'+pcs+'</b> pcs</span>'+
-    '<span>MRP <b>₹'+fmtN(mrp)+'</b></span><span>Best <b>₹'+fmtN(best)+'</b></span>'+
-    (miss?'<span style="color:#FF9B8F">⚠ '+miss+' not in catalogue</span>':'');
-}
 
 /* ── floating catalogue picker for the editor code field ── */
 let _edActiveInput=null, _edActiveRow=-1, _edTarget='editor', _edOldCode='';
@@ -6579,17 +6679,13 @@ function pickEdCode(code){
     swapItemCodeAt(at, code);
     return;
   }
-  if(_edActiveRow<0||!EDIT||!EDIT.rows[_edActiveRow]){ hideEdCodeDrop(); return; }
-  EDIT.rows[_edActiveRow].code=code;
   hideEdCodeDrop();
-  renderQuoteEditor();
 }
 
-/* ── load the edited bathroom into the quotation (accumulate) ── */
 function rebuildItemsFromBathrooms(){
   // One line per bathroom line — a tap used in two bathrooms stays two lines.
   const order=[];
-  (S.bathrooms||[]).forEach(b=>b.items.forEach(it=>order.push({...it})));
+  (S.bathrooms||[]).forEach(b=>b.items.forEach(it=>order.push(it)));   // the same objects, not copies
   S.items=order;
 }
 /* Manual stock overrides are keyed by code — keep the ones still in the quote,
@@ -6599,72 +6695,11 @@ function pruneStockOverrides(){
   (S.items||[]).forEach(it=>{ if(S.stockOverrides[it.code]) keep[it.code]=S.stockOverrides[it.code]; });
   S.stockOverrides=keep;
 }
-function loadBathroomToQuotation(){
-  if(!EDIT){ toast('Nothing to load'); return; }
-  const items=editorResolvedItems();
-  if(!items.length){ toast('Add at least one valid product first'); return; }
-  if(!S.bathrooms) S.bathrooms=[];
-  const ti=editTargetIndex();
-  const lost = (EDIT_REF && ti<0);                 // target vanished (builder reset / re-import)
-  let name=(($('se-bath-name')&&$('se-bath-name').value)||'').trim();
-  if(!name) name = ti>=0 ? S.bathrooms[ti].name : ('Bathroom '+(S.bathrooms.length+1));
-  if(ti>=0){
-    S.bathrooms[ti].name=name;                     // mutate in place: keeps position + reference
-    S.bathrooms[ti].items=items;
-  }else{
-    S.bathrooms.push({name, items});
-  }
-  rebuildItemsFromBathrooms();
-  pruneStockOverrides();
-  cancelInsert();
-  showBathroomModeBar();
-  refreshAll();
-  EDIT=null; EDIT_REF=null;
-  $('se-editor').style.display='none';
-  syncEditorMode();
-  renderLoadedPanel();
-  if(lost) toast('Original bathroom was gone — added “'+name+'” as new');
-  else toast('“'+name+'” '+(ti>=0?'updated':'added')+' — '+items.length+' products');
-}
 
 /* ── loaded-bathrooms panel ── */
-function renderLoadedPanel(){
-  const panel=$('se-loaded'), list=$('se-loaded-list');
-  if(!panel||!list) return;
-  if(!S.bathrooms||!S.bathrooms.length){ panel.style.display='none'; return; }
-  panel.style.display='flex';
-  const t=$('se-loaded-t'); if(t) t.textContent='Loaded into quotation · '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s');
-  const ei=editTargetIndex();
-  const n=S.bathrooms.length;
-  const hint=$('se-loaded-hint'); if(hint) hint.style.display = n>1 ? 'block' : 'none';
-  list.innerHTML=S.bathrooms.map((b,i)=>{
-    let pcs=0,mrp=0; b.items.forEach(it=>{pcs+=it.qty;mrp+=it.mrp*it.qty;});
-    const on=(i===ei);
-    return '<div class="se-loaded-item'+(on?' editing':'')+(b===_bathFlash?' moved':'')+'" data-bi="'+i+'">'+
-      (n>1 ? '<button class="li-grip" data-grip="'+i+'" title="Drag to change the order (or use the ↑ ↓ keys)" aria-label="Drag '+esc(b.name)+' to reorder">⠿</button>' : '')+
-      '<span class="li-pos">'+(i+1)+'</span>'+
-      '<div class="li-l"><div class="li-name">'+esc(b.name)+(on?' <span class="li-tag">• EDITING</span>':'')+'</div>'+
-      '<div class="li-meta">'+b.items.length+' product'+(b.items.length===1?'':'s')+' · '+pcs+' pcs · ₹'+fmtN(mrp)+' MRP</div></div>'+
-      '<div class="li-acts">'+
-        '<button class="li-m" onclick="duplicateLoadedBathroom('+i+')" title="Make a copy of this bathroom">⧉ Copy</button>'+
-        '<button class="li-e" onclick="editLoadedBathroom('+i+')" title="Re-edit this bathroom">✎ '+(on?'Editing':'Edit')+'</button>'+
-        '<button class="li-x" onclick="removeLoadedBathroom('+i+')" title="Remove">✕</button>'+
-      '</div></div>';
-  }).join('');
-  _bathFlash=null;
-}
 /* The quotation prints bathrooms in this order, so moving one here moves it
    on the quotation, the PDFs, the Excel export and in what gets saved. */
 let _bathFlash=null;
-function _bathroomsChanged(){
-  rebuildItemsFromBathrooms();
-  pruneStockOverrides();
-  cancelInsert();
-  showBathroomModeBar();
-  refreshAll();
-  syncEditorMode();          // the editor's target is tracked by reference, so it survives a move
-  renderLoadedPanel();
-}
 function moveLoadedBathroomTo(from, to){
   const a=S.bathrooms||[];
   if(!a[from]) return;
@@ -6779,9 +6814,9 @@ function moveLoadedBathroom(i, dir){ moveLoadedBathroomTo(i, i+dir); }
    a copy always gets a name of its own. */
 function uniqueBathroomName(name){
   const taken={}; (S.bathrooms||[]).forEach(b=>{ taken[String(b.name).trim().toUpperCase()]=1; });
-  const base=String(name||'Bathroom').replace(/\s*\(copy(?: \d+)?\)\s*$/i,'').trim() || 'Bathroom';
-  let cand=base+' (copy)', k=2;
-  while(taken[cand.toUpperCase()]) cand=base+' (copy '+(k++)+')';
+  const base=bathName(String(name||'Bathroom').replace(/\s*\(copy(?: \d+)?\)\s*$/i,'')) || 'BATHROOM';
+  let cand=base+' (COPY)', k=2;
+  while(taken[cand.toUpperCase()]) cand=base+' (COPY '+(k++)+')';
   return cand;
 }
 function duplicateLoadedBathroom(i){
@@ -6792,32 +6827,6 @@ function duplicateLoadedBathroom(i){
   _bathFlash=copy;
   _bathroomsChanged();
   toast('Copied as “'+copy.name+'” — tap ✎ Edit to rename or change it');
-}
-function removeLoadedBathroom(i){
-  if(!S.bathrooms||!S.bathrooms[i]) return;
-  const b=S.bathrooms[i];
-  if(!confirm('Remove “'+b.name+'” from the quotation?')) return;
-  const wasEditing=(EDIT_REF===b);
-  S.bathrooms.splice(i,1);
-  if(wasEditing){ EDIT=null; EDIT_REF=null; hideEdCodeDrop(); const ed=$('se-editor'); if(ed) ed.style.display='none'; }
-  if(S.bathrooms.length) rebuildItemsFromBathrooms(); else S.items=[];
-  pruneStockOverrides();
-  showBathroomModeBar();
-  refreshAll();
-  syncEditorMode();
-  renderLoadedPanel();
-  toast('“'+b.name+'” removed');
-}
-function clearLoadedQuotation(){
-  if(S.bathrooms && S.bathrooms.length && !confirm('Clear all '+S.bathrooms.length+' loaded bathroom(s) from the quotation?')) return;
-  S.bathrooms=[]; S.items=[]; S.stockOverrides={};
-  EDIT=null; EDIT_REF=null; hideEdCodeDrop();
-  const ed=$('se-editor'); if(ed) ed.style.display='none';
-  showBathroomModeBar();
-  refreshAll();
-  syncEditorMode();
-  renderLoadedPanel();
-  toast('Cleared loaded quotation');
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -6931,7 +6940,7 @@ async function qapiPost(payload){
 
 /* ── SAVE ── */
 function quotePayload(quoteNo){
-  dropBlankRows();
+  dropBlankRows(); dropEmptyBathrooms();
   const baths = (S.bathrooms&&S.bathrooms.length)
     ? S.bathrooms.map(b=>({name:b.name, items:b.items.map(i=>({code:i.code,qty:i.qty}))}))
     : [];
@@ -7476,8 +7485,7 @@ async function openSavedQuote(quoteNo, how){
   }
 
   // nothing half-edited from the previous quotation may leak into this one
-  EDIT=null; EDIT_REF=null; hideEdCodeDrop();
-  const sed=$('se-editor'); if(sed) sed.style.display='none';
+  hideEdCodeDrop(); ACTIVE_BATH=null; COLLAPSED.clear();
 
   const lost = missing.length ? ' — '+missing.length+' code(s) no longer in catalogue' : '';
   if(how==='copy'){
@@ -7490,12 +7498,11 @@ async function openSavedQuote(quoteNo, how){
   cancelInsert();
   showBathroomModeBar();
   refreshAll();
-  syncEditorMode();
   renderLoadedPanel();
   renderOpenBanner();
   if(how==='edit' || how==='copy'){
-    showScreen(S.bathrooms.length ? 'search' : 'builder');
-    if(S.bathrooms.length){ const lp=$('se-loaded'); if(lp) lp.scrollIntoView({behavior:'smooth', block:'start'}); }
+    showScreen('builder');
+    const il=$('items-list'); if(il) il.scrollTop=0;
     toast(how==='copy'
       ? 'Copy of '+quoteNo+' — a NEW quotation, not saved yet. 💾 Save Quote gives it its own number'+lost
       : quoteNo+' open for editing — 💾 Save Quote will update it'+lost);
@@ -8849,8 +8856,7 @@ function repositionEdCodeDrop(){
   renderSyncState();
   if(OUTBOX.length) setTimeout(flushOutbox, 1500);   // changes left over from last time
 })();
-makeRowDrag($('items-list'), {rowSel:'.pl-tbl tbody tr', move:(a,b)=>moveItemTo(a,b)});
-makeRowDrag($('se-ed-body'),  {rowSel:'tr',               move:(a,b)=>edMoveRowTo(a,b), beforeDrag:()=>hideEdCodeDrop()});
+makeRowDrag($('items-list'), {rowSel:'.pl-tbl tbody tr.pl-row', move:(a,b)=>{ const r=[...document.querySelectorAll('#items-list tr.pl-row')]; const f=r[a]?+r[a].dataset.gi:a, t=r[b]?+r[b].dataset.gi:b; moveItemTo(f,t); }});
 (function wireSearchEdit(){
   const sb=$('se-search-box');
   if(sb){
