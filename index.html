@@ -4422,7 +4422,7 @@ function bathHeadHTML(b, bi){
   const live=b.items.filter(i=>!isBlankRow(i));
   let pcs=0, mrp=0, best=0; live.forEach(it=>{ pcs+=it.qty; mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; });
   const act=(b===activeBath()), col=COLLAPSED.has(b);
-  return '<tr class="pl-bhead'+(act?' act':'')+(col?' col':'')+'" data-bi="'+bi+'"><td colspan="8"><div class="bh">'+
+  return '<tr class="pl-bhead'+(act?' act':'')+(col?' col':'')+'" data-bi="'+bi+'"'+' title="'+(col?'Tap to open this bathroom':'Tap to fold this bathroom')+'"'+'><td colspan="8"><div class="bh">'+
       '<button class="bh-col" onclick="toggleBathCollapse('+bi+')" title="'+(col?'Show':'Hide')+' its lines">'+(col?'▸':'▾')+'</button>'+
       '<span class="bh-no">'+(bi+1)+'</span>'+
       '<input class="bh-name" value="'+esc(b.name)+'" data-bi="'+bi+'" spellcheck="false" autocomplete="off" title="Tap to rename">'+
@@ -4438,11 +4438,18 @@ function bathHeadHTML(b, bi){
 }
 (function wireBathHeads(){
   const list=$('items-list'); if(!list) return;
-  /* a tap on a heading makes that bathroom the one the search box adds to */
+  /* a tap on a bathroom's heading folds it / opens it (the name box, when the
+     bathroom is open, is for renaming and does not fold it) */
   list.addEventListener('click', e=>{
     const h=e.target.closest && e.target.closest('tr.pl-bhead'); if(!h) return;
-    if(e.target.closest('button,input,select')) return;
-    setActiveBath(h.dataset.bi);
+    if(e.target.closest('button,select')) return;
+    const b=(S.bathrooms||[])[+h.dataset.bi]; if(!b) return;
+    const onName=e.target.closest('.bh-name');
+    if(!COLLAPSED.has(b)){ if(!onName){ ACTIVE_BATH=b; COLLAPSED.add(b); refreshList(); } return; }
+    COLLAPSED.delete(b); ACTIVE_BATH=b;
+    if(onName) onName.blur();                     // a name box in focus would hold the repaint back
+    refreshList();
+    if(onName){ const n=document.querySelector('#items-list .bh-name[data-bi="'+S.bathrooms.indexOf(b)+'"]'); if(n) n.focus(); }
   });
   list.addEventListener('focusin', e=>{ const inp=e.target.closest && e.target.closest('.bh-name'); if(inp){ inp.dataset.old=inp.value; inp.select(); } });
   list.addEventListener('keydown', e=>{
