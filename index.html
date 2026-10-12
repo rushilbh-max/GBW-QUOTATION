@@ -335,6 +335,77 @@ tr.rmoved td{animation:rowFlash .9s ease}
   border-radius:var(--r-sm);font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
 }
 
+
+/* ══ ADD PRODUCTS: totals strip, one tools line, bigger pictures ══ */
+#search-zone{padding:10px 12px 8px}
+#sum-strip{display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,rgba(201,168,76,0.10),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.35);border-radius:8px;padding:6px 8px 6px 14px}
+#sum-strip .ss-tot{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+#sum-strip .ss-l{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted2)}
+#sum-strip .ss-v{font-family:'Jost',sans-serif;font-size:14px;font-weight:600;color:#A0C0D0}
+#sum-strip .best .ss-l{color:var(--gold)}
+#sum-strip .best .ss-v{font-family:'Cormorant',serif;font-size:24px;font-weight:700;color:var(--gold-l);line-height:1}
+#sum-strip .ss-info{font-family:'Jost',sans-serif;font-size:11px;font-weight:600;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sum-strip .ss-gap{flex:1}
+#sum-strip .ss-clear{background:transparent;border:1px solid rgba(220,60,50,0.5);color:#E06060;border-radius:6px;padding:9px 14px;font-family:'Jost',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+#sum-strip .ss-go{background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));color:var(--ink);border:none;border-radius:6px;padding:10px 22px;font-family:'Jost',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+#sum-strip .ss-go:active{opacity:.85}
+#sum-strip.empty .ss-v{color:var(--muted)}
+#tools-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+#tools-line .bb{margin-top:0;flex:1 1 auto}
+#tools-line #tool-row{margin-left:auto}
+#tool-row button{padding:8px 12px!important;letter-spacing:.7px!important;font-size:10.5px!important;white-space:nowrap}
+#items-list{padding-bottom:calc(var(--safe-b) + 14px)}
+.up-target{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.35);border-radius:6px;padding:10px 12px;margin-bottom:14px}
+.up-target label{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-l)}
+.up-target select{flex:1;min-width:160px;background:var(--ink3);color:var(--gold-l);border:1px solid rgba(201,168,76,0.5);border-radius:5px;padding:7px 8px;font-family:'Jost',sans-serif;font-size:12px;font-weight:700;outline:none;text-transform:uppercase}
+/* the picker under a code box: the line Enter will take */
+#ed-code-dd .sr.hl{background:rgba(201,168,76,0.16);box-shadow:inset 3px 0 0 var(--gold)}
+/* pictures: big enough to check the quotation by eye; tap one to see it full size */
+.pl-img,.pl-img-ph{width:48px!important;height:48px!important}
+.pl-img{cursor:zoom-in}
+.pl-tbl th:nth-child(2){width:56px!important}
+#img-zoom{position:fixed;inset:0;z-index:10001;background:rgba(5,9,14,0.86);display:none;align-items:center;justify-content:center;padding:18px;cursor:zoom-out}
+#img-zoom .iz-card{background:#fff;border-radius:12px;padding:16px 16px 12px;max-width:min(560px,94vw);box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center}
+#img-zoom img{display:block;width:min(520px,86vw);height:min(520px,62vh);object-fit:contain;margin:0 auto}
+#img-zoom .iz-code{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#7A5A12;letter-spacing:1px;margin-top:10px}
+#img-zoom .iz-desc{font-family:'Jost',sans-serif;font-size:12.5px;color:#334;margin-top:3px;line-height:1.4}
+#img-zoom .iz-hint{font-family:'Jost',sans-serif;font-size:10px;color:#889;margin-top:8px;letter-spacing:.5px}
+@media (min-width:1024px){
+  /* pricing controls on one line */
+  #disc-bar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:7px 14px}
+  #disc-bar .mode-row{flex:0 0 auto}
+  #disc-bar .mode-btn{flex:none;padding:8px 18px}
+  #disc-bar .disc-row{flex:1 1 auto}
+  #disc-bar .disc-lbl{flex:0 0 auto}
+  #disc-bar .disc-note{margin-left:auto}
+  #disc-bar #net-box,#disc-bar .px-box{flex-basis:100%;margin-top:0}
+  .pl-img,.pl-img-ph{width:60px!important;height:60px!important}
+  .pl-tbl th:nth-child(2){width:76px!important}
+  .pl-tbl th,.pl-tbl td{padding:4px 10px}
+  /* bathroom controls and the import buttons share one line */
+  #tool-row{gap:5px!important}
+  #tool-row button{padding:8px 10px!important;letter-spacing:.45px!important;font-size:10px!important}
+  #tools-line .bb{padding:6px 8px;gap:6px}
+  #tools-line .bb .bb-btn{padding:6px 9px;letter-spacing:.5px}
+  #tools-line .bb .bb-acts{gap:6px}
+}
+@media (max-width:560px){
+  #search-zone{padding:8px 10px 6px}
+  #sum-strip{gap:10px;padding:5px 6px 5px 10px}
+  #sum-strip .ss-tot{flex-direction:column;align-items:flex-start;gap:0}
+  #sum-strip .ss-l{font-size:7.5px;letter-spacing:1.1px}
+  #sum-strip .ss-v{font-size:12.5px}
+  #sum-strip .best .ss-v{font-size:19px}
+  #sum-strip .ss-info,#sum-strip .ss-long{display:none}
+  #sum-strip .ss-clear{padding:8px 9px;font-size:9.5px;letter-spacing:.5px}
+  #sum-strip .ss-go{padding:9px 13px;font-size:10.5px;letter-spacing:1px}
+  #tools-line{gap:6px;margin-top:6px}
+  #tools-line .bb{flex-basis:100%}
+  #tools-line #tool-row{margin-left:0;flex-basis:100%}
+  #tools-line .bb.flat .bb-t{display:none}
+  #disc-bar .disc-note{display:none}
+}
+
 /* ══ CUSTOMER SCREEN ══ */
 #screen-customer{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(var(--safe-b)+16px);background:var(--ink)}
 .c-section-title{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15)}
@@ -959,7 +1030,7 @@ html, body{
 #gq-modal #se-quote-dd{display:block;position:static;max-height:min(52vh,420px);box-shadow:none}
 @media(max-width:560px){ .bh{max-width:calc(100vw - 46px);box-sizing:border-box;row-gap:3px} .bh-br{flex-basis:100%;height:0} .bh-money{display:none} .bh-acts{margin-left:auto} .bh-acts button{padding:5px 8px} .bh-name{min-width:0;max-width:200px} .plv-tip{display:none} .bb .bb-to select{max-width:150px}
   /* phone: the tools sit on one line that slides sideways, so the list keeps the screen */
-  #tool-row{flex-wrap:nowrap!important;overflow-x:auto;justify-content:flex-start!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  #tool-row{flex-wrap:nowrap!important;overflow-x:auto;justify-content:flex-start!important;margin-top:0!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
   #tool-row::-webkit-scrollbar{display:none}
   #tool-row button{flex:none;padding:7px 10px!important;font-size:10px!important;letter-spacing:.6px!important;white-space:nowrap}
   .bb{gap:6px;padding:6px 8px;margin-top:6px} .bb .bb-btn{padding:5px 8px;font-size:9.5px} .bb .bb-t{font-size:10.5px} .bb .bb-hint{display:none}
@@ -1262,7 +1333,7 @@ html, body{
 
 <!-- TABS -->
 <div id="tabs">
-  <button class="tab on" onclick="showScreen('builder')">Products</button>
+  <button class="tab on" onclick="showScreen('builder')">Add&nbsp;Products</button>
   <button class="tab" onclick="showScreen('quotes')">Find&nbsp;Quotes</button>
   <button class="tab" onclick="showScreen('customer')">Customer</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
@@ -1323,12 +1394,24 @@ html, body{
 <!-- BUILDER -->
 <div id="screen-builder" class="screen active">
   <div id="search-zone">
-    <div id="search-wrap">
+    <!-- totals + actions in ONE slim row at the top -->
+    <div id="sum-strip" class="empty">
+      <div class="ss-tot"><span class="ss-l">MRP Total</span><span class="ss-v" id="t-mrp">₹0</span></div>
+      <div class="ss-tot best"><span class="ss-l" id="t-best-l">Best Price</span><span class="ss-v" id="t-best">₹0</span></div>
+      <span class="ss-info" id="t-info"></span>
+      <span class="ss-gap"></span>
+      <button class="ss-clear" onclick="confirmClear()" title="Start a new, empty quotation">Clear</button>
+      <button class="ss-go" onclick="goPreview()">View<span class="ss-long"> Quotation</span> →</button>
+    </div>
+    <div id="search-wrap" style="display:none">
       <input type="text" id="search-inp" placeholder="Search by code, name or brand…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div id="search-dd"></div>
     </div>
-    <div id="tool-row" style="margin-top:8px;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap">
-      <button onclick="$('upload-modal').style.display='flex'" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
+    <div id="tools-line">
+    <!-- Plain / bathroom-wise -->
+    <div id="bath-bar" class="bb flat"></div>
+    <div id="tool-row" style="display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap">
+      <button onclick="openUpload()" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer">
         ⬆ Upload Code List
       </button>
       <button onclick="openScan()" style="background:transparent;border:1px solid rgba(201,168,76,0.45);border-radius:5px;padding:8px 16px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:var(--gold);cursor:pointer" title="Pick codes and quantities out of a quotation PDF, a photo or a screenshot">
@@ -1344,8 +1427,7 @@ html, body{
         🖼 Missing Images
       </button>
     </div>
-    <!-- Plain / bathroom-wise: what the search box adds to -->
-    <div id="bath-bar" class="bb flat"></div>
+    </div>
     <!-- Insert position banner -->
     <div id="insert-banner">
       <span class="ib-txt" id="insert-banner-txt">Inserting…</span>
@@ -1368,6 +1450,7 @@ html, body{
           <div>• Column 1: <b style="color:#D8E4EC">CODE</b> &nbsp;|&nbsp; Column 2: <b style="color:#D8E4EC">QTY</b></div>
           <div style="margin-top:6px;color:var(--slate);font-style:italic">Header row optional — will be auto-detected</div>
         </div>
+        <div id="upload-target" class="up-target" style="display:none"></div>
         <!-- Paste option -->
         <div style="margin-bottom:14px">
           <label style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;color:var(--muted2);text-transform:uppercase;display:block;margin-bottom:6px">Paste Codes (one per line: CODE,QTY)</label>
@@ -1442,21 +1525,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       </div>
     </div>
   </div>
-  <div id="items-list"><div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Search above to add products</div></div></div>
-  <div id="total-bar" class="">
-    <div class="tot-line">
-      <span class="tot-label">MRP Total</span>
-      <span class="tot-mrp-val" id="t-mrp">₹3,52,000</span>
-    </div>
-    <div class="tot-line" style="align-items:flex-end">
-      <span class="tot-best-label">Best Price Total</span>
-      <span class="tot-best-val" id="t-best">₹3,07,440</span>
-    </div>
-    <div class="tot-actions">
-      <button class="btn-clear" onclick="clearAll()">Clear</button>
-      <button class="btn-preview" onclick="goPreview()">View Quotation →</button>
-    </div>
-  </div>
+  <div id="items-list"><div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Type a code in the line below</div></div></div>
 </div>
 
 <!-- READY BATHROOM SETS (GQUOTE sheet) -->
@@ -1464,7 +1533,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   <div class="px-card">
     <div class="px-head"><span>📋 Add a ready bathroom set</span><button onclick="closeGQ()" title="Close">×</button></div>
     <div class="px-body">
-      <div class="px-sub">Pick a set from the GQUOTE sheet. It is added to this quotation as a new bathroom — change its products, quantities and name right on the Products page.</div>
+      <div class="px-sub">Pick a set from the GQUOTE sheet. It is added to this quotation as a new bathroom — change its products, quantities and name right on the Add Products page.</div>
       <div class="se-searchwrap">
         <div class="se-searchbar">
           <span class="ic">⌕</span>
@@ -2022,6 +2091,7 @@ function showScreen(id){
   if(id==='stock') renderStock();
   if(id==='editor') renderEditor();
   if(id==='quotes') renderQuotesPage();
+  if(id==='builder'){ refreshList(); refreshTotalBar(); }
 }
 
 function renderSummary(){
@@ -2485,20 +2555,44 @@ function cancelInsert(){
    the moment you leave the Products screen, so nothing blank reaches the
    quotation, the totals or the sheet. */
 const isBlankRow = it => !it || !String(it.code||'').trim();
-function blankRow(){
-  return {code:'',desc:'',brand:'',sdp:0,nrp:0,mrp:0,hsn:'',gst:0,
+function blankRow(auto){
+  const r={code:'',desc:'',brand:'',sdp:0,nrp:0,mrp:0,hsn:'',gst:0,
           sdp_net:0,nrp_basic:0,sdp_basic:0,qty:1};
+  if(auto) r.auto=1;          // put there by the page itself (start line / next line) — dropped quietly
+  return r;
 }
+/* A plain quotation always shows a line to type into, and so does every
+   bathroom that has nothing in it yet. Only while the Add Products page is open. */
+function builderOn(){ const e=$('screen-builder'); return !!(e && e.classList.contains('active')); }
+function ensureStarterRows(){
+  if(!builderOn()) return;
+  /* the page's own empty line belongs at the END of its list; one left behind
+     above lines that came in later (an import, a set) is tidied away — unless
+     the cursor is in it */
+  const ae=document.activeElement, tr=ae && ae.closest ? ae.closest('#items-list tr.pl-row') : null;
+  const cur=tr ? +tr.dataset.gi : -1;
+  const tidy=(arr,off)=>arr.filter((it,k)=>!(isBlankRow(it) && it.auto) || k===arr.length-1 || off+k===cur);
+  if(bathMode()){
+    let off=0;
+    S.bathrooms.forEach(b=>{ const n=b.items.length; b.items=tidy(b.items,off); off+=n; if(!b.items.length) b.items.push(blankRow(true)); });
+    rebuildItemsFromBathrooms();
+  } else {
+    S.items=tidy(S.items||[],0);
+    if(!S.items.length) S.items=[blankRow(true)];
+  }
+}
+const isManualBlank = it => isBlankRow(it) && !it.auto;
 function liveItemCount(){ return (S.items||[]).filter(i=>!isBlankRow(i)).length; }
+/* returns how many empty lines the USER had added (the page's own are not counted) */
 function dropBlankRows(){
   if(bathMode()){
-    let n=0; S.bathrooms.forEach(b=>{ const k=b.items.length; b.items=b.items.filter(i=>!isBlankRow(i)); n+=k-b.items.length; });
+    let n=0; S.bathrooms.forEach(b=>{ n+=b.items.filter(isManualBlank).length; b.items=b.items.filter(i=>!isBlankRow(i)); });
     rebuildItemsFromBathrooms(); return n;
   }
   if(!S.items||!S.items.length) return 0;
-  const before=S.items.length;
+  const n=S.items.filter(isManualBlank).length;
   S.items=S.items.filter(i=>!isBlankRow(i));
-  return before-S.items.length;
+  return n;
 }
 /* a bathroom left with no products is not printed or saved */
 function dropEmptyBathrooms(){
@@ -3049,6 +3143,19 @@ async function processBathroomUpload(){
 // ── UPLOAD ───────────────────────────────────────────────────────
 let uploadFileData = null;
 
+function openUpload(){
+  const t=$('upload-target');
+  if(t){
+    if(bathMode()){
+      const ab=activeBath();
+      t.innerHTML='<label>Put the lines in <select id="upload-bath">'+
+        S.bathrooms.map((b,i)=>'<option value="'+i+'"'+(b===ab?' selected':'')+'>'+esc(b.name)+'</option>').join('')+
+        '<option value="new">＋ A new bathroom</option></select></label>';
+      t.style.display='block';
+    } else { t.innerHTML=''; t.style.display='none'; }
+  }
+  $('upload-modal').style.display='flex';
+}
 function closeUpload(){
   $('upload-modal').style.display='none';
   $('upload-paste').value='';
@@ -3088,17 +3195,28 @@ function parseRows(text){
 
 function importRows(rows){
   let found=0, notFound=[];
+  /* a bathroom-wise quotation: into the bathroom picked in the box (default: the one being filled) */
+  let tb=null, isNew=false;
+  if(bathMode()){
+    const sel=$('upload-bath'), v=sel?sel.value:'';
+    if(v==='new'){ tb={name:uniqueBathName('BATHROOM '+(S.bathrooms.length+1)), items:[]}; isNew=true; }
+    else tb=(v!=='' && S.bathrooms[+v]) || activeBath();
+  }
+  const dest=()=>tb?tb.items:S.items;
+  const clean=a=>a.filter(i=>!(isBlankRow(i) && i.auto));      // the page's own empty line makes way
+  if(tb) tb.items=clean(tb.items); else S.items=clean(S.items||[]);
   rows.forEach(({code,qty})=>{
     // Skip header row
     if(code==='CODE'||code==='ITEM CODE'||code==='PRODUCT CODE') return;
     const p=PMAP[code];
-    if(p){
-      if(bathMode()) activeBath().items.push({...p,qty});      // a bathroom-wise quotation: into the bathroom being filled
-      else S.items.push({...p,qty});
-      found++;
-    } else { notFound.push(code); }
+    if(p){ dest().push({...p,qty}); found++; }
+    else { notFound.push(code); }
   });
-  if(bathMode()) rebuildItemsFromBathrooms();
+  if(tb){
+    if(isNew && found) S.bathrooms.push(tb);
+    if(found){ ACTIVE_BATH=tb; COLLAPSED.delete(tb); }
+    rebuildItemsFromBathrooms();
+  }
   return {found, notFound};
 }
 
@@ -3731,32 +3849,27 @@ function refreshAll(){
 }
 
 function refreshTotalBar(){
-  const tb=$('total-bar');
-  if(!S.items.length){tb.classList.remove('visible');return;}
-  const tot=totals();
-  tb.classList.add('visible');
+  const st=$('sum-strip'); if(!st) return;
+  const tot=totals(), n=liveItemCount();
+  let pcs=0; (S.items||[]).forEach(i=>{ if(!isBlankRow(i)) pcs+=i.qty; });
   $('t-mrp').textContent=fmt(tot.mrp);
   $('t-best').textContent=fmt(tot.charges ? tot.grand : tot.best);
-  const bl=document.querySelector('#total-bar .tot-best-label');
-  if(bl) bl.textContent = tot.charges ? 'Net Payable · incl. charges '+fmt(tot.charges) : 'Best Price Total';
+  const bl=$('t-best-l');
+  if(bl) bl.textContent = tot.charges ? 'Net Payable · incl. charges '+fmt(tot.charges) : 'Best Price';
+  const nb=bathMode()?S.bathrooms.length:0;
+  $('t-info').textContent=(nb?nb+' bathroom'+(nb===1?'':'s')+' · ':'')+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs';
+  st.classList.toggle('empty', !n);
+}
+function confirmClear(){
+  if(liveItemCount() && !confirm('Clear the whole quotation and start a new one?')) return;
+  clearAll();
 }
 
 /* The Products list is a single slim-row table. The old large-card view was
    removed, along with the view toggle and the remembered preference. */
 try{ localStorage.removeItem('gbw_plist_view_v1'); }catch(e){}
 
-function plistViewBar(){
-  let pcs=0; S.items.forEach(i=>{ if(!isBlankRow(i)) pcs+=i.qty; });
-  if(bathMode()){
-    const n=liveItemCount();
-    return '<div class="pl-viewbar"><span class="plv-info">'+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s')+' · '+n+' product line'+(n===1?'':'s')+' · '+pcs+' pcs</span>'+
-      '<span class="plv-tip">Tap a bathroom’s heading to add products to it · drag ⠿ to move a line, even into another bathroom</span></div>';
-  }
-  const n=liveItemCount(), blanks=S.items.length-n;
-  return '<div class="pl-viewbar">'+
-    '<span class="plv-info">'+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs'+
-      (blanks?' · '+blanks+' empty':'')+'</span></div>';
-}
+function plistViewBar(){ return ''; }   /* the counts now sit in the totals strip at the top */
 
 /* Slim one-line-per-item table — same shape as the Search & Edit editor. */
 function plistRowsHTML(){
@@ -3780,7 +3893,7 @@ function plistRowsHTML(){
     const url=empty?'':(IMAGE_MAP[item.code]||'');
     const c=esc(item.code||'');
     const img=url
-      ? '<img class="pl-img" src="'+url+'" onerror="this.style.display=\'none\'" alt="">'
+      ? '<img class="pl-img" src="'+url+'" data-code="'+c+'" onerror="this.style.display=\'none\'" alt="" title="Tap to see it big">'
       : '<div class="pl-img-ph">—</div>';
     const hot=!!(insertFrom && insertFrom.row===i);
     const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
@@ -3793,10 +3906,10 @@ function plistRowsHTML(){
       '<td>'+img+'</td>'+
       '<td class="pl-prod">'+
         '<input class="pl-code-inp" value="'+c+'" data-i="'+i+'" spellcheck="false" autocomplete="off" '+
-               'autocapitalize="characters" placeholder="'+(empty?'type or search a code…':'')+'" '+
+               'autocapitalize="characters" placeholder="'+(empty?'Type code or name…':'')+'" '+
                'title="'+(empty?'Type a code, or search by name':'Tap to swap this product for another')+'">'+
         (empty
-          ? '<div class="pl-hint">empty line — fill it in or it will be dropped</div>'
+          ? '<div class="pl-hint">type a code or a product name, then pick it</div>'
           : '<div class="pl-name" title="'+esc(item.desc)+'">'+esc(item.desc)+'</div>')+'</td>'+
       '<td class="'+(empty?'pl-dash':'pl-mrp')+'">'+(empty?'—':fmtN(item.mrp))+'</td>'+
       '<td class="'+(empty?'pl-dash':'pl-best')+'">'+(empty?'—':fmtN(price))+'</td>'+
@@ -3826,22 +3939,33 @@ function wirePlistCodeInputs(){
   document.querySelectorAll('#items-list .pl-code-inp').forEach(inp=>{
     inp.addEventListener('focus',e=>{ e.target.select(); showEdCodeDrop(e.target,-1,'plist',e.target.dataset.i); });
     inp.addEventListener('input',e=>showEdCodeDrop(e.target,-1,'plist',e.target.dataset.i));
+    inp.dataset.old=inp.value;
     inp.addEventListener('keydown',e=>{
-      if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
-      if(e.key==='Escape'){ e.target.value=e.target.dataset.old; hideEdCodeDrop(); e.target.blur(); }
+      const el=e.target;
+      if((e.key==='ArrowDown'||e.key==='ArrowUp') && edDropOpen()){ e.preventDefault(); edDropMove(e.key==='ArrowDown'?1:-1); return; }
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const v=String(el.value||'').trim().toUpperCase();
+        if(!(v && PMAP[v])){ const pick=edDropChoice(); if(pick){ pickEdCode(pick); return; } }
+        el.dataset.next='1'; el.blur();
+      }
+      if(e.key==='Escape'){ el.value=el.dataset.old; hideEdCodeDrop(); el.blur(); }
     });
     inp.addEventListener('blur',e=>{
       const el=e.target;
       setTimeout(()=>{
         if(_edActiveInput===el) hideEdCodeDrop();
         if(el.dataset.done==='1') return;          // a picker choice already handled it
-        swapItemCodeAt(el.dataset.i, el.value);
+        const v=String(el.value||'').trim().toUpperCase();
+        if(v===String(el.dataset.old||'').toUpperCase()) return;   // nothing typed: leave the list alone (no repaint to steal the cursor)
+        if(!v){ el.value=el.dataset.old||''; return; }             // emptied: put the code back
+        swapItemCodeAt(el.dataset.i, el.value, el.dataset.next==='1');
       },180);
     });
   });
 }
 
-function swapItemCodeAt(idx, raw){
+function swapItemCodeAt(idx, raw, goNext){
   idx=parseInt(idx,10);
   const row=(S.items||[])[idx];
   if(!row) return;                                  // row already gone — nothing to do
@@ -3849,14 +3973,40 @@ function swapItemCodeAt(idx, raw){
   const nc=String(raw||'').trim().toUpperCase();
   if(!nc || nc===oldCode){ refreshList(); return; } // unchanged or cleared — just repaint
   const p=PMAP[nc];
-  if(!p){ toast('“'+nc+'” is not in the catalogue'); refreshList(); return; }
+  if(!p){ toast('“'+nc+'” is not in the catalogue'); refreshList(); if(!oldCode) focusPlistRow(idx); return; }
 
-  if(bathMode()){ const loc=locateRow(idx); if(!loc) return; loc.b.items[loc.i]={...p, qty:row.qty}; rebuildItemsFromBathrooms(); }
-  else S.items[idx]={...p, qty:row.qty};            // swap in place — other lines untouched
+  const wasBlank=isBlankRow(row);
+  /* the cursor may already be in another line (a click there finished this edit) — it stays there */
+  const ae=document.activeElement, tr=ae && ae.closest ? ae.closest('#items-list tr.pl-row') : null;
+  const keep=(tr && +tr.dataset.gi!==idx) ? {gi:+tr.dataset.gi, sel:ae.classList.contains('pl-code-inp')?'.pl-code-inp':(ae.matches('.pl-qty input')?'.pl-qty input':'')} : null;
+  const n0=S.items.length;
+  let next=-1;                                      // the empty line to carry on typing in
+  if(bathMode()){
+    const loc=locateRow(idx); if(!loc) return;
+    loc.b.items[loc.i]={...p, qty:row.qty};
+    if(wasBlank){
+      if(loc.i===loc.b.items.length-1) loc.b.items.push(blankRow(true));   // the last line was filled: open the next one
+      if(isBlankRow(loc.b.items[loc.i+1])) next=idx+1;
+    }
+    rebuildItemsFromBathrooms();
+  } else {
+    S.items[idx]={...p, qty:row.qty};               // swap in place — other lines untouched
+    if(wasBlank){
+      if(idx===S.items.length-1) S.items.push(blankRow(true));
+      if(isBlankRow(S.items[idx+1])) next=idx+1;
+    }
+  }
   pruneStockOverrides();
   cancelInsert();
   refreshAll();
-  toast(oldCode ? (oldCode+' → '+nc) : ('Added '+nc));
+  const twin=S.items.findIndex((it,j)=>j!==idx && it.code===nc);
+  toast((oldCode ? (oldCode+' → '+nc) : ('Added '+nc))+(twin>=0?' — also on line '+(twin+1):''));
+  if(goNext && next>=0) focusPlistRow(next);
+  else if(keep && keep.sel){
+    const gi=keep.gi+((S.items.length>n0 && keep.gi>idx)?1:0);
+    const el=document.querySelector('#items-list tr.pl-row[data-gi="'+gi+'"] '+keep.sel);
+    if(el) el.focus();
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -4010,8 +4160,9 @@ function refreshList(){
   const a=document.activeElement;
   if(a && a.classList && a.classList.contains('bh-name') && list.contains(a)){ _listPending=true; return; }
   _listPending=false;
+  ensureStarterRows();
   if(!S.items.length && !bathMode()){
-    list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Search above to add products</div></div>';
+    list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Type a code in the line below</div></div>';
     return;
   }
   list.innerHTML=plistViewBar()+plistRowsHTML();
@@ -4089,12 +4240,29 @@ function setActiveBath(bi){
   ACTIVE_BATH=b;
   refreshList();
 }
+/* ＋ Add product: an empty line at the end of that bathroom (or of the plain
+   list), with the cursor in it. An empty line already waiting there is reused. */
 function addToBathroom(bi){
   const b=(S.bathrooms||[])[+bi]; if(!b) return;
   ACTIVE_BATH=b; COLLAPSED.delete(b);
-  cancelInsert(); refreshList();
-  const s=$('search-inp'); if(s){ s.focus(); s.scrollIntoView({block:'nearest'}); }
-  toast('Search a product — it goes into “'+b.name+'”');
+  cancelInsert();
+  if(!b.items.length || !isBlankRow(b.items[b.items.length-1])){ b.items.push(blankRow(true)); rebuildItemsFromBathrooms(); }
+  refreshAll();
+  focusPlistRow(firstRowOf(b)+b.items.length-1);
+}
+function addLineAtEnd(){
+  if(bathMode()){ addToBathroom(S.bathrooms.indexOf(activeBath())); return; }
+  cancelInsert();
+  if(!S.items.length || !isBlankRow(S.items[S.items.length-1])) S.items.push(blankRow(true));
+  refreshAll();
+  focusPlistRow(S.items.length-1);
+}
+/* the bathroom the cursor is in — shown on its heading, and where Upload Code List puts lines by default */
+function markActiveBath(b){
+  if(!b || ACTIVE_BATH===b) return;
+  ACTIVE_BATH=b;
+  const bi=S.bathrooms.indexOf(b);
+  document.querySelectorAll('#items-list tr.pl-bhead').forEach(h=>h.classList.toggle('act', +h.dataset.bi===bi));
 }
 function renameBathroom(bi, raw){
   const b=(S.bathrooms||[])[+bi]; if(!b) return;
@@ -4191,24 +4359,21 @@ function showBathroomModeBar(){
   if(!bathMode()){
     bar.className='bb flat';
     bar.innerHTML='<span class="bb-t">Plain quotation</span>'+
+      '<span class="bb-acts">'+
+      '<button class="bb-btn" onclick="addLineAtEnd()" title="An empty line at the end, ready for a code">＋ Add product</button>'+
       '<button class="bb-btn gold" onclick="addBathroom()" title="Make this quotation bathroom-wise">＋ Add Bathroom</button>'+
-      '<span class="bb-hint">for a bathroom-wise quotation</span>';
-    if(s) s.placeholder='Search by code, name or brand…';
+      '</span>';
     return;
   }
   const ab=activeBath(), a=S.bathrooms;
   bar.className='bb';
   bar.innerHTML='<span class="bb-t">🛁 '+a.length+' bathroom'+(a.length===1?'':'s')+'</span>'+
-    '<label class="bb-to">Adding to <select onchange="setActiveBath(this.value)">'+
-      a.map((b,i)=>'<option value="'+i+'"'+(b===ab?' selected':'')+'>'+esc(b.name)+'</option>').join('')+
-    '</select></label>'+
     '<span class="bb-acts">'+
     '<button class="bb-btn gold" onclick="addBathroom()">＋ Add Bathroom</button>'+
     (a.length>1 ? '<button class="bb-btn" onclick="openArrange()" title="Drag the bathrooms into the order they should print">⇅ Arrange</button>' : '')+
     (a.length>1 ? '<button class="bb-btn" onclick="setAllCollapsed('+(a.every(b=>COLLAPSED.has(b))?'false':'true')+')">'+(a.every(b=>COLLAPSED.has(b))?'▾ Open all':'▸ Fold all')+'</button>' : '')+
     '<button class="bb-btn ghost" onclick="ungroupAll()" title="Join all bathrooms into one plain list">Make plain</button>'+
     '</span>';
-  if(s) s.placeholder='Search a product to add to “'+ab.name+'”…';
 }
 
 /* ── one bathroom's heading inside the list ── */
@@ -4220,7 +4385,6 @@ function bathHeadHTML(b, bi){
       '<button class="bh-col" onclick="toggleBathCollapse('+bi+')" title="'+(col?'Show':'Hide')+' its lines">'+(col?'▸':'▾')+'</button>'+
       '<span class="bh-no">'+(bi+1)+'</span>'+
       '<input class="bh-name" value="'+esc(b.name)+'" data-bi="'+bi+'" spellcheck="false" autocomplete="off" title="Tap to rename">'+
-      (act ? '<span class="bh-tag" title="The search box adds products here">✚ ADDING HERE</span>' : '')+
       '<span class="bh-br"></span>'+
       '<span class="bh-meta"><b>'+live.length+'</b> product'+(live.length===1?'':'s')+' · <b>'+pcs+'</b> pcs<span class="bh-money"> · MRP ₹'+fmtN(mrp)+' · Best <b>₹'+fmtN(best)+'</b></span></span>'+
       '<span class="bh-acts">'+
@@ -4242,15 +4406,44 @@ function bathHeadHTML(b, bi){
   list.addEventListener('focusin', e=>{ const inp=e.target.closest && e.target.closest('.bh-name'); if(inp){ inp.dataset.old=inp.value; inp.select(); } });
   list.addEventListener('keydown', e=>{
     const inp=e.target.closest && e.target.closest('.bh-name'); if(!inp) return;
-    if(e.key==='Enter'){ e.preventDefault(); inp.blur(); }
+    if(e.key==='Enter'){ e.preventDefault(); inp.dataset.go='1'; inp.blur(); }
     if(e.key==='Escape'){ inp.value=inp.dataset.old||inp.value; inp.blur(); }
+  });
+  list.addEventListener('focusin', e=>{
+    const c=e.target.closest && e.target.closest('.pl-code-inp,.pl-qty input'); if(!c || !bathMode()) return;
+    const tr=c.closest('tr.pl-row'); const loc=tr?locateRow(+tr.dataset.gi):null;
+    if(loc) markActiveBath(loc.b);
+  });
+  /* a picture: tap it to see it full size */
+  list.addEventListener('click', e=>{
+    const im=e.target.closest && e.target.closest('img.pl-img'); if(im) openImgZoom(im.dataset.code, im.src);
   });
   list.addEventListener('focusout', e=>{
     const inp=e.target.closest && e.target.closest('.bh-name'); if(!inp) return;
+    const go=inp.dataset.go==='1'; inp.dataset.go='';
     renameBathroom(inp.dataset.bi, inp.value);
+    if(go){
+      const b=S.bathrooms[+inp.dataset.bi];
+      if(b && b.items.length && isBlankRow(b.items[0]) && !b.items.some(i=>!isBlankRow(i))) setTimeout(()=>focusPlistRow(firstRowOf(b)), _listPending?260:20);
+    }
     if(_listPending) setTimeout(()=>{ const a=document.activeElement; if(_listPending && !(a && a.classList && a.classList.contains('bh-name'))) refreshList(); }, 220);
   });
 })();
+
+function openImgZoom(code, src){
+  if(!src) return;
+  let z=$('img-zoom');
+  if(!z){
+    z=document.createElement('div'); z.id='img-zoom';
+    z.addEventListener('click', ()=>{ z.style.display='none'; });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && z.style.display==='flex') z.style.display='none'; });
+    document.body.appendChild(z);
+  }
+  const p=PMAP[code]||{};
+  z.innerHTML='<div class="iz-card"><img src="'+esc(src)+'" alt=""><div class="iz-code">'+esc(code||'')+'</div>'+
+    '<div class="iz-desc">'+esc(p.desc||'')+'</div><div class="iz-hint">tap anywhere to close</div></div>';
+  z.style.display='flex';
+}
 
 // ── RENDER PREVIEW ──
 function renderPreview(){
@@ -6650,7 +6843,7 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
   }
   if(!res.length){ hideEdCodeDrop(); return; }
   dd.innerHTML=res.map(p=>{
-    const url=IMAGE_MAP[p.code]||'';
+    const url=(getCustomProducts()[p.code]||{}).img||IMAGE_MAP[p.code]||'';
     const st=getStock(p.code);
     const tag = (st!==null&&st>0)?'<span class="sr-stock-in">✓ '+fmtN(st)+'</span>':(st!==null?'<span class="sr-stock-out">✕ 0</span>':'<span class="sr-stock-unk">—</span>');
     return '<div class="sr" data-pick="'+esc(p.code)+'">'+
@@ -6658,11 +6851,25 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
       '<div style="flex:1;min-width:0"><div class="sr-code">'+esc(p.code)+'</div><div class="sr-desc">'+esc(p.desc)+'</div>'+
       '<div class="sr-meta"><span class="sr-mrp">MRP ₹'+fmtN(p.mrp)+'</span>'+tag+'</div></div></div>';
   }).join('');
+  if(_edTarget==='plist'){ const f=dd.querySelector('[data-pick]'); if(f) f.classList.add('hl'); }
   const r=input.getBoundingClientRect();
   dd.style.left=Math.max(6,Math.min(r.left, window.innerWidth-270))+'px';
   dd.style.top=(r.bottom+4)+'px';
   dd.style.width=Math.min(Math.max(r.width,260), window.innerWidth-12)+'px';
   dd.classList.add('open');
+}
+function edDropOpen(){ const dd=$('ed-code-dd'); return !!(dd && dd.classList.contains('open') && dd.querySelector('[data-pick]')); }
+function edDropMove(d){
+  const dd=$('ed-code-dd'); if(!dd) return;
+  const r=[...dd.querySelectorAll('[data-pick]')]; if(!r.length) return;
+  let k=r.findIndex(x=>x.classList.contains('hl'));
+  k=Math.max(0, Math.min(r.length-1, k+d));
+  r.forEach(x=>x.classList.remove('hl')); r[k].classList.add('hl'); r[k].scrollIntoView({block:'nearest'});
+}
+function edDropChoice(){
+  if(!edDropOpen()) return '';
+  const dd=$('ed-code-dd'); const h=dd.querySelector('[data-pick].hl')||dd.querySelector('[data-pick]');
+  return h ? h.dataset.pick : '';
 }
 function hideEdCodeDrop(){
   const dd=$('ed-code-dd'); if(dd){ dd.classList.remove('open'); dd.innerHTML=''; dd.style.zIndex=''; }
@@ -6676,7 +6883,7 @@ function pickEdCode(code){
     const at=_edOldCode, inp=_edActiveInput;        // holds the row index for this target
     if(inp) inp.dataset.done='1';                   // stop blur from re-running the swap
     hideEdCodeDrop();
-    swapItemCodeAt(at, code);
+    swapItemCodeAt(at, code, true);
     return;
   }
   hideEdCodeDrop();
