@@ -349,6 +349,14 @@ tr.rmoved td{animation:rowFlash .9s ease}
 #sum-strip .ss-clear{background:transparent;border:1px solid rgba(220,60,50,0.5);color:#E06060;border-radius:6px;padding:9px 14px;font-family:'Jost',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 #sum-strip .ss-go{background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));color:var(--ink);border:none;border-radius:6px;padding:10px 22px;font-family:'Jost',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 #sum-strip .ss-go:active{opacity:.85}
+#sum-strip .ss-name{display:flex;align-items:center;gap:8px;background:var(--ink3);border:1px solid rgba(201,168,76,0.4);border-radius:6px;padding:0 10px;height:36px;flex:0 1 300px;min-width:170px}
+#sum-strip .ss-name:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.10)}
+#sum-strip .ss-nl{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+#sum-strip .ss-name input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:#E6EDF5;font-family:'Jost',sans-serif;font-size:13px;font-weight:700;letter-spacing:.6px}
+#sum-strip .ss-name input::placeholder{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:.2px}
+#sum-strip .ss-save{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.75);color:var(--gold-l);border-radius:6px;padding:0 16px;height:36px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+#sum-strip .ss-save:hover{background:rgba(201,168,76,0.22)}
+#sum-strip .ss-go{height:36px;padding:0 20px}
 #sum-strip.empty .ss-v{color:var(--muted)}
 #tools-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
 #tools-line .bb{margin-top:0;flex:1 1 auto}
@@ -391,14 +399,18 @@ tr.rmoved td{animation:rowFlash .9s ease}
 }
 @media (max-width:560px){
   #search-zone{padding:8px 10px 6px}
-  #sum-strip{gap:10px;padding:5px 6px 5px 10px}
+  #sum-strip{gap:6px 10px;padding:5px 6px 6px 10px;flex-wrap:wrap}
+  #sum-strip .ss-gap{flex:1}
+  #sum-strip .ss-name{order:5;flex:1 1 60%;min-width:0;height:36px;padding:0 8px}
+  #sum-strip .ss-nl{display:none}
+  #sum-strip .ss-save{order:6;height:36px;padding:0 12px;font-size:10.5px;letter-spacing:.8px}
   #sum-strip .ss-tot{flex-direction:column;align-items:flex-start;gap:0}
   #sum-strip .ss-l{font-size:7.5px;letter-spacing:1.1px}
   #sum-strip .ss-v{font-size:12.5px}
   #sum-strip .best .ss-v{font-size:19px}
   #sum-strip .ss-info,#sum-strip .ss-long{display:none}
   #sum-strip .ss-clear{padding:8px 9px;font-size:9.5px;letter-spacing:.5px}
-  #sum-strip .ss-go{padding:9px 13px;font-size:10.5px;letter-spacing:1px}
+  #sum-strip .ss-go{height:36px;padding:0 13px;font-size:10.5px;letter-spacing:1px}
   #tools-line{gap:6px;margin-top:6px}
   #tools-line .bb{flex-basis:100%}
   #tools-line #tool-row{margin-left:0;flex-basis:100%}
@@ -1400,7 +1412,11 @@ html, body{
       <div class="ss-tot best"><span class="ss-l" id="t-best-l">Best Price</span><span class="ss-v" id="t-best">₹0</span></div>
       <span class="ss-info" id="t-info"></span>
       <span class="ss-gap"></span>
-      <button class="ss-clear" onclick="confirmClear()" title="Start a new, empty quotation">Clear</button>
+      <label class="ss-name" title="Customer name — the same box as on the Customer page">
+        <span class="ss-nl">Customer</span>
+        <input type="text" id="s-name" placeholder="Customer name" autocomplete="off" spellcheck="false" autocapitalize="characters">
+      </label>
+      <button class="ss-save js-save" onclick="saveQuoteToCloud()" title="Save this quotation to the sheet">💾 Save<span class="ss-long"> Quotation</span></button>
       <button class="ss-go" onclick="goPreview()">View<span class="ss-long"> Quotation</span> →</button>
     </div>
     <div id="search-wrap" style="display:none">
@@ -1761,7 +1777,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
   <div class="prev-bar">
     <span class="prev-bar-title">Quotation Preview</span>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-      <button class="btn-print-alt" onclick="saveQuoteToCloud()">💾 Save Quote</button>
+      <button class="btn-print-alt js-save" onclick="saveQuoteToCloud()">💾 Save Quote</button>
       <button class="btn-print-alt" onclick="doPrintDispatch()">📦 Dispatch List</button>
       <button class="btn-print-alt" onclick="exportQuotationExcel()">📊 Excel</button>
       <button class="btn-print-alt" onclick="doPrint()">🖨 Export PDF</button>
@@ -2092,6 +2108,7 @@ function showScreen(id){
   if(id==='editor') renderEditor();
   if(id==='quotes') renderQuotesPage();
   if(id==='builder'){ refreshList(); refreshTotalBar(); }
+  else syncNameFromStrip();
 }
 
 function renderSummary(){
@@ -3859,7 +3876,31 @@ function refreshTotalBar(){
   const nb=bathMode()?S.bathrooms.length:0;
   $('t-info').textContent=(nb?nb+' bathroom'+(nb===1?'':'s')+' · ':'')+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs';
   st.classList.toggle('empty', !n);
+  syncNameToStrip();
 }
+/* the name box in the top row IS the Customer page's name — kept in step both ways */
+function syncNameFromStrip(){
+  const a=$('s-name'), f=$('f-name'); if(!a||!f) return;
+  const v=a.value.toUpperCase();
+  if(f.value!==v){ f.value=v; f.dispatchEvent(new Event('change')); }
+}
+function syncNameToStrip(){
+  const a=$('s-name'), f=$('f-name'); if(!a||!f) return;
+  if(document.activeElement!==a && a.value!==f.value) a.value=f.value;
+}
+(function wireStripName(){
+  const a=$('s-name'), f=$('f-name'); if(!a||!f) return;
+  a.style.textTransform='uppercase';
+  a.addEventListener('input', ()=>{
+    const v=a.value, u=v.toUpperCase();
+    if(v!==u){ const p=a.selectionStart, q=a.selectionEnd; a.value=u; try{ a.setSelectionRange(p,q); }catch(e){} }
+    f.value=a.value;
+  });
+  a.addEventListener('change', syncNameFromStrip);
+  a.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); a.blur(); } });
+  f.addEventListener('input', syncNameToStrip);
+  f.addEventListener('change', syncNameToStrip);
+})();
 function confirmClear(){
   if(liveItemCount() && !confirm('Clear the whole quotation and start a new one?')) return;
   clearAll();
@@ -7199,16 +7240,17 @@ function persistSaved(){
 
 let _newSaveBusy=false;
 function setSaveBtnBusy(on){
-  const b=document.querySelector('.prev-bar button[onclick="saveQuoteToCloud()"]');
-  if(!b) return;
-  if(!b._label) b._label=b.textContent;
-  b.disabled=!!on; b.style.opacity=on?'.6':'';
-  b.textContent=on?'⏳ Saving…':b._label;
+  document.querySelectorAll('button.js-save').forEach(b=>{
+    if(!b._label) b._label=b.innerHTML;
+    b.disabled=!!on; b.style.opacity=on?'.6':'';
+    b.innerHTML=on?'⏳ Saving…':b._label;
+  });
 }
 
 async function saveQuoteToCloud(){
   if(!qapiReady()){ showScreen('quotes'); toggleQuoteApiSetup(); toast('Set up saving first'); return; }
-  if(!S.items||!S.items.length){ toast('Nothing to save — add products first'); return; }
+  if(!S.items||!liveItemCount()){ toast('Nothing to save — add products first'); return; }
+  syncNameFromStrip();
   const name=($('f-name')&&$('f-name').value.trim())||'';
   if(!name && !confirm('No customer name entered.\n\nSave anyway? It will be harder to find later.')) return;
 
@@ -7217,6 +7259,7 @@ async function saveQuoteToCloud(){
     qno = confirm('“'+CUR_QNO+'” is open.\n\nOK = update it\nCancel = save as a NEW quotation') ? CUR_QNO : '';
   }
   const payload=quotePayload(qno);
+  if(builderOn()) refreshAll();                     // the empty lines the payload dropped: repaint the page
   if(!payloadItems(payload).length){ toast('Nothing to save — every line has qty 0'); return; }
 
   /* UPDATE — the quote number is already known, so apply it here instantly
@@ -7392,12 +7435,11 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState=
 
 function renderSyncState(){
   const n=OUTBOX.length;
-  const b=document.querySelector('.prev-bar button[onclick="saveQuoteToCloud()"]');
-  if(b && !_newSaveBusy){
-    if(!b._label) b._label=b.textContent;
-    b.textContent = n ? '💾 Save Quote · ⟳'+n : b._label;
-    b.title = n ? (n+' change'+(n===1?'':'s')+' syncing to the sheet in the background') : '';
-  }
+  if(!_newSaveBusy) document.querySelectorAll('button.js-save').forEach(b=>{
+    if(!b._label) b._label=b.innerHTML;
+    b.innerHTML = n ? b._label+' · ⟳'+n : b._label;
+    b.title = n ? (n+' change'+(n===1?'':'s')+' syncing to the sheet in the background') : 'Save this quotation to the sheet';
+  });
   if(!n) return;
   const stuck=OUTBOX.some(e=>e.tries>0);
   setFqStatus(stuck
