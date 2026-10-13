@@ -1356,7 +1356,7 @@ html, body{
 <div id="tabs">
   <button class="tab on" onclick="showScreen('builder')">Add&nbsp;Products</button>
   <button class="tab" onclick="showScreen('quotes')">Find&nbsp;Quotes</button>
-  <button class="tab" onclick="showScreen('customer')">Customer</button>
+  <button class="tab" onclick="showScreen('customer')">Customer&nbsp;Form</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
   <button class="tab" onclick="showScreen('stock')">Stock</button>
   <button class="tab" onclick="showScreen('editor')">Editor</button>
@@ -6993,6 +6993,22 @@ function showEdCodeDrop(input,rowIdx,target,oldCode){
   if(_edTarget==='plist'){ const f=dd.querySelector('[data-pick]'); if(f) f.classList.add('hl'); }
   dd.classList.add('open');
   placeEdCodeDrop(dd, input);
+  watchEdCodeDrop();
+}
+/* the page can shift under an open list (a row repainted, a message, a bar
+   changing height) — keep the list glued to its code box while it is open */
+let _edWatch=0;
+function watchEdCodeDrop(){
+  if(_edWatch) return;
+  let last='';
+  const tick=()=>{
+    const dd=$('ed-code-dd');
+    if(!dd || !dd.classList.contains('open') || !_edActiveInput || !_edActiveInput.isConnected){ _edWatch=0; return; }
+    const r=_edActiveInput.getBoundingClientRect(), k=r.top+'|'+r.left+'|'+r.width+'|'+window.innerHeight;
+    if(k!==last){ if(last) placeEdCodeDrop(dd, _edActiveInput); last=k; }
+    _edWatch=requestAnimationFrame(tick);
+  };
+  _edWatch=requestAnimationFrame(tick);
 }
 /* Under the code box when there is room; near the bottom of the screen it
    opens UPWARDS instead, so the whole list is always on screen. */
@@ -7876,16 +7892,12 @@ async function openSavedQuote(quoteNo, how){
   refreshAll();
   renderLoadedPanel();
   renderOpenBanner();
-  if(how==='edit' || how==='copy'){
-    showScreen('builder');
-    const il=$('items-list'); if(il) il.scrollTop=0;
-    toast(how==='copy'
-      ? 'Copy of '+quoteNo+' — a NEW quotation, not saved yet. 💾 Save Quote gives it its own number'+lost
-      : quoteNo+' open for editing — 💾 Save Quote will update it'+lost);
-  }else{
-    toast(quoteNo+' opened'+lost);
-    goPreview();
-  }
+  /* every way of opening a saved quotation lands on Add Products, ready to work on */
+  showScreen('builder');
+  const il=$('items-list'); if(il) il.scrollTop=0;
+  toast(how==='copy'
+    ? 'Copy of '+quoteNo+' — a NEW quotation, not saved yet. 💾 Save Quotation gives it its own number'+lost
+    : quoteNo+' opened — 💾 Save Quotation will update it'+lost);
 }
 function detachSavedQuote(){
   CUR_QNO=''; COPY_OF='';
