@@ -1207,6 +1207,8 @@ html, body{
 .fq-card .fq-amt.wait{color:var(--muted2);font-weight:600;font-size:11px}
 .fq-card .fq-mrpline{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);white-space:nowrap}
 .fq-card .fq-mrpline s{color:#9FB4C4}
+.fq-card .fq-mrp{font-size:12.5px;font-weight:700;color:#D8E4EC;letter-spacing:.2px}
+.fq-card .fq-mrpline{font-size:11px}
 .fq-card .fq-off{color:#4ADF90;font-weight:700}
 .fq-card .fq-x{background:transparent;border:none;color:#E06060;font-size:14px;font-weight:700;cursor:pointer;padding:4px 2px}
 .fq-card .fq-acts{display:flex;align-items:center;gap:6px;margin-top:5px}
@@ -1686,6 +1688,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button onclick="exportStockPDF()" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">🖨 Export Availability PDF</button>
+        <button id="stock-xl-btn" onclick="exportStockExcel()" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(201,168,76,0.75);color:var(--gold-l);border-radius:7px;padding:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">📊 Export Excel</button>
         <button onclick="resetStockStatuses()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--muted2);border-radius:7px;padding:11px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">↻ Reset to Auto</button>
       </div>
       <!-- Availability filter -->
@@ -4019,6 +4022,7 @@ function wirePlistCodeInputs(){
       setTimeout(()=>{
         if(_edActiveInput===el) hideEdCodeDrop();
         if(el.dataset.done==='1') return;          // a picker choice already handled it
+        if(!el.isConnected) return;                // repainted away while typing — the new box carries on
         const v=String(el.value||'').trim().toUpperCase();
         if(v===String(el.dataset.old||'').toUpperCase()) return;   // nothing typed: leave the list alone (no repaint to steal the cursor)
         if(!v){ el.value=el.dataset.old||''; return; }             // emptied: put the code back
@@ -4228,6 +4232,14 @@ function refreshList(){
   const a=document.activeElement;
   if(a && a.classList && a.classList.contains('bh-name') && list.contains(a)){ _listPending=true; return; }
   _listPending=false;
+  /* a code or qty box is being typed in: the repaint (a sync finishing, a price
+     change…) must not take the cursor or the half-typed text away — both are
+     put back into the same line afterwards */
+  let keepF=null;
+  if(a && list.contains(a) && a.closest && a.closest('tr.pl-row') && (a.classList.contains('pl-code-inp') || (a.matches && a.matches('.pl-qty input')))){
+    const tr=a.closest('tr.pl-row');
+    keepF={ref:(S.items||[])[+tr.dataset.gi], code:a.classList.contains('pl-code-inp'), val:a.value, s:a.selectionStart, e:a.selectionEnd, next:a.dataset.next};
+  }
   ensureStarterRows();
   if(!S.items.length && !bathMode()){
     list.innerHTML='<div class="empty-state"><div class="empty-ornament">✦ ✦ ✦</div><div class="empty-title">Your Quotation Awaits</div><div class="empty-sub">Type a code in the line below</div></div>';
@@ -4236,6 +4248,16 @@ function refreshList(){
   list.innerHTML=plistViewBar()+plistRowsHTML();
   _rowFlash.pl=-1;
   wirePlistCodeInputs();
+  if(keepF && keepF.ref){
+    const gi=S.items.indexOf(keepF.ref);
+    const el=gi>=0 ? document.querySelector('#items-list tr.pl-row[data-gi="'+gi+'"] '+(keepF.code?'.pl-code-inp':'.pl-qty input')) : null;
+    if(el){
+      el.value=keepF.val;
+      el.focus({preventScroll:true});
+      try{ if(keepF.s!=null) el.setSelectionRange(keepF.s, keepF.e); }catch(e){}
+      if(keepF.code && keepF.val!==el.dataset.old) showEdCodeDrop(el,-1,'plist',el.dataset.i);
+    }
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -4518,6 +4540,304 @@ function openImgZoom(code, src){
   z.innerHTML='<div class="iz-card"><img src="'+esc(src)+'" alt=""><div class="iz-code">'+esc(code||'')+'</div>'+
     '<div class="iz-desc">'+esc(p.desc||'')+'</div><div class="iz-hint">tap anywhere to close</div></div>';
   z.style.display='flex';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   STOCK TAB → EXCEL  (same layout as the ORDER STATUS sheet of the stock app)
+   ────────────────────────────────────────────────────────────────────────
+   Sheet 1 "ORDER STATUS": one row per code (the same code on two lines is
+   added up), RDMS ORDER input column, live totals, the RDMS discount cell,
+   filters, frozen header, landscape print on one page wide.
+   Sheet 2 "BRAND SUMMARY": lines / qty / available / fill rate / RDMS per
+   brand — all formulas, so it follows whatever is typed in RDMS ORDER.
+   Brand + colour come from the BRAND+COLOUR tab of the sheet (falls back to
+   the catalogue brand and the colour part of the code). The DISPLAY,
+   PENDING ORDERS, NET STOCK, MVP PENDING and MSL columns appear when the GBW
+   STOCK tab carries them.                                                 */
+let BC_MAP=null;                                   // code → {brand, colour, name}
+const BC_CACHE='gbw_brandcolour_v1';
+const BRAND_NAMES={JAF:'JAQUAR FAUCET', JAC:'JAQUAR CONCEALED CISTERN', JSW:'JAQUAR SANITARYWARE'};
+try{ const c=localStorage.getItem(BC_CACHE); if(c) BC_MAP=JSON.parse(c); }catch(e){}
+function parseBrandColour(text){
+  const rows=parseCSV(text).filter(r=>r.some(c=>String(c).trim()!==''));
+  if(rows.length<2) return null;
+  const h=rows[0].map(_norm);
+  const ci=h.findIndex(x=>x==='code'||x==='itemcode'||x==='productcode');
+  const bi=h.findIndex(x=>x==='brand'||x==='brandcode');
+  const ki=h.findIndex(x=>x==='colour'||x==='color'||x==='finish');
+  const ni=h.findIndex(x=>x==='brandname');
+  if(ci<0||bi<0||ki<0) return null;               // not that tab (Google hands back the first tab for a missing name)
+  const m={};
+  rows.slice(1).forEach(r=>{
+    const code=String(r[ci]||'').trim().toUpperCase(); if(!code) return;
+    m[code]={brand:String(r[bi]||'').trim().toUpperCase(), colour:String(r[ki]||'').trim().toUpperCase(), name:ni>=0?String(r[ni]||'').trim().toUpperCase():''};
+  });
+  return Object.keys(m).length ? m : null;
+}
+async function loadBrandColour(){
+  try{
+    const t=await Promise.race([fetchSheetText('BRAND+COLOUR'), new Promise((_,rj)=>setTimeout(()=>rj(new Error('timeout')),7000))]);
+    const m=parseBrandColour(t);
+    if(m){ BC_MAP=m; try{ localStorage.setItem(BC_CACHE, JSON.stringify(m)); }catch(e){} }
+  }catch(e){ /* offline / not shared: the cached copy (or the fallback) is used */ }
+  return BC_MAP;
+}
+function brandColourOf(p){
+  const b=BC_MAP && BC_MAP[p.code];
+  return {
+    brand: (b && b.brand) || String(p.brand||'').toUpperCase(),
+    colour:(b && b.colour) || colourOf(p.code),
+    name:  (b && b.name) || ''
+  };
+}
+let _excelJsP=null;
+function loadExcelJS(){
+  if(window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if(_excelJsP) return _excelJsP;
+  const one=src=>new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>window.ExcelJS?res(window.ExcelJS):rej(new Error('no ExcelJS')); s.onerror=()=>rej(new Error('load failed')); document.head.appendChild(s); });
+  _excelJsP=one('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js')
+    .catch(()=>one('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'))
+    .catch(e=>{ _excelJsP=null; throw e; });
+  return _excelJsP;
+}
+
+/* the rows of the export — one per code, in the order of the quotation */
+function stockExportRows(){
+  const by={}, order=[];
+  (S.items||[]).forEach(it=>{
+    if(isBlankRow(it)) return;
+    if(!by[it.code]){ by[it.code]={item:it, qty:0}; order.push(it.code); }
+    by[it.code].qty+=it.qty;
+  });
+  const f=S.stockFilter||'ALL';
+  return order.map(code=>{
+    const r=by[code], p=PMAP[code]||r.item;
+    const status=S.stockOverrides[code] || autoStockStatus({code:code, qty:r.qty});
+    const ex=(typeof STOCK_EXTRA!=='undefined' && STOCK_EXTRA[code]) || {};
+    const bc=brandColourOf(p);
+    return {code:code, qty:r.qty, status:status, desc:p.desc||'', brand:bc.brand, brandName:bc.name, colour:bc.colour,
+            stock:getStock(code), ex:ex, sdp:Number(p.sdp_net)||0};
+  }).filter(r=>f==='ALL' || r.status===f);
+}
+
+async function exportStockExcel(){
+  if(!liveItemCount()){ alert('Add some products to the quotation first.'); return; }
+  const btn=$('stock-xl-btn'); const lbl=btn?btn.innerHTML:'';
+  const busy=on=>{ if(btn){ btn.disabled=on; btn.style.opacity=on?'.6':''; btn.innerHTML=on?'⏳ Preparing Excel…':lbl; } };
+  busy(true);
+  try{
+    let EJ;
+    try{ EJ=await loadExcelJS(); }catch(e){ alert('Could not load the Excel maker — check the internet connection and try again.'); return; }
+    await loadBrandColour();
+    const rows=stockExportRows();
+    if(!rows.length){ alert('No '+((S.stockFilter||'ALL')==='AVAILABLE'?'available':'not-available')+' items to export.\n\nSwitch the filter on the Stock tab and try again.'); return; }
+    const wb=buildStockWorkbook(EJ, rows);
+    const buf=await wb.xlsx.writeBuffer();
+    const nm=(printName()||'QUOTATION').replace(/[\\\/:*?"<>|]+/g,' ').trim();
+    const fname='STOCK STATUS - '+nm+'.xlsx';
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href), 20000);
+    window._lastStockXlsx={name:fname, rows:rows.length};
+    toast('Excel exported — '+rows.length+' code'+(rows.length===1?'':'s'));
+  } finally { busy(false); }
+}
+
+function buildStockWorkbook(EJ, rows){
+  const wb=new EJ.Workbook();
+  wb.creator='Grace Bath World';
+  wb.calcProperties.fullCalcOnLoad=true;
+  const ARGB=c=>'FF'+c;
+  const fill=c=>({type:'pattern', pattern:'solid', fgColor:{argb:ARGB(c)}});
+  const font=o=>({name:o.n||'Arial', size:o.s||10, bold:!!o.b, italic:!!o.i, color:{argb:ARGB(o.c||'15201F')}});
+  const side=(st,c)=>({style:st, color:{argb:ARGB(c)}});
+  const cellB=c=>({left:side('thin',c), right:side('thin',c), top:side('thin',c), bottom:side('thin',c)});
+  const INT='#,##0;[Red]-#,##0;0', RS='"₹"#,##0.00';
+
+  /* which optional stock columns carry anything */
+  const has=k=>rows.some(r=>r.ex[k]!=null && r.ex[k]!=='');
+  const hasPend=has('pending');
+  const C=[
+    {k:'sr',     h:'SR#',            w:6.5},
+    {k:'code',   h:'CODE',           w:22},
+    {k:'rdms',   h:'RDMS ORDER',     w:17},
+    {k:'qty',    h:'ORDER QTY',      w:10.5},
+    {k:'status', h:'STATUS',         w:17},
+    {k:'name',   h:'ITEM NAME',      w:44},
+    {k:'brand',  h:'BRAND',          w:10},
+    {k:'colour', h:'COLOUR',         w:10},
+    {k:'stock',  h:'GBW STOCK',      w:11},
+    {k:'display',h:'DISPLAY',        w:9.5,  opt:'display'},
+    {k:'pending',h:'PENDING ORDERS', w:11.5, opt:'pending'},
+    {k:'net',    h:'NET STOCK',      w:10.5, opt:'net'},
+    {k:'mvp',    h:'MVP PENDING',    w:11.5, opt:'mvp'},
+    {k:'msl',    h:'MSL',            w:13,   opt:'msl'},
+    {k:'sdp',    h:'SDP NET',        w:12},
+    {k:'val',    h:'RDMS VALUE',     w:16}
+  ].filter(c=>!c.opt || (c.opt==='net' ? (has('net')||hasPend) : has(c.opt)));
+  const L={}; C.forEach((c,i)=>{ L[c.k]=String.fromCharCode(65+i); });
+  const nC=C.length, first=2, last=rows.length+1, totR=last+1, discR=totR+1;
+  const DISC='$'+L.sdp+'$'+discR;
+  const sumVal='SUBTOTAL(109,'+L.val+first+':'+L.val+last+')';
+  const discTxt='"(SDP NET − "&ROUND('+DISC+'*100,2)&"%"&")"';
+  const disc=0.04;
+
+  const ws=wb.addWorksheet('ORDER STATUS', {
+    views:[{state:'frozen', xSplit:3, ySplit:1, showGridLines:false, zoomScale:100}],
+    pageSetup:{paperSize:9, orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true,
+               margins:{left:0.35, right:0.35, top:0.45, bottom:0.55, header:0.2, footer:0.2}, printTitlesRow:'1:1'}
+  });
+  ws.columns=C.map(c=>({width:c.w}));
+
+  /* header */
+  const hr=ws.getRow(1); hr.height=48;
+  C.forEach((c,i)=>{
+    const cell=hr.getCell(i+1);
+    if(c.k==='rdms') cell.value={formula:'"RDMS ORDER"&CHAR(10)&"₹ "&TEXT('+sumVal+',"#,##0.00")&CHAR(10)&'+discTxt, result:'RDMS ORDER\n₹ 0.00\n(SDP NET − 4%)'};
+    else if(c.k==='val') cell.value={formula:'"RDMS VALUE"&CHAR(10)&'+discTxt, result:'RDMS VALUE\n(SDP NET − 4%)'};
+    else cell.value=c.h;
+    const brown=(c.k==='sdp'||c.k==='val'), rd=(c.k==='rdms');
+    cell.font=font({b:true, s:rd?10:9, c:'FFFFFF'});
+    cell.fill=fill(rd?'8A4F2C':(brown?'B0673C':'0F5E57'));
+    cell.alignment={horizontal:'center', vertical:'middle', wrapText:true};
+    const bc=rd?'5E3419':(brown?'8A4F2C':'0A443F');
+    cell.border=rd ? {left:side('medium',bc), right:side('medium',bc), top:side('medium',bc), bottom:side('medium',bc)}
+                   : {left:side('thin',bc), right:side('thin',bc), top:side('thin',bc), bottom:side('medium',bc)};
+  });
+
+  /* lines */
+  rows.forEach((r,k)=>{
+    const R=first+k, row=ws.getRow(R); row.height=20;
+    const avail=r.status==='AVAILABLE';
+    const bg=!avail ? 'FDF3F1' : (k%2 ? 'FAF7EF' : 'FFFFFF');
+    const st=r.stock, ex=r.ex;
+    const pend=ex.pending!=null && ex.pending!=='' ? Number(ex.pending) : null;
+    const net = ex.net!=null && ex.net!=='' ? Number(ex.net) : (pend!=null && st!=null ? st-pend : null);
+    const V={sr:k+1, code:r.code, rdms:null, qty:r.qty, status:r.status, name:r.desc, brand:r.brand, colour:r.colour,
+             stock:st, display:ex.display!=null&&ex.display!==''?Number(ex.display):null, pending:pend, net:net,
+             mvp:ex.mvp!=null&&ex.mvp!==''?Number(ex.mvp):null, msl:ex.msl!=null?String(ex.msl):null, sdp:r.sdp||null};
+    C.forEach((c,i)=>{
+      const cell=row.getCell(i+1);
+      let v=V[c.k];
+      if(c.k==='val') v={formula:'IF(OR('+L.rdms+R+'="",'+L.sdp+R+'=""),"",'+L.rdms+R+'*'+L.sdp+R+'*(1-'+DISC+'))', result:''};
+      if(v!==null && v!==undefined && !(typeof v==='number' && isNaN(v))) cell.value=v;
+      cell.alignment={horizontal:c.k==='name'?'left':'center', vertical:'middle'};
+      cell.fill=fill(bg);
+      cell.border=cellB('E2DCCD');
+      switch(c.k){
+        case 'sr':      cell.font=font({s:9, c:'7C857F'}); break;
+        case 'code':    cell.font=font({n:'Consolas', b:true, c:'0A443F'}); break;
+        case 'rdms':    cell.font=font({b:true, s:10.5, c:'1F3A93'}); cell.fill=fill('FFF6CC'); cell.numFmt='#,##0';
+                        cell.border={left:side('thin','D9B44A'), right:side('thin','D9B44A'), top:side('hair','D9B44A'), bottom:side('hair','D9B44A')}; break;
+        case 'qty':     cell.font=font({b:true, s:10.5}); cell.numFmt=INT; break;
+        case 'status':  cell.font=font({b:true, s:9, c:avail?'1C7A4C':'B3261E'}); cell.fill=fill(avail?'E6F3EA':'FBEAE8'); break;
+        case 'name':    cell.font=font({s:9.5, c:'3C4B49'}); break;
+        case 'brand': case 'colour': cell.font=font({n:'Consolas', b:true, s:9.5, c:'0F5E57'}); break;
+        case 'stock':   cell.font=font({b:true}); cell.numFmt=INT; break;
+        case 'net':     cell.font=font({}); cell.numFmt=INT; break;
+        case 'display': case 'pending': case 'mvp': cell.font=font({c:'3C4B49'}); cell.numFmt=INT; break;
+        case 'msl':     cell.font=font({b:true, s:9, c:/^OK$/i.test(String(v||''))?'1C7A4C':'B3261E'}); break;
+        case 'sdp':     cell.font=font({s:9.5, c:'3C4B49'}); cell.numFmt=RS; break;
+        case 'val':     cell.font=font({b:true, c:'0A443F'}); cell.numFmt=RS; break;
+      }
+    });
+  });
+
+  /* totals */
+  const tr=ws.getRow(totR); tr.height=24;
+  C.forEach((c,i)=>{
+    const cell=tr.getCell(i+1);
+    if(c.k==='code') cell.value='TOTAL';
+    if(c.k==='rdms') cell.value={formula:'SUBTOTAL(109,'+L.rdms+first+':'+L.rdms+last+')', result:0};
+    if(c.k==='qty')  cell.value={formula:'SUBTOTAL(109,'+L.qty+first+':'+L.qty+last+')', result:rows.reduce((a,r)=>a+r.qty,0)};
+    if(c.k==='status') cell.value={formula:'SUBTOTAL(103,'+L.code+first+':'+L.code+last+')&" lines shown"', result:rows.length+' lines shown'};
+    if(c.k==='val')  cell.value={formula:sumVal, result:0};
+    const gold=(c.k==='rdms'||c.k==='val');
+    cell.font=font({b:true, s:(c.k==='rdms'||c.k==='qty'||c.k==='val')?11:(c.k==='status'?9:10), c:c.k==='rdms'?'1F3A93':'0A443F'});
+    cell.fill=fill(gold?'FCEBC0':'E7F0EE');
+    cell.alignment={horizontal:'center', vertical:'middle'};
+    cell.border={left:side('thin','E2DCCD'), right:side('thin','E2DCCD'), top:side('medium','0F5E57'), bottom:side('medium','0F5E57')};
+    if(c.k==='rdms') cell.numFmt='#,##0';
+    if(c.k==='qty')  cell.numFmt=INT;
+    if(c.k==='val')  cell.numFmt=RS;
+  });
+
+  /* the RDMS discount — one cell to change */
+  const dr=ws.getRow(discR); dr.height=20;
+  const si=C.findIndex(c=>c.k==='sdp');
+  const from=Math.max(1, si-2);                    // label across the three columns before SDP NET
+  ws.mergeCells(discR, from, discR, si);
+  const lab=dr.getCell(from); lab.value='RDMS discount on SDP NET  →';
+  lab.font=font({b:true, s:9, c:'B0673C'}); lab.alignment={horizontal:'right', vertical:'middle'};
+  const dc=dr.getCell(si+1); dc.value=disc; dc.numFmt='0.0%';
+  dc.font=font({b:true, s:10.5, c:'1F3A93'}); dc.fill=fill('FFF6CC'); dc.alignment={horizontal:'center', vertical:'middle'}; dc.border=cellB('D9B44A');
+  const hint=dr.getCell(si+2); hint.value='(change % here)'; hint.font=font({i:true, s:8, c:'7C857F'}); hint.alignment={horizontal:'left', vertical:'middle'};
+
+  ws.autoFilter={from:{row:1, column:1}, to:{row:last, column:nC}};
+
+  /* ── BRAND SUMMARY ── */
+  const bs=wb.addWorksheet('BRAND SUMMARY', {
+    views:[{state:'frozen', ySplit:5, showGridLines:false}],
+    pageSetup:{paperSize:9, orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true}
+  });
+  bs.columns=[12,34,10,13,12,15,12,12,16].map(w=>({width:w}));
+  bs.mergeCells('A1:I1'); bs.mergeCells('A2:I2');
+  const t1=bs.getCell('A1'); t1.value='BRAND-WISE SUMMARY'; t1.font=font({b:true, s:16, c:'0A443F'}); t1.alignment={horizontal:'left', vertical:'bottom'};
+  const now=new Date();
+  const when=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+', '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}).toLowerCase();
+  const nm=printName();
+  const t2=bs.getCell('A2'); t2.value='GRACE BATH WORLD   ·   '+(nm?nm+'   ·   ':'')+when; t2.font=font({s:9, c:'7C857F'}); t2.alignment={horizontal:'left', vertical:'middle'};
+  bs.getRow(1).height=26; bs.getRow(2).height=16; bs.getRow(3).height=8;
+  const H=['BRAND','BRAND NAME','LINES','ORDER QTY','AVAILABLE','NOT AVAILABLE','FILL RATE','RDMS ORDER','RDMS VALUE'];
+  const h5=bs.getRow(5); h5.height=30;
+  H.forEach((t,i)=>{
+    const cell=h5.getCell(i+1), brown=i>=7;
+    cell.value=t; cell.font=font({b:true, s:9, c:'FFFFFF'}); cell.fill=fill(brown?'B0673C':'0F5E57');
+    cell.alignment={horizontal:'center', vertical:'middle', wrapText:true};
+    const bc=brown?'8A4F2C':'0A443F';
+    cell.border={left:side('thin',bc), right:side('thin',bc), top:side('thin',bc), bottom:side('medium',bc)};
+  });
+  const brands=[]; const bname={};
+  rows.forEach(r=>{ const b=r.brand||'—'; if(brands.indexOf(b)<0){ brands.push(b); bname[b]=r.brandName||BRAND_NAMES[b]||''; } });
+  const SH="'ORDER STATUS'!", rg=col=>SH+'$'+col+'$'+first+':$'+col+'$'+last;
+  brands.forEach((b,k)=>{
+    const R=6+k, row=bs.getRow(R); row.height=20;
+    const mine=rows.filter(r=>(r.brand||'—')===b), av=mine.filter(r=>r.status==='AVAILABLE').length;
+    const vals=[
+      b, bname[b],
+      {formula:'COUNTIF('+rg(L.brand)+',A'+R+')', result:mine.length},
+      {formula:'SUMIF('+rg(L.brand)+',A'+R+','+rg(L.qty)+')', result:mine.reduce((a,r)=>a+r.qty,0)},
+      {formula:'COUNTIFS('+rg(L.brand)+',A'+R+','+rg(L.status)+',"AVAILABLE")', result:av},
+      {formula:'C'+R+'-E'+R, result:mine.length-av},
+      {formula:'IFERROR(E'+R+'/C'+R+',0)', result:mine.length?av/mine.length:0},
+      {formula:'SUMIF('+rg(L.brand)+',A'+R+','+rg(L.rdms)+')', result:0},
+      {formula:'SUMIF('+rg(L.brand)+',A'+R+','+rg(L.val)+')', result:0}
+    ];
+    const bg=k%2?'FAF7EF':'FFFFFF';
+    const st=[
+      {n:'Consolas', b:true, c:'0F5E57'}, {s:9.5, c:'3C4B49'}, {c:'15201F'}, {b:true, c:'15201F'},
+      {b:true, c:'1C7A4C'}, {b:true, c:'B3261E'}, {b:true, c:'B0673C'}, {b:true, c:'1F3A93'}, {b:true, c:'0A443F'}];
+    const fm=[null,null,'#,##0',INT,'#,##0','#,##0','0%','#,##0',RS];
+    vals.forEach((v,i)=>{
+      const cell=row.getCell(i+1); cell.value=v; cell.font=font(st[i]); cell.fill=fill(bg); cell.border=cellB('E2DCCD');
+      cell.alignment={horizontal:i===1?'left':'center', vertical:'middle'};
+      if(fm[i]) cell.numFmt=fm[i];
+    });
+  });
+  const bl=6+brands.length-1, TR=bl+1, trow=bs.getRow(TR); trow.height=24;
+  const tv=['TOTAL', brands.length+' brand'+(brands.length===1?'':'s'),
+    {formula:'SUM(C6:C'+bl+')'}, {formula:'SUM(D6:D'+bl+')'}, {formula:'SUM(E6:E'+bl+')'}, {formula:'SUM(F6:F'+bl+')'},
+    {formula:'IFERROR(E'+TR+'/C'+TR+',0)'}, {formula:'SUM(H6:H'+bl+')'}, {formula:'SUM(I6:I'+bl+')'}];
+  const tfm=[null,null,'#,##0',INT,'#,##0','#,##0','0%','#,##0',RS];
+  tv.forEach((v,i)=>{
+    const cell=trow.getCell(i+1); cell.value=v; cell.font=font({b:true, c:'0A443F'}); cell.fill=fill('E7F0EE');
+    cell.alignment={horizontal:'center', vertical:'middle'};
+    cell.border={left:side('thin','E2DCCD'), right:side('thin','E2DCCD'), top:side('medium','0F5E57'), bottom:side('medium','0F5E57')};
+    if(tfm[i]) cell.numFmt=tfm[i];
+  });
+  bs.autoFilter={from:{row:5, column:1}, to:{row:bl, column:9}};
+  return wb;
 }
 
 // ── RENDER PREVIEW ──
@@ -6598,6 +6918,8 @@ function buildProductsFromRows(rows){
   return out;
 }
 
+/* extra stock columns, when the GBW STOCK tab has them (used by the Stock Excel) */
+let STOCK_EXTRA={};
 function buildStockFromRows(rows){
   const headers = rows[0].map(_norm);
   let ci=_col(headers,['code','itemcode','productcode']);
@@ -6607,11 +6929,28 @@ function buildStockFromRows(rows){
   if(ci<0||qi<0){ hasHeader=false; ci=0; qi=1; } // positional fallback: col A = code, col B = stock
   const body = hasHeader ? rows.slice(1) : rows;
   const map={};
+  const xi={};
+  if(hasHeader){
+    const at=pred=>{ const i=headers.findIndex(pred); return (i>=0 && i!==ci && i!==qi) ? i : -1; };
+    xi.display=at(h=>h==='display'||h==='displayqty'||h==='ondisplay');
+    xi.pending=at(h=>h.indexOf('pending')>=0 && h.indexOf('mvp')<0);
+    xi.net    =at(h=>h==='netstock'||h==='netqty');
+    xi.mvp    =at(h=>h.indexOf('mvp')>=0);
+    xi.msl    =at(h=>h==='msl'||h==='minstock'||h==='minimumstocklevel');
+  }
+  const extra={};
+  const xk=Object.keys(xi).filter(k=>xi[k]>=0);
   for(const r of body){
     const code=String(r[ci]||'').trim().toUpperCase();
     if(!code) continue;
     map[code]=_num(r[qi]);   // numeric stock; non-numeric/blank → 0
+    if(xk.length){
+      const e={};
+      xk.forEach(k=>{ const v=String(r[xi[k]]==null?'':r[xi[k]]).trim(); if(v!=='') e[k]= k==='msl' ? v.toUpperCase() : _num(v); });
+      extra[code]=e;
+    }
   }
+  STOCK_EXTRA=extra;
   return map;
 }
 
@@ -7818,7 +8157,7 @@ function renderQuoteResults(){
           (f.amt!=null
             ? '<div class="fq-amt" title="Quotation amount at today\'s prices">₹'+fmtN(f.amt)+'</div>'
             : '<div class="fq-amt wait">calculating…</div>')+
-          '<div class="fq-mrpline">MRP <s>₹'+fmtN(f.mrp)+'</s>'+(off!=null && off>0 ? ' <span class="fq-off">'+off+'% off</span>' : '')+'</div>'+
+          '<div class="fq-mrpline">MRP <b class="fq-mrp">₹'+fmtN(f.mrp)+'</b>'+(off!=null && off>0 ? ' <span class="fq-off">'+off+'% off</span>' : '')+'</div>'+
           (f.charges ? '<div class="fq-mrpline">incl. charges ₹'+fmtN(f.charges)+'</div>' : '')+
           (f.missing ? '<div class="fq-mrpline" style="color:#FFB870">'+f.missing+' code'+(f.missing===1?'':'s')+' not in catalogue</div>' : '')+
           '<div class="fq-acts">'+
