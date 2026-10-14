@@ -4236,7 +4236,7 @@ function refreshList(){
      change…) must not take the cursor or the half-typed text away — both are
      put back into the same line afterwards */
   let keepF=null;
-  if(a && list.contains(a) && a.closest && a.closest('tr.pl-row') && (a.classList.contains('pl-code-inp') || (a.matches && a.matches('.pl-qty input')))){
+  if(a && list.contains(a) && a.dataset.done!=='1' && a.closest && a.closest('tr.pl-row') && (a.classList.contains('pl-code-inp') || (a.matches && a.matches('.pl-qty input')))){
     const tr=a.closest('tr.pl-row');
     keepF={ref:(S.items||[])[+tr.dataset.gi], code:a.classList.contains('pl-code-inp'), val:a.value, s:a.selectionStart, e:a.selectionEnd, next:a.dataset.next};
   }
@@ -7415,7 +7415,7 @@ function pickEdCode(code){
   }
   if(_edTarget==='plist'){
     const at=_edOldCode, inp=_edActiveInput;        // holds the row index for this target
-    if(inp) inp.dataset.done='1';                   // stop blur from re-running the swap
+    if(inp){ inp.dataset.done='1'; inp.blur(); }   // the choice is made: leave the box (its blur won't re-run the swap)
     hideEdCodeDrop();
     swapItemCodeAt(at, code, true);
     return;
