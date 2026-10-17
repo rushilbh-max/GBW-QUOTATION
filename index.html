@@ -1358,9 +1358,9 @@ html, body{
 <div id="tabs">
   <button class="tab on" onclick="showScreen('builder')">Add&nbsp;Products</button>
   <button class="tab" onclick="showScreen('quotes')">Find&nbsp;Quotes</button>
-  <button class="tab" onclick="showScreen('customer')">Customer&nbsp;Form</button>
   <button class="tab" onclick="showScreen('summary')">Summary</button>
-  <button class="tab" onclick="showScreen('stock')">Stock</button>
+  <button class="tab" onclick="showScreen('stock')">Stock&nbsp;Availability</button>
+  <button class="tab" onclick="showScreen('customer')">Customer&nbsp;Form</button>
   <button class="tab" onclick="showScreen('editor')">Editor</button>
   <button class="tab" onclick="goPreview()">Quotation</button>
 </div>
@@ -2118,7 +2118,7 @@ function setMode(m){
 }
 
 // ── SCREENS ──
-const SCREEN_ORDER=['builder','quotes','customer','summary','stock','editor','preview'];
+const SCREEN_ORDER=['builder','quotes','summary','stock','customer','editor','preview'];   // same order as the tabs
 function showScreen(id){
   if(id==='search') id='builder';                    // the old Search & Edit page is now part of Products
   if(id!=='builder'){
@@ -2242,7 +2242,7 @@ function renderStockChips(total, avail, notAvail){
                + chip('NOT AVAILABLE', '\u2715 NOT AVAILABLE',  notAvail, '#FF9B8F');
 }
 
-/* The Stock tab works per PRODUCT: the same code on several lines of the
+/* The Stock Availability tab works per PRODUCT: the same code on several lines of the
    quotation (two bathrooms, say) is clubbed into one row with the quantities
    added up, and its availability is judged on that total. */
 function stockGroups(){
@@ -2331,7 +2331,7 @@ function exportStockPDF(){
   let avail=0, notAvail=0, totQty=0;
   G.forEach(g=>{ g.status==='AVAILABLE'?avail++:notAvail++; totQty+=g.item.qty; });
 
-  // The PDF mirrors whatever the Stock tab is currently showing. When a filter
+  // The PDF mirrors whatever the Stock Availability tab is currently showing. When a filter
   // is on, the report is banner-labelled so a partial list can never be mistaken
   // for the full availability report.
   const fS   = S.stockFilter || 'ALL';
@@ -2339,7 +2339,7 @@ function exportStockPDF(){
     .map(g => ({ item:g.item, sr:g.sr, isAvail: g.status==='AVAILABLE' }))
     .filter(r => fS === 'ALL' || (fS === 'AVAILABLE') === r.isAvail);
   if(!list.length){
-    alert('No ' + (fS==='AVAILABLE'?'available':'not-available') + ' items to export.\n\nSwitch the filter on the Stock tab and try again.');
+    alert('No ' + (fS==='AVAILABLE'?'available':'not-available') + ' items to export.\n\nSwitch the filter on the Stock Availability tab and try again.');
     return;
   }
   const fQty  = list.reduce((a,r)=>a+r.item.qty, 0);
@@ -4645,7 +4645,7 @@ async function exportStockExcel(){
     try{ EJ=await loadExcelJS(); }catch(e){ alert('Could not load the Excel maker — check the internet connection and try again.'); return; }
     await loadBrandColour();
     const rows=stockExportRows();
-    if(!rows.length){ alert('No '+((S.stockFilter||'ALL')==='AVAILABLE'?'available':'not-available')+' items to export.\n\nSwitch the filter on the Stock tab and try again.'); return; }
+    if(!rows.length){ alert('No '+((S.stockFilter||'ALL')==='AVAILABLE'?'available':'not-available')+' items to export.\n\nSwitch the filter on the Stock Availability tab and try again.'); return; }
     const wb=buildStockWorkbook(EJ, rows);
     const buf=await wb.xlsx.writeBuffer();
     const nm=(printName()||'QUOTATION').replace(/[\\\/:*?"<>|]+/g,' ').trim();
@@ -4709,7 +4709,7 @@ function buildStockWorkbook(EJ, rows){
   const hr=ws.getRow(1); hr.height=48;
   C.forEach((c,i)=>{
     const cell=hr.getCell(i+1);
-    if(c.k==='rdms') cell.value={formula:'"RDMS ORDER"&CHAR(10)&"₹ "&TEXT('+sumVal+',"#,##0.00")&CHAR(10)&'+discTxt, result:'RDMS ORDER\n₹ 0.00\n(SDP NET − 4%)'};
+    if(c.k==='rdms') cell.value='RDMS ORDER\nQTY';            // quantity only — the ₹ total sits in TOTAL (column B)
     else if(c.k==='val') cell.value={formula:'"RDMS VALUE"&CHAR(10)&'+discTxt, result:'RDMS VALUE\n(SDP NET − 4%)'};
     else cell.value=c.h;
     const brown=(c.k==='sdp'||c.k==='val'), rd=(c.k==='rdms');
@@ -4760,10 +4760,11 @@ function buildStockWorkbook(EJ, rows){
   });
 
   /* totals */
-  const tr=ws.getRow(totR); tr.height=24;
+  const tr=ws.getRow(totR); tr.height=46;
   C.forEach((c,i)=>{
     const cell=tr.getCell(i+1);
-    if(c.k==='code') cell.value='TOTAL';
+    /* TOTAL + the RDMS value (SDP NET − discount) right under it, live */
+    if(c.k==='code') cell.value={formula:'"TOTAL"&CHAR(10)&"₹ "&TEXT('+sumVal+',"#,##0.00")&CHAR(10)&'+discTxt, result:'TOTAL\n₹ 0.00\n(SDP NET − 4%)'};
     if(c.k==='rdms') cell.value={formula:'SUBTOTAL(109,'+L.rdms+first+':'+L.rdms+last+')', result:0};
     if(c.k==='qty')  cell.value={formula:'SUBTOTAL(109,'+L.qty+first+':'+L.qty+last+')', result:rows.reduce((a,r)=>a+r.qty,0)};
     if(c.k==='status') cell.value={formula:'SUBTOTAL(103,'+L.code+first+':'+L.code+last+')&" lines shown"', result:rows.length+' lines shown'};
@@ -4776,6 +4777,7 @@ function buildStockWorkbook(EJ, rows){
     if(c.k==='rdms') cell.numFmt='#,##0';
     if(c.k==='qty')  cell.numFmt=INT;
     if(c.k==='val')  cell.numFmt=RS;
+    if(c.k==='code'){ cell.alignment={horizontal:'center', vertical:'middle', wrapText:true}; cell.font=font({b:true, s:10, c:'0A443F'}); }
   });
 
   /* the RDMS discount — one cell to change */
