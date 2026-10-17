@@ -8140,16 +8140,24 @@ function renderOpenBanner(){
 function renderQuoteResults(){
   const list=$('fq-list'); if(!list) return;
   const raw=(($('fq-search')&&$('fq-search').value)||'').trim();
-  const term=raw.toUpperCase(), pk=phoneKeyOf(raw);
+  const term=raw.toUpperCase();
+  const pk=(/[a-z]/i.test(raw) ? '' : phoneKeyOf(raw)), pkOk=pk.length>=3;   // a phone search is digits only — the 1 in "vishwakarma1" is not a phone number
   if(!SAVED.length){
     list.innerHTML='<div class="se-empty">No saved quotations yet.<br>Build a quote, then tap 💾 Save Quote on the Quotation screen.</div>';
     return;
   }
+  /* forgiving search: spaces, dots, dashes and brackets don't matter
+     ("rajuvishwakarma" finds "RAJU VISHWAKARMA-1 BATH"), and several words
+     can be typed in any order ("vishwakarma raju") */
+  const qn=_alnum(raw), words=raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   const res=SAVED.filter(q=>{
     if(!term) return true;
     if(String(q.quoteNo||'').toUpperCase().includes(term)) return true;
     if(String(q.customer||'').toUpperCase().includes(term)) return true;
-    if(pk && String(q.phoneKey||'').includes(pk)) return true;
+    if(pkOk && String(q.phoneKey||'').includes(pk)) return true;
+    const hay=_alnum(q.customer)+'|'+_alnum(q.quoteNo);
+    if(qn && hay.includes(qn)) return true;
+    if(words.length>1 && words.every(w=>hay.includes(w))) return true;
     return false;
   }).slice(0,300);
   if(!res.length){ list.innerHTML='<div class="se-empty">Nothing matches “'+esc(raw)+'”.</div>'; return; }
