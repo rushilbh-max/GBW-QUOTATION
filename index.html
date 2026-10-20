@@ -1233,6 +1233,14 @@ html, body{
 .fq-card .fq-l{min-width:0;flex:1}
 .fq-card .fq-n{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--gold-l);letter-spacing:.3px;word-break:break-word}
 .fq-card .fq-q{font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--gold);margin-top:2px}
+.fq-mode{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+.fq-mode .fq-ml{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted2);margin-right:2px}
+.fq-mode button{background:transparent;border:1px solid rgba(255,255,255,0.18);color:#C0D4E4;border-radius:14px;padding:5px 12px;font-family:'Jost',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.4px;cursor:pointer}
+.fq-mode button.on{background:rgba(201,168,76,0.16);border-color:var(--gold);color:var(--gold-l)}
+.fq-mode .fq-hit{font-family:'Jost',sans-serif;font-size:11px;color:var(--gold-l);margin-left:auto}
+.fq-card .fq-has{margin-top:5px;font-family:'Jost',sans-serif;font-size:10.5px;color:#C0D4E4;line-height:1.6}
+.fq-card .fq-has b{font-family:'Cinzel',serif;font-size:10.5px;color:var(--gold-l);letter-spacing:.3px}
+.fq-card .fq-has .fq-hb{display:inline-block;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:4px;padding:0 6px;margin:2px 4px 0 0}
 .fq-card .fq-m{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-top:3px;line-height:1.5}
 .fq-card .fq-r{text-align:right;flex-shrink:0}
 .fq-card .fq-mrp{font-family:'Jost',sans-serif;font-size:13px;font-weight:700;color:#D8E4EC}
@@ -1629,7 +1637,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 <div id="screen-quotes" class="screen">
   <div class="fq-scroll">
     <div class="se-head">Find Saved Quotations</div>
-    <div class="se-sub">Search by customer name, mobile number or quotation number, then open it back into the app.</div>
+    <div class="se-sub">Search by customer name, mobile number, quotation number or an item code, then open it back into the app.</div>
 
     <div id="fq-setup" class="fq-setup" style="display:none">
       <div class="t">⚙ Connection</div>
@@ -1644,7 +1652,13 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
 
     <div class="se-searchbar">
       <span class="ic">⌕</span>
-      <input id="fq-search" placeholder="Name, mobile number or quote no…" autocomplete="off" spellcheck="false">
+      <input id="fq-search" placeholder="Name, mobile, quote no. or an item code…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="fq-mode" id="fq-mode">
+      <span class="fq-ml">Search in</span>
+      <button class="on" data-m="all" onclick="setFqMode('all')">Everything</button>
+      <button data-m="code" onclick="setFqMode('code')">🔎 Item codes only</button>
+      <span class="fq-hit" id="fq-hit"></span>
     </div>
 
     <div class="se-toolbar">
@@ -8462,6 +8476,13 @@ function renderOpenBanner(){
   }
   else b.style.display='none';
 }
+let FQ_MODE='all';
+function setFqMode(m){
+  FQ_MODE=m==='code'?'code':'all';
+  document.querySelectorAll('#fq-mode button').forEach(b=>b.classList.toggle('on', b.getAttribute('data-m')===FQ_MODE));
+  const i=$('fq-search'); if(i){ i.placeholder = FQ_MODE==='code' ? 'Type an item code — e.g. 35233 or ALD-CHR-577' : 'Name, mobile, quote no. or an item code…'; i.focus(); }
+  renderQuoteResults();
+}
 function renderQuoteResults(){
   const list=$('fq-list'); if(!list) return;
   const raw=(($('fq-search')&&$('fq-search').value)||'').trim();
@@ -8475,8 +8496,32 @@ function renderQuoteResults(){
      ("rajuvishwakarma" finds "RAJU VISHWAKARMA-1 BATH"), and several words
      can be typed in any order ("vishwakarma raju") */
   const qn=_alnum(raw), words=raw.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const cache=itemsCache();                           // parse once, not once per card
+  /* item codes inside the quotes: dashes and spaces don't matter, part of a code is enough
+     ("35233" finds every quote with KUP-CHR-35233NKPM, FUP-CHR-35233…) */
+  const codeMode=FQ_MODE==='code', codeOk=qn.length>=4 && (codeMode || /\d/.test(qn));
+  const HIT={};
+  let unloaded=0;
+  if(term && codeOk){
+    SAVED.forEach(q=>{
+      const c=cache[q.quoteNo];
+      if(!c || !Array.isArray(c.items)){ unloaded++; return; }
+      const by={};
+      c.items.forEach(it=>{
+        const code=String(it.code||'').toUpperCase();
+        if(!_alnum(code).includes(qn)) return;
+        const k=code; if(!by[k]) by[k]={code:code, qty:0, baths:[]};
+        by[k].qty+=Number(it.qty)||0;
+        const b=String(it.bathroom||'').trim(); if(b && by[k].baths.indexOf(b)<0) by[k].baths.push(b);
+      });
+      const l=Object.keys(by).map(k=>by[k]);
+      if(l.length) HIT[q.quoteNo]=l;
+    });
+  }
   const res=SAVED.filter(q=>{
     if(!term) return true;
+    if(HIT[q.quoteNo]) return true;
+    if(codeMode) return false;
     if(String(q.quoteNo||'').toUpperCase().includes(term)) return true;
     if(String(q.customer||'').toUpperCase().includes(term)) return true;
     if(pkOk && String(q.phoneKey||'').includes(pk)) return true;
@@ -8485,8 +8530,11 @@ function renderQuoteResults(){
     if(words.length>1 && words.every(w=>hay.includes(w))) return true;
     return false;
   }).slice(0,300);
-  if(!res.length){ list.innerHTML='<div class="se-empty">Nothing matches “'+esc(raw)+'”.</div>'; return; }
-  const cache=itemsCache();                           // parse once, not once per card
+  const nHit=res.filter(q=>HIT[q.quoteNo]).length;
+  const hitEl=$('fq-hit');
+  if(hitEl) hitEl.textContent = (term && codeOk) ? (nHit+' quote'+(nHit===1?'':'s')+' contain'+(nHit===1?'s':'')+' “'+raw+'”'+(unloaded?' · '+unloaded+' still loading':'')) : (codeMode && term ? 'type at least 4 letters / digits of the code' : '');
+  if(unloaded && term && codeOk) prefetchQuoteItems();
+  if(!res.length){ list.innerHTML='<div class="se-empty">'+(codeMode?'No saved quote contains “'+esc(raw)+'”.':'Nothing matches “'+esc(raw)+'”.')+'</div>'; return; }
   list.innerHTML=res.map(q=>{
     let when='';
     try{ when=new Date(q.savedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}); }catch(e){}
@@ -8498,7 +8546,9 @@ function renderQuoteResults(){
     return '<div class="fq-card" data-q="'+esc(q.quoteNo)+'" onclick="openSavedQuote(\''+esc(q.quoteNo)+'\')">'+
       '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+badge+'</div>'+
       '<div class="fq-q">'+esc(q.quoteNo)+(q.phone?' · '+esc(q.phone):'')+'</div>'+
-      '<div class="fq-m">'+esc(meta)+'</div></div>'+
+      '<div class="fq-m">'+esc(meta)+'</div>'+
+      (HIT[q.quoteNo] ? '<div class="fq-has">🔎 '+HIT[q.quoteNo].slice(0,3).map(h=>'<span class="fq-hb"><b>'+esc(h.code)+'</b> × '+h.qty+(h.baths.length?' · '+esc(h.baths.slice(0,2).join(', '))+(h.baths.length>2?'…':''):'')+'</span>').join('')+(HIT[q.quoteNo].length>3?' +'+(HIT[q.quoteNo].length-3)+' more':'')+'</div>' : '')+
+      '</div>'+
       (function(){
         const f=quoteFigures(q, cache), lv=priceLevelOf(q);
         const off=(f.amt!=null && f.mrp>0) ? Math.round((1-(f.amt-(f.charges||0))/f.mrp)*100) : null;
