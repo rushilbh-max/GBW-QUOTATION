@@ -389,6 +389,35 @@ tr.rmoved td{animation:rowFlash .9s ease}
 .pl-img,.pl-img-ph{width:48px!important;height:48px!important}
 .pl-img{cursor:zoom-in}
 .pl-tbl th:nth-child(2){width:56px!important}
+/* ── picture upload box ── */
+#imgup-modal{position:fixed;inset:0;z-index:10060;background:rgba(5,9,14,0.86);display:none;align-items:center;justify-content:center;padding:14px}
+#imgup-modal .iu-card{background:var(--ink2);border:1px solid rgba(201,168,76,0.4);border-radius:12px;width:100%;max-width:460px;max-height:94vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+#imgup-modal .iu-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(201,168,76,0.2);font-family:'Cinzel',serif;font-size:11px;letter-spacing:1.6px;color:var(--gold);text-transform:uppercase}
+#imgup-modal .iu-head button{background:transparent;border:none;color:var(--muted2);font-size:22px;cursor:pointer;line-height:1}
+#imgup-modal .iu-body{padding:14px 16px 16px}
+#imgup-modal .iu-code{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--gold-l);letter-spacing:.6px;word-break:break-word}
+#imgup-modal .iu-desc{font-family:'Jost',sans-serif;font-size:12px;color:#9FB6C9;margin-top:2px}
+#imgup-modal .iu-drop{display:block;margin-top:12px;border:2px dashed rgba(201,168,76,0.45);border-radius:10px;padding:12px;text-align:center;cursor:pointer;background:rgba(201,168,76,0.04)}
+#imgup-modal .iu-drop.over{border-color:var(--gold);background:rgba(201,168,76,0.12)}
+#imgup-modal .iu-prev{width:220px;height:220px;max-width:100%;margin:0 auto;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+#imgup-modal .iu-prev img{width:100%;height:100%;object-fit:contain}
+#imgup-modal .iu-ph{font-family:'Jost',sans-serif;font-size:12px;color:#99a}
+#imgup-modal .iu-hint{font-family:'Jost',sans-serif;font-size:11.5px;color:var(--muted2);margin-top:10px;line-height:1.5}
+#imgup-modal .iu-hint b{color:var(--gold-l)}
+#imgup-modal .iu-msg{font-family:'Jost',sans-serif;font-size:11.5px;color:var(--muted2);margin-top:10px;min-height:16px;line-height:1.55}
+#imgup-modal .iu-msg.ok{color:#4ADF90}
+#imgup-modal .iu-msg.bad{color:#FF9B8F}
+#imgup-modal .iu-acts{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+#imgup-modal .iu-acts button{border-radius:6px;padding:9px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer}
+#imgup-modal .iu-cancel{background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--muted2)}
+#imgup-modal .iu-go{background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));border:none;color:var(--ink)}
+#imgup-modal .iu-go:disabled{opacity:.45;cursor:not-allowed}
+#imgup-modal .iu-rm{background:transparent;border:1px solid rgba(224,112,112,0.5);color:#F0A0A0}
+.pl-img-up{border:1px dashed rgba(201,168,76,0.55)!important;cursor:pointer;font-size:18px!important;color:var(--gold)!important;padding:0}
+.pl-img-up:hover{background:rgba(201,168,76,0.14)!important}
+#img-zoom .iz-acts{margin-top:8px}
+#img-zoom .iz-up{background:#0E1520;color:#E8D08A;border:none;border-radius:6px;padding:8px 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;cursor:pointer}
+.ia-up{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.6);color:var(--gold-l);border-radius:5px;padding:5px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer}
 #img-zoom{position:fixed;inset:0;z-index:10001;background:rgba(5,9,14,0.86);display:none;align-items:center;justify-content:center;padding:18px;cursor:zoom-out}
 #img-zoom .iz-card{background:#fff;border-radius:12px;padding:16px 16px 12px;max-width:min(560px,94vw);box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center}
 #img-zoom img{display:block;width:min(520px,86vw);height:min(520px,62vh);object-fit:contain;margin:0 auto}
@@ -3501,6 +3530,10 @@ function healCandidates(url){
     const other=/^www\./i.test(t[2]) ? 'global.jaquar.com' : 'www.jaquar.com';
     add(t[1]+other+t[3]+'_'+t[4]+t[5]);
   }
+  /* a Google Drive picture (uploaded from this app, or pasted as a share link): the
+     direct picture link, then Drive's own thumbnail service as a second way in */
+  const d=String(url).match(/^https?:\/\/(?:lh3\.googleusercontent\.com\/d\/|drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=|thumbnail\?id=))([A-Za-z0-9_-]{20,})/i);
+  if(d){ add('https://lh3.googleusercontent.com/d/'+d[1]); add('https://drive.google.com/thumbnail?id='+d[1]+'&sz=w1200'); }
   return out.slice(0,10);
 }
 async function findRepair(url){
@@ -3784,6 +3817,7 @@ function auditRender(cancelled){
       urlLine += '<div style="margin-top:4px"><a href="' + esc(f.href) + '" target="_blank" rel="noopener" style="font-family:\'Jost\',sans-serif;font-size:10px;font-weight:700;color:var(--gold-l);text-decoration:none">🔎 ' + esc(f.label) + ' ↗</a>'
         + '<span style="font-family:\'Jost\',sans-serif;font-size:9.5px;color:var(--muted2)"> — open the product, right-click its picture → Copy image address, paste into IMAGE NEW, then RE-CHECK</span></div>';
     }
+    if(!ok) urlLine += '<div style="margin-top:6px"><button class="ia-up" data-code="' + esc(r.code) + '" onclick="openImgUpload(this.getAttribute(\'data-code\'))">📷 No picture on the web? Upload one</button></div>';
 
     h += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:' + (ok ? 'transparent' : m.bg.replace('0.16','0.06')) + '">'
       + '<td style="padding:7px 6px;text-align:center;font-family:\'Jost\',sans-serif;font-size:11px;color:var(--muted2)">' + (i+1) + '</td>'
@@ -4041,8 +4075,8 @@ function plistRowsHTML(){
     const url=empty?'':(IMAGE_MAP[item.code]||'');
     const c=esc(item.code||'');
     const img=url
-      ? '<img class="pl-img" src="'+url+'" data-code="'+c+'" onerror="this.style.display=\'none\'" alt="" title="Tap to see it big">'
-      : '<div class="pl-img-ph">—</div>';
+      ? '<img class="pl-img" src="'+url+'" data-code="'+c+'" onerror="imgFail(this)" alt="" title="Tap to see it big">'
+      : (empty ? '<div class="pl-img-ph">—</div>' : '<button class="pl-img-ph pl-img-up" data-up="'+c+'" title="No picture — tap to add one">📷</button>');
     const hot=!!(insertFrom && insertFrom.row===i);
     const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
     const cls=[hot?'ins-here':'', empty?'blank':''].filter(Boolean).join(' ');
@@ -4599,6 +4633,7 @@ function bathHeadHTML(b, bi){
   /* a picture: tap it to see it full size */
   list.addEventListener('click', e=>{
     const im=e.target.closest && e.target.closest('img.pl-img'); if(im) openImgZoom(im.dataset.code, im.src);
+    const up=e.target.closest && e.target.closest('[data-up]'); if(up) openImgUpload(up.getAttribute('data-up'));
   });
   list.addEventListener('focusout', e=>{
     const inp=e.target.closest && e.target.closest('.bh-name'); if(!inp) return;
@@ -4623,7 +4658,11 @@ function openImgZoom(code, src){
   }
   const p=PMAP[code]||{};
   z.innerHTML='<div class="iz-card"><img src="'+esc(src)+'" alt=""><div class="iz-code">'+esc(code||'')+'</div>'+
-    '<div class="iz-desc">'+esc(p.desc||'')+'</div><div class="iz-hint">tap anywhere to close</div></div>';
+    '<div class="iz-desc">'+esc(p.desc||'')+'</div>'+
+    '<div class="iz-acts"><button class="iz-up" data-zup="'+esc(code||'')+'">📷 '+(IMG_UP[code]?'Replace the uploaded picture':'Upload a better picture')+'</button></div>'+
+    '<div class="iz-hint">tap anywhere else to close</div></div>';
+  const zb=z.querySelector('[data-zup]');
+  if(zb) zb.addEventListener('click', e=>{ e.stopPropagation(); z.style.display='none'; openImgUpload(zb.getAttribute('data-zup')); });
   z.style.display='flex';
 }
 
@@ -4925,6 +4964,221 @@ function buildStockWorkbook(EJ, rows){
   });
   bs.autoFilter={from:{row:5, column:1}, to:{row:bl, column:9}};
   return wb;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PRODUCT PICTURES — upload your own when the web has none
+   ────────────────────────────────────────────────────────────────────────
+   A photo (camera, gallery, a saved file, or a copied picture pasted with
+   Ctrl+V) is straightened, shrunk to 1200 px on a white background and sent
+   to the quotes web app, which keeps it in the Drive folder
+   "GBW PRODUCT IMAGES" and returns a link an <img> can show. The link is
+   kept in the IMAGES tab of the quotes sheet, so every device picks it up:
+   the screen, the quotation PDFs, the stock report, the exports.
+   An uploaded picture wins over the IMAGE NEW sheet for that code; removing
+   it brings the sheet's picture back.                                    */
+const IMG_UP_KEY='gbw_img_up_v1';
+let IMG_UP={}, IMG_UP_REV='', IMG_UP_SHEET={};   // code → uploaded url · sheet's own url for the codes we override
+try{ const c=JSON.parse(localStorage.getItem(IMG_UP_KEY)||'null'); if(c && c.map){ IMG_UP=c.map; IMG_UP_REV=c.rev||''; } }catch(e){}
+function saveImgUp(){ try{ localStorage.setItem(IMG_UP_KEY, JSON.stringify({map:IMG_UP, rev:IMG_UP_REV})); }catch(e){} }
+/* put the uploaded pictures over whatever IMAGE NEW says (called after every sheet load) */
+function applyUploads(){
+  Object.keys(IMG_UP).forEach(code=>{
+    const u=IMG_UP[code]; if(!u) return;
+    const h=(typeof IMG_HEAL!=='undefined') ? IMG_HEAL[code] : null;
+    if(h && h.from===u){ IMAGE_MAP[code]=h.to; return; }          // the uploaded link answers through Drive's other door
+    if(h) delete IMG_HEAL[code];                                  // a repair of the OLD sheet picture no longer applies
+    if(IMAGE_MAP[code]!==u){ IMG_UP_SHEET[code]=IMAGE_MAP[code]||''; IMAGE_MAP[code]=u; }   // remember the sheet's own picture, in case the upload is removed
+  });
+}
+function imgUpRepaint(){
+  try{ refreshAll(); }catch(e){}
+  try{ if($('screen-preview') && $('screen-preview').classList.contains('active')) renderPreview(); }catch(e){}
+}
+/* the uploads list from the sheet — tiny "unchanged" answer when nothing is new */
+let _imgUpBusy=false;
+async function syncUploads(force){
+  if(_imgUpBusy || !qapiReady()) return;
+  _imgUpBusy=true;
+  try{
+    const r=await qapiGet('images', (IMG_UP_REV && !force) ? {rev:IMG_UP_REV} : null);
+    if(!r || !r.ok || r.unchanged) return;
+    const next=r.images||{}, before=JSON.stringify(IMG_UP);
+    /* a picture removed on another device: give the code back to the sheet */
+    Object.keys(IMG_UP).forEach(c=>{ if(!next[c] && IMAGE_MAP[c]===IMG_UP[c]){ IMAGE_MAP[c]=IMG_UP_SHEET[c]||''; if(!IMAGE_MAP[c]) delete IMAGE_MAP[c]; } });
+    IMG_UP=next; IMG_UP_REV=r.irev||''; saveImgUp(); applyUploads();
+    if(JSON.stringify(IMG_UP)!==before) imgUpRepaint();
+  } finally { _imgUpBusy=false; }
+}
+(function bootUploads(){
+  applyUploads();
+  const go=()=>{ syncUploads(false); };
+  if(document.readyState==='complete') setTimeout(go, 1200); else window.addEventListener('load', ()=>setTimeout(go, 1200));
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') syncUploads(false); });
+})();
+
+/* a picture in a list that fails to load → the "add a picture" button instead */
+function imgFail(el){
+  const code=el.getAttribute('data-code')||'';
+  const b=document.createElement('button');
+  b.className='pl-img-ph pl-img-up'; b.setAttribute('data-up', code); b.title='Picture did not load — tap to upload one'; b.textContent='📷';
+  el.replaceWith(b);
+}
+
+/* ── the upload box ── */
+const IMGUP={code:'', blob:null, url:'', busy:false};
+function openImgUpload(code){
+  code=String(code||'').trim(); if(!code) return;
+  IMGUP.code=code; IMGUP.blob=null; if(IMGUP.url){ URL.revokeObjectURL(IMGUP.url); IMGUP.url=''; }
+  let m=$('imgup-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='imgup-modal';
+    m.addEventListener('click', e=>{ if(e.target===m) closeImgUpload(); });
+    document.body.appendChild(m);
+    document.addEventListener('paste', e=>{
+      if(!m || m.style.display!=='flex') return;
+      const it=[...((e.clipboardData && e.clipboardData.items) || [])].filter(x=>x.kind==='file' && /^image\//.test(x.type))[0];
+      if(it){ e.preventDefault(); imgUpTake(it.getAsFile()); }
+    });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && m.style.display==='flex') closeImgUpload(); });
+  }
+  const p=PMAP[code]||{}, have=IMG_UP[code], cur=IMAGE_MAP[code]||'';
+  m.innerHTML='<div class="iu-card">'+
+    '<div class="iu-head"><span>📷 Product picture</span><button onclick="closeImgUpload()" title="Close">×</button></div>'+
+    '<div class="iu-body">'+
+      '<div class="iu-code">'+esc(code)+'</div><div class="iu-desc">'+esc(p.desc||'')+'</div>'+
+      '<label class="iu-drop" id="iu-drop">'+
+        '<input type="file" id="iu-file" accept="image/*" hidden>'+
+        '<div class="iu-prev" id="iu-prev">'+(cur?'<img src="'+esc(cur)+'" alt="" onerror="this.nextSibling.textContent=\'Current picture does not load\';this.remove()">':'')+'<span class="iu-ph">'+(cur?'':'No picture yet')+'</span></div>'+
+        '<div class="iu-hint"><b>Tap to choose a photo</b> or take one with the camera<br>— or drag a picture here, or copy one and press <b>Ctrl+V</b></div>'+
+      '</label>'+
+      '<div class="iu-msg" id="iu-msg">'+(have?'This product shows a picture you uploaded. Choose another to replace it.':'')+'</div>'+
+      '<div class="iu-acts">'+
+        (have?'<button class="iu-rm" onclick="removeImgUpload()" title="Stop using the uploaded picture — the IMAGE NEW sheet decides again">↺ Remove uploaded</button>':'')+
+        '<span style="flex:1"></span>'+
+        '<button class="iu-cancel" onclick="closeImgUpload()">Cancel</button>'+
+        '<button class="iu-go" id="iu-go" onclick="doImgUpload()" disabled>⬆ Upload picture</button>'+
+      '</div>'+
+    '</div></div>';
+  m.style.display='flex';
+  const f=$('iu-file'); f.addEventListener('change', ()=>{ if(f.files && f.files[0]) imgUpTake(f.files[0]); });
+  const dz=$('iu-drop');
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('over'); }));
+  dz.addEventListener('drop', e=>{ const fl=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(fl) imgUpTake(fl); });
+}
+function closeImgUpload(){
+  const m=$('imgup-modal'); if(m) m.style.display='none';
+  if(IMGUP.url){ URL.revokeObjectURL(IMGUP.url); IMGUP.url=''; }
+  IMGUP.blob=null;
+}
+function imgUpMsg(t, kind){ const el=$('iu-msg'); if(el){ el.innerHTML=t; el.className='iu-msg'+(kind?' '+kind:''); } }
+
+/* straighten (phone photos carry their rotation separately), fit 1200 px on white, JPEG */
+async function imgUpPrepare(file){
+  let bmp;
+  try{ bmp=await createImageBitmap(file, {imageOrientation:'from-image'}); }
+  catch(e){ bmp=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('this file is not a picture the browser can open')); im.src=URL.createObjectURL(file); }); }
+  const W=bmp.width||bmp.naturalWidth, H=bmp.height||bmp.naturalHeight;
+  if(!(W>8 && H>8)) throw new Error('the picture is empty');
+  const k=Math.min(1, 1200/Math.max(W,H));
+  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(W*k)); c.height=Math.max(1,Math.round(H*k));
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  g.imageSmoothingQuality='high'; g.drawImage(bmp,0,0,c.width,c.height);
+  let q=0.86, blob=null;
+  for(let i=0;i<5;i++){
+    blob=await new Promise(res=>c.toBlob(res,'image/jpeg',q));
+    if(blob && blob.size<=900*1024) break;
+    q-=0.12;
+  }
+  if(!blob) throw new Error('could not prepare the picture');
+  return {blob:blob, w:c.width, h:c.height};
+}
+async function imgUpTake(file){
+  if(!file) return;
+  if(!/^image\//.test(file.type||'') && !/\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name||'')){ imgUpMsg('That is not a picture — choose a JPG or PNG photo.', 'bad'); return; }
+  imgUpMsg('Preparing the picture…');
+  try{
+    const r=await imgUpPrepare(file);
+    IMGUP.blob=r.blob;
+    if(IMGUP.url) URL.revokeObjectURL(IMGUP.url);
+    IMGUP.url=URL.createObjectURL(r.blob);
+    const pv=$('iu-prev'); if(pv) pv.innerHTML='<img src="'+IMGUP.url+'" alt="">';
+    imgUpMsg('Ready: '+r.w+' × '+r.h+' px · '+Math.round(r.blob.size/1024)+' KB. Tap <b>Upload picture</b>.', 'ok');
+    const go=$('iu-go'); if(go) go.disabled=false;
+  }catch(e){ imgUpMsg('Could not read the picture: '+esc(e.message||String(e)), 'bad'); }
+}
+function blobToB64(blob){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(',')[1]||''); fr.onerror=()=>rej(fr.error); fr.readAsDataURL(blob); });
+}
+/* a fresh Drive link can take a moment to answer — wait for it before saying "done" */
+async function imgUpWaitLive(url){
+  for(let i=0;i<4;i++){
+    const r=await auditProbeOnce(url);
+    if(r.ok) return true;
+    await new Promise(res=>setTimeout(res, 1500));
+  }
+  return false;
+}
+function imgUpBackendHelp(){
+  return 'The quotes web app needs a one-time update to store pictures:<br>'+
+    '1. Open the Apps Script of the quotes sheet, paste the new <b>GBW_QUOTES_API.gs</b>, save.<br>'+
+    '2. Run <b>setupImages</b> once (▶ Run) and allow the Drive permission.<br>'+
+    '3. Deploy → Manage deployments → ✏ → Version: <b>New version</b> → Deploy.';
+}
+async function doImgUpload(){
+  if(IMGUP.busy || !IMGUP.blob) return;
+  if(!qapiReady()){ imgUpMsg('Saving to the sheet is not set up on this device yet (Find Quotes → setup).', 'bad'); return; }
+  const code=IMGUP.code, go=$('iu-go');
+  IMGUP.busy=true; if(go){ go.disabled=true; go.textContent='⏳ Uploading…'; }
+  imgUpMsg('Uploading to Google Drive…');
+  try{
+    const data=await blobToB64(IMGUP.blob);
+    const r=await qapiPost({secret:qapiSecret(), action:'image', code:code, mime:'image/jpeg', data:data});
+    if(!r || !r.ok){
+      const unknown=r && /unknown action/i.test(String(r.error||''));
+      imgUpMsg(unknown ? imgUpBackendHelp() : ('Upload failed: '+esc((r && r.error) || 'no answer')+(r && r.net ? ' — check the internet and try again.' : '')), 'bad');
+      return;
+    }
+    if(IMAGE_MAP[code]!==r.url && !(code in IMG_UP_SHEET)) IMG_UP_SHEET[code]=IMAGE_MAP[code]||'';
+    IMG_UP[code]=r.url; if(r.irev) IMG_UP_REV=r.irev; saveImgUp();
+    IMAGE_MAP[code]=r.url; if(typeof IMG_HEAL!=='undefined' && IMG_HEAL[code]) delete IMG_HEAL[code];
+    if(typeof IMG_AUDIT!=='undefined') IMG_AUDIT.cache.delete(r.url);
+    imgUpMsg('Uploaded ✓ — checking the link…', 'ok');
+    let live=await imgUpWaitLive(r.url);
+    if(!live && r.fileId){
+      const alt='https://drive.google.com/thumbnail?id='+r.fileId+'&sz=w1200';
+      if(await imgUpWaitLive(alt)){ rememberHeal(code, r.url, alt); live=true; }
+    }
+    auditMarkUploaded(code, r.url, live);
+    imgUpRepaint();
+    toast('Picture saved for '+code+(live?'':' — it may take a minute to appear'));
+    closeImgUpload();
+  }catch(e){
+    imgUpMsg('Upload failed: '+esc(e.message||String(e)), 'bad');
+  }finally{
+    IMGUP.busy=false; if(go && document.body.contains(go)){ go.disabled=!IMGUP.blob; go.textContent='⬆ Upload picture'; }
+  }
+}
+async function removeImgUpload(){
+  const code=IMGUP.code; if(!code || !IMG_UP[code]) return;
+  if(!confirm('Remove the uploaded picture of '+code+'?\n\nThe picture from the IMAGE NEW sheet (if any) is used again.')) return;
+  imgUpMsg('Removing…');
+  const r=await qapiPost({secret:qapiSecret(), action:'image-delete', code:code});
+  if(!r || !r.ok){ imgUpMsg('Could not remove: '+esc((r && r.error) || 'no answer'), 'bad'); return; }
+  const was=IMG_UP[code]; delete IMG_UP[code]; if(r.irev) IMG_UP_REV=r.irev; saveImgUp();
+  if(IMAGE_MAP[code]===was){ IMAGE_MAP[code]=IMG_UP_SHEET[code]||''; if(!IMAGE_MAP[code]) delete IMAGE_MAP[code]; }
+  delete IMG_UP_SHEET[code];
+  imgUpRepaint();
+  toast('Uploaded picture removed for '+code);
+  closeImgUpload();
+}
+/* the Missing Images check: the uploaded product turns OK at once */
+function auditMarkUploaded(code, url, live){
+  if(typeof IMG_AUDIT==='undefined' || !IMG_AUDIT.results) return;
+  let hit=false;
+  IMG_AUDIT.results.forEach(r=>{ if(r.code===code){ hit=true; r.status=live?'OK':'NEEDS_FIX'; r.url=url; r.probeUrl=url; r.repaired=live?'':url; r.reason=live?'Picture uploaded from this app ✓':'Picture uploaded — the link is still waking up; RE-CHECK in a minute'; } });
+  if(hit){ try{ auditRender(false); }catch(e){} }
 }
 
 // ── RENDER PREVIEW ──
@@ -6950,6 +7204,7 @@ function applyImagesCSV(text){
   Object.keys(IMAGE_MAP).forEach(k=>delete IMAGE_MAP[k]); // mutate const in place
   Object.assign(IMAGE_MAP, m);
   if(typeof applyHeals==='function') applyHeals();        // keep verified repairs of dead links
+  if(typeof applyUploads==='function') applyUploads();    // pictures uploaded from the app win over the sheet
   return keys.length;
 }
 function applyStockCSV(text){
