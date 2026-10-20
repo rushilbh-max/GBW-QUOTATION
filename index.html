@@ -376,6 +376,14 @@ tr.rmoved td{animation:rowFlash .9s ease}
 #ed-code-dd .ecd-none,#ed-code-dd .ecd-more{padding:12px 14px;font-family:'Cormorant',serif;font-style:italic;font-size:13px;color:var(--muted2)}
 #ed-code-dd .ecd-more{padding:8px 14px;font-size:12px;border-top:1px solid rgba(255,255,255,0.05)}
 #ed-code-dd.up{box-shadow:0 -12px 40px rgba(0,0,0,0.6)}
+#upload-msg .nf-box,#bathroom-msg .nf-box{margin-top:10px;padding:10px 12px;border-radius:6px;background:rgba(224,96,96,0.08);border:1px solid rgba(224,96,96,0.35);color:#F0A0A0}
+.nf-head{font-family:'Jost',sans-serif;font-size:12px;font-weight:700}
+.nf-list{margin-top:8px;max-height:240px;overflow:auto;border-radius:5px;border:1px solid rgba(255,255,255,0.08)}
+.nf-tbl{width:100%;border-collapse:collapse;font-family:'Jost',sans-serif;font-size:11px;color:#D8E4EC}
+.nf-tbl th{position:sticky;top:0;background:#2A1A1C;color:#F0A0A0;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;text-align:left;padding:6px 8px}
+.nf-tbl td{padding:5px 8px;border-top:1px solid rgba(255,255,255,0.06);vertical-align:top}
+.nf-tbl td.nf-c{font-weight:700;color:#FFC0C0;word-break:break-word}
+.nf-tbl td.nf-n{color:var(--gold-l);word-break:break-word}
 #ed-code-dd .sr.hl{background:rgba(201,168,76,0.16);box-shadow:inset 3px 0 0 var(--gold)}
 /* pictures: big enough to check the quotation by eye; tap one to see it full size */
 .pl-img,.pl-img-ph{width:48px!important;height:48px!important}
@@ -3061,7 +3069,8 @@ function showBathroomMsg(msg,ok){
 }
 
 function parseBathroomRows(text){
-  return text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l).map(l=>{
+  return text.split(/\r?\n/).map((l,i)=>({l:l.trim(), n:i+1})).filter(o=>o.l).map(o=>{
+    let l=o.l;
     // Strip leading "3." or "3)" numbering
     l=l.replace(/^\d+[\.\'\)]\s*/,'');
 
@@ -3112,7 +3121,8 @@ function parseBathroomRows(text){
         const tryBath=rawParts.slice(0,i+1).join(' ');
         const tryCode=rawParts.slice(i+1).join(' ').toUpperCase();
         if(tryCode.length<2) continue;
-        if(PMAP[tryCode]){bestBath=tryBath;bestCode=tryCode;break;}
+        const rc=resolveCode(tryCode);
+        if(rc){bestBath=tryBath;bestCode=rc;break;}
       }
 
       if(bestCode){
@@ -3125,9 +3135,9 @@ function parseBathroomRows(text){
       }
     }
     // For comma-path only: clean hyphenated codes (spaces are legitimate for TG codes found above)
-    if(!PMAP[code]) code=(code||'').replace(/[^A-Z0-9\-\s]/g,'').trim();
+    if(!resolveCode(code)) code=(code||'').replace(/[^A-Z0-9\-\s]/g,'').trim();
     if(!bath||!code||code.length<2) return null;
-    return{bath,code,qty};
+    return{bath,code,qty,line:o.n};
   }).filter(r=>r&&r.bath&&r.code&&r.code.length>2);
 }
 function importBathroomRows(rows){
@@ -3136,9 +3146,9 @@ function importBathroomRows(rows){
   const bathroomMap={};
   const order=[];
   let found=0,notFound=[];
-  filtered.forEach(({bath,code,qty})=>{
-    const p=PMAP[code];
-    if(!p){notFound.push(code);return;}
+  filtered.forEach(({bath,code,qty,line})=>{
+    const rc=resolveCode(code), p=rc && PMAP[rc];
+    if(!p){notFound.push({code:code, qty:qty, bath:bath, line:line});return;}
     if(!bathroomMap[bath]){bathroomMap[bath]={name:bath,items:[]};order.push(bath);}
     bathroomMap[bath].items.push({...p,qty});
     found++;
@@ -3157,22 +3167,14 @@ async function processBathroomUpload(){
     const rows=parseBathroomRows(paste);
     if(!rows.length){showBathroomMsg('No valid rows. Format: BATHROOM, CODE, QTY',false);return;}
     const{found,notFound}=importBathroomRows(rows);
-    if(found>0){
-      showBathroomMsg('✓ Imported '+found+' item(s) across '+S.bathrooms.length+' bathroom(s)'+(notFound.length?' · '+notFound.length+' not found':''),true);
-      showBathroomModeBar();refreshAll();
-      setTimeout(closeBathroomModal,1600);
-    } else showBathroomMsg('No matching codes found.',false);
+    showBathroomResult(found,notFound);
     return;
   }
   if(!bathroomFileData){showBathroomMsg('Please paste data or choose a file.',false);return;}
   if(bathroomFileData.type==='csv'){
     const rows=parseBathroomRows(bathroomFileData.data);
     const{found,notFound}=importBathroomRows(rows);
-    if(found>0){
-      showBathroomMsg('✓ Imported '+found+' item(s) across '+S.bathrooms.length+' bathroom(s)',true);
-      showBathroomModeBar();refreshAll();
-      setTimeout(closeBathroomModal,1600);
-    } else showBathroomMsg('No matching codes in file.',false);
+    showBathroomResult(found,notFound);
   } else {
     if(typeof XLSX==='undefined'){
       showBathroomMsg('Loading Excel parser…',true);
@@ -3182,13 +3184,9 @@ async function processBathroomUpload(){
       const wb=XLSX.read(bathroomFileData.data,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      const rows=data.map(r=>({bath:String(r[0]||'').trim(),code:String(r[1]||'').trim().toUpperCase(),qty:parseInt(r[2])||1})).filter(r=>r.bath&&r.code&&r.code.length>2);
+      const rows=data.map((r,i)=>({bath:String(r[0]||'').trim(),code:String(r[1]||'').trim().toUpperCase(),qty:parseInt(r[2])||1,line:i+1})).filter(r=>r.bath&&r.code&&r.code.length>2);
       const{found,notFound}=importBathroomRows(rows);
-      if(found>0){
-        showBathroomMsg('✓ Imported '+found+' item(s) across '+S.bathrooms.length+' bathroom(s)',true);
-        showBathroomModeBar();refreshAll();
-        setTimeout(closeBathroomModal,1600);
-      } else showBathroomMsg('No matching codes in Excel.',false);
+      showBathroomResult(found,notFound);
     }catch(e){showBathroomMsg('Error reading file: '+e.message,false);}
   }
 }
@@ -3237,13 +3235,48 @@ function showMsg(msg,ok){
   el.textContent=msg;
 }
 
+/* A code as typed / pasted / read from a file → the catalogue code.
+   Exact first; then the same code with extra or missing spaces (long names
+   such as Viking's "5313 F/T VIKING WASTE COUPLING … - 75MM(3")"); then the
+   same letters and digits with the dashes, dots and spaces ignored — but only
+   when that points to exactly ONE product. */
+let _CIDX=null, _CIDX_OF=null;
+function codeIndex(){
+  if(_CIDX && _CIDX_OF===ALL) return _CIDX;
+  const ws={}, an={};
+  ALL.forEach(p=>{
+    const c=p.code, w=String(c).replace(/\s+/g,' ').trim().toUpperCase(), a=String(c).toLowerCase().replace(/[^a-z0-9]/g,'');
+    if(!(w in ws)) ws[w]=c;
+    if(a.length>=4) an[a]=(a in an && an[a]!==c) ? null : c;      // null = two products share it → not used
+  });
+  _CIDX={ws:ws, an:an}; _CIDX_OF=ALL; return _CIDX;
+}
+function resolveCode(raw){
+  const s0=String(raw==null?'':raw);
+  const up=s0.trim().toUpperCase();
+  if(!up) return null;
+  if(PMAP[up]) return up;
+  if(PMAP[s0]) return s0;
+  const ix=codeIndex();
+  const w=up.replace(/\s+/g,' ');
+  if(ix.ws[w]) return ix.ws[w];
+  const a=up.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(a.length>=4 && ix.an[a]) return ix.an[a];
+  return null;
+}
 function parseRows(text){
   // Split by newline, handle comma or tab separated
-  return text.split(/\r?\n/).map(line=>{
+  return text.split(/\r?\n/).map((line,i)=>{
     const parts = line.includes('\t') ? line.split('\t') : line.split(',');
-    const code = (parts[0]||'').trim().toUpperCase();
-    const qty  = parseInt((parts[1]||'1').trim())||1;
-    return {code, qty};
+    let code = (parts[0]||'').trim().toUpperCase();
+    let qty  = parseInt((parts[1]||'1').trim())||1;
+    /* no comma / tab: "CODE 2" or "CODE 2 PCS" → the number at the end is the qty
+       (only when the line without it is a known code) */
+    if(parts.length===1 && !resolveCode(code)){
+      const m=code.match(/^(.*\S)\s+(\d+)\s*(PCS|PC|NOS?|NO)?\.?$/);
+      if(m && resolveCode(m[1])){ code=m[1]; qty=parseInt(m[2])||1; }
+    }
+    return {code, qty, line:i+1};
   }).filter(r=>r.code && r.code.length>2);
 }
 
@@ -3259,12 +3292,12 @@ function importRows(rows){
   const dest=()=>tb?tb.items:S.items;
   const clean=a=>a.filter(i=>!(isBlankRow(i) && i.auto));      // the page's own empty line makes way
   if(tb) tb.items=clean(tb.items); else S.items=clean(S.items||[]);
-  rows.forEach(({code,qty})=>{
+  rows.forEach(({code,qty,line})=>{
     // Skip header row
     if(code==='CODE'||code==='ITEM CODE'||code==='PRODUCT CODE') return;
-    const p=PMAP[code];
+    const rc=resolveCode(code), p=rc && PMAP[rc];
     if(p){ dest().push({...p,qty}); found++; }
-    else { notFound.push(code); }
+    else { notFound.push({code:code, qty:qty, line:line}); }
   });
   if(tb){
     if(isNew && found) S.bathrooms.push(tb);
@@ -3831,10 +3864,8 @@ async function processUpload(){
     const rows=parseRows(paste);
     if(!rows.length){ showMsg('No valid rows found in pasted text.',false); return; }
     const {found,notFound}=importRows(rows);
-    if(found>0){
-      refreshAll();
-      showImportResult(found,notFound);
-    } else { showMsg('No matching product codes found. Check your codes.',false); }
+    if(found>0) refreshAll();
+    showImportResult(found,notFound);
     return;
   }
 
@@ -3844,10 +3875,8 @@ async function processUpload(){
   if(uploadFileData.name.endsWith('.csv')){
     const rows=parseRows(uploadFileData.data);
     const {found,notFound}=importRows(rows);
-    if(found>0){
-      refreshAll();
-      showImportResult(found,notFound);
-    } else { showMsg('No matching codes found in CSV.',false); }
+    if(found>0) refreshAll();
+    showImportResult(found,notFound);
   } else {
     // Excel — use SheetJS from CDN
     if(typeof XLSX==='undefined'){
@@ -3863,35 +3892,76 @@ async function processUpload(){
       const wb=XLSX.read(uploadFileData.data,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      const rows=data.map(r=>({
+      const rows=data.map((r,i)=>({
         code:String(r[0]||'').trim().toUpperCase(),
-        qty:parseInt(r[1])||1
+        qty:parseInt(r[1])||1,
+        line:i+1
       })).filter(r=>r.code.length>2);
       const {found,notFound}=importRows(rows);
-      if(found>0){
-        refreshAll();
-        showImportResult(found,notFound);
-      } else { showMsg('No matching codes found in Excel file.',false); }
+      if(found>0) refreshAll();
+      showImportResult(found,notFound);
     } catch(e){ showMsg('Could not read Excel file. Try CSV instead.',false); }
   }
 }
 
 function showImportResult(found, notFound){
-  const missing=getMissingImageItems();
-  const msgEl=$('upload-msg');
-  msgEl.style.display='block';
-  msgEl.style.background='rgba(42,157,96,0.1)';
-  msgEl.style.border='1px solid rgba(42,157,96,0.3)';
-  msgEl.style.color='#4ADF90';
-  let html=`✓ Imported ${found} item${found!==1?'s':''}`;
-  if(notFound.length) html+=` · ${notFound.length} code(s) not found`;
-  if(missing.length){
-    html+=`<br><span style="color:#E8D08A;font-size:11px">⚠ ${missing.length} item${missing.length!==1?'s':''} have no image URL — run the full image check for broken links too</span>`;
-    html+=`<br><button onclick="openImageAudit()" style="margin-top:8px;padding:6px 14px;background:#C9A84C;color:#0D1520;border:none;border-radius:4px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;text-transform:uppercase">⬇ Download Missing Images List</button>`;
+  importReport($('upload-msg'), found, notFound||[], false, closeUpload);
+}
+function showBathroomResult(found, notFound){
+  if(found>0){ showBathroomModeBar(); refreshAll(); }
+  importReport($('bathroom-msg'), found, notFound||[], true, closeBathroomModal);
+}
+/* What came in, what did NOT (with a list to look at and to download), and
+   the missing-pictures check — the same report for both upload boxes.
+   The box closes by itself only when everything went in cleanly. */
+let NF_LAST=[], NF_BATH=false;
+function importReport(el, found, notFound, withBath, closer){
+  const missing=found>0 ? getMissingImageItems() : [];
+  const ok=found>0;
+  el.style.display='block';
+  el.style.background=ok?'rgba(42,157,96,0.1)':'rgba(231,76,60,0.1)';
+  el.style.border='1px solid '+(ok?'rgba(42,157,96,0.3)':'rgba(231,76,60,0.3)');
+  el.style.color=ok?'#4ADF90':'#E07070';
+  NF_LAST=notFound.map((r,k)=>{
+    const sug=k<80 ? smartSearch(r.code,'').res[0] : null;      // a suggestion for the first 80 — enough to spot a pattern
+    return Object.assign({}, r, {near: sug ? sug.code : ''});
+  });
+  NF_BATH=withBath;
+  const btn='margin:8px 6px 0 0;padding:6px 12px;border:none;border-radius:4px;font-family:\'Jost\',sans-serif;font-size:10px;letter-spacing:.8px;font-weight:800;cursor:pointer;text-transform:uppercase;';
+  let html = ok ? ('✓ Imported '+found+' item'+(found!==1?'s':'')+(withBath?' across '+S.bathrooms.length+' bathroom'+(S.bathrooms.length===1?'':'s'):''))
+                : '✕ None of the codes were found in the catalogue';
+  if(NF_LAST.length){
+    html+='<div class="nf-box"><div class="nf-head">✕ <b>'+NF_LAST.length+'</b> code'+(NF_LAST.length===1?'':'s')+' not found — left out</div>'+
+      '<button class="nf-btn" onclick="toggleNotFound(this)" style="'+btn+'background:#E07070;color:#1A0F10">☰ Show the list</button>'+
+      '<button class="nf-btn" onclick="downloadNotFound()" style="'+btn+'background:transparent;color:#F0A0A0;border:1px solid rgba(224,112,112,0.6)">⬇ Download not-found list</button>'+
+      '<div class="nf-list" style="display:none">'+notFoundTable()+'</div></div>';
   }
-  msgEl.innerHTML=html;
-  // Auto close after 4 seconds if no missing images
-  if(!missing.length) setTimeout(closeUpload, 2000);
+  if(missing.length){
+    html+='<div style="color:#E8D08A;font-size:11px;margin-top:8px">⚠ '+missing.length+' item'+(missing.length!==1?'s':'')+' have no image URL — run the full image check for broken links too</div>'+
+      '<button onclick="openImageAudit()" style="'+btn+'background:#C9A84C;color:#0D1520">⬇ Download Missing Images List</button>';
+  }
+  el.innerHTML=html;
+  if(ok && !NF_LAST.length && !missing.length) setTimeout(closer, 2000);
+}
+function notFoundTable(){
+  return '<table class="nf-tbl"><thead><tr><th>Row</th>'+(NF_BATH?'<th>Bathroom</th>':'')+'<th>Code as given</th><th>Qty</th><th>Closest in catalogue</th></tr></thead><tbody>'+
+    NF_LAST.map(r=>'<tr><td>'+(r.line||'')+'</td>'+(NF_BATH?'<td>'+esc(r.bath||'')+'</td>':'')+'<td class="nf-c">'+esc(r.code)+'</td><td>'+(r.qty||1)+'</td><td class="nf-n">'+(r.near?esc(r.near):'—')+'</td></tr>').join('')+
+    '</tbody></table>';
+}
+function toggleNotFound(b){
+  const l=b.parentNode.querySelector('.nf-list'); if(!l) return;
+  const on=l.style.display==='none'; l.style.display=on?'block':'none';
+  b.textContent=on?'☰ Hide the list':'☰ Show the list';
+}
+function downloadNotFound(){
+  if(!NF_LAST.length) return;
+  const q=v=>{ const t=String(v==null?'':v); return /[",\n]/.test(t) ? '"'+t.replace(/"/g,'""')+'"' : t; };
+  const head=['ROW'].concat(NF_BATH?['BATHROOM']:[]).concat(['CODE AS GIVEN','QTY','CLOSEST IN CATALOGUE']);
+  const lines=[head.join(',')].concat(NF_LAST.map(r=>[r.line||''].concat(NF_BATH?[r.bath||'']:[]).concat([r.code, r.qty||1, r.near||'']).map(q).join(',')));
+  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='codes_not_found.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),20000);
 }
 
 
