@@ -8480,6 +8480,23 @@ function scanLines(tokens){
   });
   lines.sort((a,b)=>a.yc-b.yc);
   lines.forEach(L=>L.toks.sort((a,b)=>a.x0-b.x0));
+  /* letter-spaced headings ("Q T Y", "T O TA L", "B E S T  P R I C E") come out
+     of the PDF as one token per letter — put each word back together */
+  const short=k=>/^[A-Z]{1,2}$/.test(k.u);
+  lines.forEach(L=>{
+    const T=L.toks, out=[]; let i=0;
+    while(i<T.length){
+      let j=i;
+      if(short(T[i])) while(j+1<T.length && short(T[j+1]) && (T[j+1].x0-T[j].x1)<=0.5*Math.max(T[j].h,T[j+1].h)) j++;
+      if(j-i>=2){
+        const g=T.slice(i,j+1), s=g.map(k=>k.s).join('');
+        const w=Object.assign({}, g[0], {s:s, x1:g[g.length-1].x1, y0:Math.min.apply(null,g.map(k=>k.y0)), y1:Math.max.apply(null,g.map(k=>k.y1))});
+        w.u=scanClean(s); w.xc=(w.x0+w.x1)/2; w.yc=(w.y0+w.y1)/2; w.h=Math.max(1,w.y1-w.y0);
+        out.push(w); i=j+1;
+      } else { out.push(T[i]); i++; }
+    }
+    L.toks=out;
+  });
   return lines;
 }
 
@@ -8751,6 +8768,16 @@ function scanAnalyzePage(page, pi){
       if(!v && NL && NL.y0-L.y1<1.2*L.h) v=NL.toks.filter(k=>want.test(k.u) && k.x0>=T[a].x0-1.5*L.h && k.x0<=T[a+1].x1+1.5*L.h)[0];
       if(v){ if(isQ) res.totalQty=parseInt(v.u,10); else res.totalMrp=parseFloat(v.u.replace(/,/g,'')); }
     }
+    /* a totals block laid out as labels over figures:   QTY        TOTAL MRP
+                                                    TOTAL 21   ₹55,150      */
+    if(T.some(k=>/^TOTAL/.test(k.u.replace(/[^A-Z]/g,'')))){
+      const above=lines.filter(X=>X.yc<L.yc && L.yc-X.yc<=2.6*L.h);
+      const labelOver=(k,re)=>above.some(X=>X.toks.some(t=>re.test(t.u.replace(/[^A-Z]/g,'')) && Math.abs(t.xc-k.xc)<=Math.max(1.5*L.h, 0.6*(t.x1-t.x0))));
+      T.forEach(k=>{
+        if(res.totalQty==null && /^\d{1,5}$/.test(k.u) && labelOver(k,/^(TOTAL)?(QTY|QUANTITY|PCS)$/)) res.totalQty=parseInt(k.u,10);
+        if(res.totalMrp==null && /^\d{1,3}(,\d{2,3})*(\.\d{2})?$/.test(k.u) && /,/.test(k.u) && labelOver(k,/^(TOTAL)?MRP$/)) res.totalMrp=parseFloat(k.u.replace(/,/g,''));
+      });
+    }
     const txt=T.map(k=>String(k.s).trim()).join(' ');
     const m=/^(.*[A-Za-z0-9].*?)\s+TOTAL\s*:/i.exec(txt);
     if(m){
@@ -8842,6 +8869,26 @@ function scanAnalyzePage(page, pi){
     }
     if(h.soft){ row.soft=true; if(row.status!=='unknown' && !row.codeOk) row.notes.unshift('badly printed / blurred code — rebuilt from '+L.toks[h.i].s); }
     scanQty(row, L, h, band, bx0, bx1, ctx, qtyX, qtyHeadY, qtol(L), ocr, page);
+    /* a qty printed as a little stack in the QTY column — the number with "pcs"
+       right under it — sits on the line above a single-line code */
+    if(qtyX!==null && L.yc>qtyHeadY && !/^under the QTY heading/.test(row.qtyWhy||'')){
+      const tol=qtol(L), inQ=k=>Math.abs(k.xc-qtyX)<=tol;
+      const unitHere=x=>x.toks.some(k=>inQ(k) && /^(PCS?|NOS?|NO|SET|SETS)\.?$/.test(k.u));
+      let st=null;
+      lines.forEach((X,xi)=>{
+        if(st || Math.abs(X.yc-L.yc)>2.4*L.h || X.yc<=qtyHeadY) return;   // (that line may also carry the little MRP / BEST PRICE / TOTAL labels)
+        const n=X.toks.filter(k=>inQ(k) && /^\d{1,4}$/.test(k.u))[0];
+        const U=lines[xi+1];
+        if(n && U && U.y0-X.y1<1.2*L.h && unitHere(U) && (U===L || Math.abs(U.yc-L.yc)<1.5*L.h)) st=parseInt(n.u,10);
+      });
+      if(st>0){
+        row.qty=st; row.qtyWhy='under the QTY heading ("'+st+' pcs")'; row.qtyOk=!ocr;
+        row._needCol=false; row._leftOnly=false; row.qtyWeak=false; row.qtyBad=false; row.qtyDerived=false;
+        row.notes=row.notes.filter(t=>!/qty|several numbers/i.test(t));
+        const nums=ctx.nums||[];
+        if(nums.some(r=>r>=10 && nums.some(t=>t>=r && Math.abs(st*r-t)<=Math.max(1,0.0015*t) && (st>1 || nums.filter(z=>Math.abs(z-r)<0.01).length>=2)))){ row.qtyProof=true; row.qtyWhy+=', and qty × rate = amount'; }
+      }
+    }
     if(glued && !row.qtyWhy && row.code && scanNeighboursHas(glued.code, row.code)){ row.qty=glued.qty; row.qtyWhy='× '+glued.qty+' written right after the code'; }
     rows.push(row);
   });
