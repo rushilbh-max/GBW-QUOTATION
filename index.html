@@ -3297,9 +3297,10 @@ async function processBathroomUpload(){
     }
     try{
       const wb=XLSX.read(bathroomFileData.data,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
+      const sn=wb.SheetNames.filter(n=>/bathroom/i.test(n))[0] || wb.SheetNames[0];     // our own export: its "Bathroom wise" sheet
+      const ws=wb.Sheets[sn];
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      const rows=data.map((r,i)=>({bath:String(r[0]||'').trim(),code:String(r[1]||'').trim().toUpperCase(),qty:parseInt(r[2])||1,line:i+1})).filter(r=>r.bath&&r.code&&r.code.length>2);
+      const rows=data.map((r,i)=>({bath:String(r[0]||'').trim(),code:String(r[1]||'').trim().toUpperCase(),qty:parseInt(r[2])||1,line:i+1})).filter(r=>r.bath&&r.code&&r.code.length>2&&!xlSummaryRow(r.bath, r.code));
       const{found,notFound}=importBathroomRows(rows);
       showBathroomResult(found,notFound);
     }catch(e){showBathroomMsg('Error reading file: '+e.message,false);}
@@ -3395,6 +3396,12 @@ function parseRows(text){
   }).filter(r=>r.code && r.code.length>2);
 }
 
+/* heading / total / charge rows of an exported quotation are not products */
+function xlSummaryRow(){
+  const L=CHARGE_DEFS.map(d=>d.label.toUpperCase());
+  return [].slice.call(arguments).some(v=>{ const u=String(v||'').trim().toUpperCase();
+    return /^(CODE|AREA NAME|TOTAL|PRODUCTS TOTAL|TOTAL QUOTE AMOUNT|GRAND TOTAL|SUB ?TOTAL)$/.test(u) || L.indexOf(u)>=0; });
+}
 function importRows(rows){
   let found=0, notFound=[];
   /* a bathroom-wise quotation: into the bathroom picked in the box (default: the one being filled) */
@@ -4016,7 +4023,7 @@ async function processUpload(){
         code:String(r[0]||'').trim().toUpperCase(),
         qty:parseInt(r[1])||1,
         line:i+1
-      })).filter(r=>r.code.length>2);
+      })).filter(r=>r.code.length>2 && !xlSummaryRow(r.code));
       const {found,notFound}=importRows(rows);
       if(found>0) refreshAll();
       showImportResult(found,notFound);
@@ -9927,47 +9934,97 @@ function uniqueImportName(base){
 /* ════════════════════════════════════════════════════════════════════════
    EXCEL EXPORT  —  Quotation page (code + qty, bathroom-wise when grouped)
    ════════════════════════════════════════════════════════════════════════ */
-function exportQuotationExcel(){
-  if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
-  const inBath = S.bathrooms && S.bathrooms.length>0;
-  let aoa, fname;
-  /* Basic Rate = the pre-GST unit rate after the discount / margin — the same
-     figure as the "Rate" column of the GST Format quotation. It sits AFTER Qty,
-     so the file still imports back into the app (which reads code + qty by
-     position and ignores anything further right). */
-  const basicRate=it=>Math.round(basicUnit(it)*100)/100;
-  if(inBath){
-    aoa=[['Bathroom','Code','Qty','Basic Rate']];
-    S.bathrooms.forEach(b=>b.items.forEach(it=>aoa.push([b.name, it.code, it.qty, basicRate(it)])));
-    fname='quotation_bathroomwise.xlsx';
-  }else{
-    if(!S.items.length){ alert('No products in the quotation to export.'); return; }
-    aoa=[['Code','Qty','Basic Rate']];
-    S.items.forEach(it=>aoa.push([it.code, it.qty, basicRate(it)]));
-    fname='quotation_codes.xlsx';
+/* ── QUOTATION → EXCEL (two sheets) ──
+   "Tally rates"   one row per code (same code + same rate added up): CODE · QTY ·
+                   BASIC RATE · TOTAL AMOUNT (WITH GST) · BRAND, then the quote total.
+   "Bathroom wise" every line as quoted: AREA NAME · CODE · QTY · BASIC RATE ·
+                   TOTAL AMOUNT NET · BRAND, then the quote total.
+   BASIC RATE = the pre-GST unit rate after the discount / margin (the "Rate" of the
+   GST Format quotation). The amounts are qty × rate incl. GST, worked out exactly
+   the way the GST Format quotation does, so the totals match it to the paisa.
+   Cartage / installation (no GST) are listed under the products and included in
+   the quote total. Row 1 is the heading and CODE / QTY keep their places, so each
+   sheet still imports back through Upload code list / Bathroom-wise file.    */
+function quoteXlLines(){
+  const r2=n=>Math.round((Number(n)||0)*100)/100;
+  const lines=[];
+  const add=(area,it)=>{ if(!it || isBlankRow(it)) return;
+    lines.push({area:area, code:it.code, qty:+it.qty||0, rate:r2(basicUnit(it)), amt:grossUnit(it)*(+it.qty||0), brand:brandKey(it)}); };
+  if(S.bathrooms && S.bathrooms.length) S.bathrooms.forEach(b=>(b.items||[]).forEach(it=>add(b.name, it)));
+  else (S.items||[]).forEach(it=>add('', it));
+  return lines;
+}
+function quoteXlClub(lines){
+  const by={}, out=[];
+  lines.forEach(l=>{ const k=l.code+'|'+l.rate;
+    if(!by[k]){ by[k]={code:l.code, qty:0, rate:l.rate, amt:0, brand:l.brand}; out.push(by[k]); }
+    by[k].qty+=l.qty; by[k].amt+=l.amt; });
+  return out;
+}
+function buildQuoteWorkbook(EJ){
+  const lines=quoteXlLines(), club=quoteXlClub(lines), ch=chargeList();
+  const r2=n=>Math.round((Number(n)||0)*100)/100;
+  const wb=new EJ.Workbook(); wb.creator='Grace Bath World'; wb.created=new Date();
+  const TEAL='FF0F5E57', GOLDF='FFFFF4D6', LINE='FFD9D9D9';
+  const thin={style:'thin',color:{argb:LINE}};
+  const MONEY='#,##0.00';
+  function sheet(name, head, widths, rows, cols){
+    /* cols: which column holds QTY / AMOUNT / the label of the total rows (1-based) */
+    const ws=wb.addWorksheet(name, {views:[{state:'frozen', ySplit:1}], properties:{defaultRowHeight:18},
+      pageSetup:{orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9, margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
+    ws.columns=widths.map(w=>({width:w}));
+    const h=ws.addRow(head); h.height=30;
+    h.eachCell(c=>{ c.font={bold:true,color:{argb:'FFFFFFFF'},size:10.5}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TEAL}};
+      c.alignment={vertical:'middle',horizontal:'center',wrapText:true}; c.border={top:thin,left:thin,bottom:thin,right:thin}; });
+    rows.forEach(v=>{ const r=ws.addRow(v);
+      r.eachCell({includeEmpty:true},(c,ci)=>{ c.border={top:thin,left:thin,bottom:thin,right:thin}; c.alignment={vertical:'middle'}; });
+      r.getCell(cols.code).font={name:'Consolas',bold:true,size:10.5};
+      r.getCell(cols.qty).numFmt='0'; r.getCell(cols.qty).alignment={vertical:'middle',horizontal:'center'};
+      r.getCell(cols.rate).numFmt=MONEY; r.getCell(cols.amt).numFmt=MONEY; });
+    const first=2, last=rows.length+1, L=c=>ws.getColumn(c).letter;
+    const qtySum=rows.reduce((a,v)=>a+(+v[cols.qty-1]||0),0), amtSum=rows.reduce((a,v)=>a+(+v[cols.amt-1]||0),0);
+    const total=(label, qtyCell, amtCell, strong)=>{
+      const v=new Array(head.length).fill(null); v[cols.label-1]=label;
+      const r=ws.addRow(v);
+      if(qtyCell) r.getCell(cols.qty).value=qtyCell;
+      r.getCell(cols.amt).value=amtCell;
+      r.eachCell({includeEmpty:true},c=>{ c.border={top:thin,left:thin,bottom:thin,right:thin}; c.font={bold:true,size:strong?12:10.5};
+        if(strong) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:GOLDF}}; c.alignment={vertical:'middle'}; });
+      r.getCell(cols.qty).numFmt='0'; r.getCell(cols.qty).alignment={vertical:'middle',horizontal:'center'};
+      r.getCell(cols.amt).numFmt=MONEY; r.height=strong?22:18;
+      return r;
+    };
+    const sumQty={formula:'SUM('+L(cols.qty)+first+':'+L(cols.qty)+last+')', result:qtySum};
+    const sumAmt={formula:'SUM('+L(cols.amt)+first+':'+L(cols.amt)+last+')', result:r2(amtSum)};
+    if(!ch.length){
+      total('TOTAL QUOTE AMOUNT', sumQty, sumAmt, true);
+    } else {
+      const pr=total('PRODUCTS TOTAL', sumQty, sumAmt, false);
+      const refs=[L(cols.amt)+pr.number];
+      ch.forEach(c=>{ const r=total(c.label, null, c.amt, false); r.getCell(cols.label).font={bold:false,size:10.5}; r.getCell(cols.amt).font={bold:false,size:10.5}; refs.push(L(cols.amt)+r.number); });
+      total('TOTAL QUOTE AMOUNT', null, {formula:refs.join('+'), result:r2(amtSum+chargesTotal())}, true);
+    }
+    return ws;
   }
-  if(aoa.length<=1){ alert('No products in the quotation to export.'); return; }
-  const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']= inBath ? [{wch:24},{wch:20},{wch:8},{wch:13}] : [{wch:20},{wch:8},{wch:13}];
-  const rateCol=XLSX.utils.encode_col(inBath?3:2);
-  for(let r=2;r<=aoa.length;r++){ const c=ws[rateCol+r]; if(c && c.t==='n') c.z='#,##0.00'; }   // always 2 decimals
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
-
-  // second sheet: the dispatch view — one row per code, quantities added up
-  const dr=dispatchRows();
-  if(dr.length){
-    const d=[['Code','Description','MRP','Qty','Basic Rate','Received','Short']];
-    const byCode={}; (S.items||[]).forEach(it=>{ if(!byCode[it.code]) byCode[it.code]=it; });
-    dr.forEach(r=>{ const it=byCode[r.code]||PMAP[r.code]; d.push([r.code, r.desc||'', r.mrp||0, r.qty, it?basicRate(it):'', '', '']); });
-    const wsd=XLSX.utils.aoa_to_sheet(d);
-    wsd['!cols']=[{wch:22},{wch:42},{wch:10},{wch:7},{wch:13},{wch:10},{wch:9}];
-    for(let r=2;r<=d.length;r++){ const c=wsd['E'+r]; if(c && c.t==='n') c.z='#,##0.00'; }
-    XLSX.utils.book_append_sheet(wb, wsd, 'Dispatch');
-  }
-
-  XLSX.writeFile(wb, fname);
-  toast('Excel exported — '+(aoa.length-1)+' rows + dispatch sheet');
+  sheet('Tally rates', ['CODE','QTY','BASIC RATE','TOTAL AMOUNT\n(WITH GST)','BRAND'], [24,8,14,18,16],
+        club.map(c=>[c.code, c.qty, c.rate, r2(c.amt), c.brand]), {code:1, qty:2, rate:3, amt:4, label:1});
+  sheet('Bathroom wise', ['AREA NAME','CODE','QTY','BASIC RATE','TOTAL AMOUNT\nNET','BRAND'], [22,24,8,14,18,16],
+        lines.map(l=>[l.area||null, l.code, l.qty, l.rate, r2(l.amt), l.brand]), {code:2, qty:3, rate:4, amt:5, label:1});
+  return {wb:wb, lines:lines.length, codes:club.length, total:r2(lines.reduce((a,l)=>a+l.amt,0)+chargesTotal())};
+}
+async function exportQuotationExcel(){
+  if(!liveItemCount()){ alert('No products in the quotation to export.'); return; }
+  let EJ;
+  try{ EJ=await loadExcelJS(); }catch(e){ alert('Could not load the Excel maker — check the internet connection and try again.'); return; }
+  const out=buildQuoteWorkbook(EJ);
+  const buf=await out.wb.xlsx.writeBuffer();
+  const nm=(printName()||'').replace(/[\\\/:*?"<>|]+/g,' ').trim();
+  const fname='QUOTATION'+(nm?' - '+nm:'')+'.xlsx';
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 20000);
+  toast('Excel exported — Tally rates ('+out.codes+' code'+(out.codes===1?'':'s')+') + Bathroom wise ('+out.lines+' line'+(out.lines===1?'':'s')+')');
 }
 
 /* ── wire Search & Edit listeners (DOM already parsed at this point) ── */
