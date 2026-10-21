@@ -303,7 +303,6 @@ tr.rmoved td{animation:rowFlash .9s ease}
 .pl-code-inp:focus{background:var(--ink4);border-bottom:1px solid var(--gold);padding-left:4px;color:#fff}
 .pl-code-inp::placeholder{font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.3px;color:var(--muted);text-transform:none}
 .pl-tbl tbody tr.blank td{background:rgba(201,168,76,0.045)}
-.pl-tbl tbody tr.blank td.pl-ctrl{background:#141E2B}
 .pl-tbl tbody tr.blank .pl-code-inp{border-bottom-style:solid;border-bottom-color:rgba(201,168,76,0.5)}
 .pl-hint{font-family:'Cormorant',serif;font-style:italic;font-size:11px;color:var(--muted);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-dash{color:var(--muted);font-family:'Jost',sans-serif;font-size:11px;text-align:right}
@@ -312,24 +311,65 @@ tr.rmoved td{animation:rowFlash .9s ease}
 .pl-best{font-family:'Jost',sans-serif;font-size:12px;font-weight:600;color:var(--gold-l);text-align:right}
 .pl-tot{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#D8E4EC;text-align:right}
 .pl-ctrl{padding:4px 6px !important}
-.pl-ctrl-inner{display:flex;align-items:center;justify-content:flex-end;gap:7px}
-.pl-qty{display:flex;align-items:center;background:var(--ink3);border:1px solid rgba(255,255,255,0.08);border-radius:5px;overflow:hidden;width:74px;flex-shrink:0}
+.pl-ctrl-inner{display:flex;align-items:center;justify-content:flex-start;gap:7px}
+.pl-qty{display:flex;align-items:center;background:var(--ink3);border:1px solid rgba(255,255,255,0.08);border-radius:5px;overflow:hidden;width:auto;flex-shrink:0}
 .pl-qty button{width:26px;height:28px;background:transparent;border:none;color:var(--gold);font-size:15px;font-weight:400;line-height:1;cursor:pointer;flex-shrink:0;padding:0}
 .pl-qty button:active{background:rgba(201,168,76,0.16)}
 .pl-qty input{width:30px;height:28px;text-align:center;background:transparent;border:none;color:#D8E4EC;font-family:'Jost',sans-serif;font-size:12px;font-weight:700;outline:none;-moz-appearance:textfield}
 .pl-qty input::-webkit-outer-spin-button,.pl-qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .pl-acts{white-space:nowrap;text-align:right}
-/* Qty + ↑ ↓ ✕ live in ONE cell pinned to the right edge, so the controls stay
-   at the corner while the information columns scroll sideways on a phone.
-   Sticky cells sit above the row, so they need their own opaque background. */
-.pl-tbl th.pl-ctrl-h,.pl-tbl td.pl-ctrl{position:sticky;right:0;z-index:3;border-left:1px solid rgba(255,255,255,0.07);box-shadow:-9px 0 12px -7px rgba(0,0,0,0.65)}
-.pl-tbl th.pl-ctrl-h{background:var(--ink3);z-index:4;text-align:right}
-.pl-tbl td.pl-ctrl{background:var(--ink2)}
-.pl-tbl tbody tr:hover td.pl-ctrl{background:#18222F}
-.pl-tbl tbody tr.ins-here td.pl-ctrl{background:#1D2636}
+/* Qty + ↑ ↓ ✕ sit in ONE cell right after the product, so the quantity reads
+   next to its code and is changed without the eye travelling across the row. */
+.pl-tbl th.pl-ctrl-h{text-align:left}
+.pl-tbl td.pl-ctrl{border-left:1px solid rgba(255,255,255,0.04);border-right:1px solid rgba(255,255,255,0.04)}
 .pl-acts button{background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:4px;width:26px;height:28px;font-size:12px;font-weight:700;cursor:pointer;margin-left:3px;color:var(--gold);padding:0}
 .pl-acts button.del{color:#E06060;border-color:rgba(224,96,96,0.4)}
 .pl-acts button:active{background:rgba(201,168,76,0.12)}
+
+/* ══ PHONES ══
+   ┌──┬──────┬──────────────────────┬──────────┐
+   │⠿ │ pic  │ CODE                 │ − 2 +    │
+   │1 │      │ product name…        │ ↑  ↓  ✕  │
+   │  │ MRP  │ BEST   TOTAL   STOCK │          │
+   └──┴──────┴──────────────────────┴──────────┘
+   Same table, laid out as a grid per line: nothing to scroll sideways, the
+   quantity sits right beside the code, and every button is a full finger wide. */
+@media (max-width:600px){
+  .pl-wrap{overflow:visible}
+  .pl-tbl{min-width:0;display:block}
+  .pl-tbl thead{display:none}
+  .pl-tbl tbody{display:block}
+  .pl-tbl tbody tr.pl-bhead,.pl-tbl tbody tr.pl-bempty{display:block}
+  .pl-tbl tbody tr.pl-bhead td,.pl-tbl tbody tr.pl-bempty td{display:block}
+  .pl-tbl tbody tr.pl-row{display:grid;grid-template-columns:24px 52px repeat(3,minmax(0,1fr)) auto;column-gap:7px;row-gap:5px;align-items:center;padding:8px 8px 7px 4px;border-bottom:1px solid rgba(255,255,255,0.07)}
+  .pl-tbl tbody tr.pl-row:last-child{border-bottom:none}
+  .pl-tbl tbody tr.pl-row td{display:block;padding:0!important;border:none!important;background:transparent!important;min-width:0}
+  .pl-tbl tbody tr.pl-row.blank{background:rgba(201,168,76,0.06)}
+  .pl-tbl tbody tr.pl-row.ins-here{background:rgba(201,168,76,0.12)}
+  .pl-tbl tbody tr.pl-row td.pl-sr{grid-column:1;grid-row:1 / span 2;align-self:start;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .pl-tbl tbody tr.pl-row td.pl-sr .row-grip{margin:0;height:26px}
+  .pl-tbl tbody tr.pl-row td:nth-child(2){grid-column:2;grid-row:1;align-self:start}
+  .pl-tbl tbody tr.pl-row td.pl-prod{grid-column:3 / span 3;grid-row:1;max-width:none;min-width:0;align-self:center}
+  .pl-tbl tbody tr.pl-row td.pl-ctrl{grid-column:6;grid-row:1 / span 2;align-self:center}
+  .pl-tbl tbody tr.pl-row td:nth-child(5){grid-column:2;grid-row:2}
+  .pl-tbl tbody tr.pl-row td:nth-child(6){grid-column:3;grid-row:2}
+  .pl-tbl tbody tr.pl-row td:nth-child(7){grid-column:4;grid-row:2}
+  .pl-tbl tbody tr.pl-row td:nth-child(8){grid-column:5;grid-row:2}
+  .pl-tbl tbody tr.pl-row td[data-l]{text-align:left;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+  .pl-tbl tbody tr.pl-row td[data-l]::before{content:attr(data-l);display:block;font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+  .pl-tbl tbody tr.pl-row td.pl-stk{text-align:left;font-size:12px}
+  .pl-img,.pl-img-ph{width:52px!important;height:52px!important}
+  .pl-code-inp{max-width:none;font-size:13px;padding:2px 0 3px}
+  .pl-code-inp:focus{padding-left:4px}
+  .pl-name{font-size:11px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px}
+  .pl-hint{white-space:normal}
+  .pl-ctrl-inner{flex-direction:column;align-items:stretch;gap:6px}
+  .pl-qty{width:auto}
+  .pl-qty button{width:34px;height:36px;font-size:19px}
+  .pl-qty input{width:36px;height:36px;font-size:16px}
+  .pl-acts{display:flex;justify-content:space-between;gap:4px}
+  .pl-acts button{flex:1;width:auto;min-width:30px;height:32px;margin:0;font-size:13px}
+}
 
 /* ══ WIDE SCREENS (desktop / counter PC) ══
    Everything above is sized for a phone, where the table has to scroll
@@ -340,18 +380,13 @@ tr.rmoved td{animation:rowFlash .9s ease}
 @media (min-width:1024px){
   .pl-tbl{min-width:0}
   .pl-tbl th,.pl-tbl td{padding:6px 10px}
-  /* unpin — there is no sideways scroll to escape from */
-  .pl-tbl th.pl-ctrl-h,.pl-tbl td.pl-ctrl{position:static;box-shadow:none;border-left:1px solid rgba(255,255,255,0.05)}
-  .pl-tbl tbody tr:hover td.pl-ctrl{background:transparent}
-  .pl-tbl tbody tr.blank td.pl-ctrl{background:rgba(201,168,76,0.045)}
-  .pl-tbl td.pl-ctrl{background:transparent}
   /* column shares — the name column absorbs whatever is left over */
   .pl-tbl th:nth-child(1){width:46px!important}
   .pl-tbl th:nth-child(2){width:62px!important}
-  .pl-tbl th:nth-child(3){width:44%!important}
-  .pl-tbl th:nth-child(4),.pl-tbl th:nth-child(5){width:104px!important}
-  .pl-tbl th:nth-child(6){width:116px!important}
+  .pl-tbl th:nth-child(3){width:32%!important}
   .pl-tbl th.pl-ctrl-h{width:212px!important}
+  .pl-tbl th:nth-child(5),.pl-tbl th:nth-child(6){width:104px!important}
+  .pl-tbl th:nth-child(7){width:116px!important}
   .pl-prod{min-width:0;max-width:none}
   .pl-code-inp{max-width:260px;font-size:12px}
   .pl-name{font-size:11.5px;color:#9FB6C9}
@@ -361,7 +396,6 @@ tr.rmoved td{animation:rowFlash .9s ease}
   .pl-code{font-size:12px}
   .pl-mrp,.pl-dash{font-size:12px}
   .pl-best,.pl-tot{font-size:13px}
-  .pl-qty{width:92px}
   .pl-qty button{width:30px;height:30px;font-size:16px}
   .pl-qty input{width:32px;height:30px;font-size:13px}
   .pl-acts button{width:30px;height:30px;font-size:13px;margin-left:4px}
@@ -369,10 +403,10 @@ tr.rmoved td{animation:rowFlash .9s ease}
   .pl-viewbar{padding:0 2px 10px}
   .pl-viewbar .plv-info{font-size:11px}
 }
-/* On a very wide monitor give the extra room to the product name, so the
-   prices don't drift away from the controls with a dead band between them. */
+/* On a very wide monitor keep the product column modest, so the quantity
+   stays close to the code instead of drifting to the middle of the screen. */
 @media (min-width:1600px){
-  .pl-tbl th:nth-child(3){width:57%!important}
+  .pl-tbl th:nth-child(3){width:29%!important}
 }
 
 /* ══ TOTAL BAR ══ */
@@ -430,6 +464,13 @@ tr.rmoved td{animation:rowFlash .9s ease}
 #sum-strip .ss-save:hover{background:rgba(201,168,76,0.22)}
 #sum-strip .ss-go{height:36px;padding:0 20px}
 #sum-strip.empty .ss-v{color:var(--muted)}
+/* tablets: two rows — totals + View on top, name + Save below — instead of running off the edge */
+@media (min-width:561px) and (max-width:900px){
+  #sum-strip{flex-wrap:wrap;row-gap:8px}
+  #sum-strip .ss-go{order:3}
+  #sum-strip .ss-name{order:5;flex:1 1 60%}
+  #sum-strip .ss-save{order:6}
+}
 #tools-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
 #tools-line .bb{margin-top:0;flex:1 1 auto}
 #tools-line #tool-row{margin-left:auto}
@@ -4104,11 +4145,11 @@ function plistRowsHTML(){
     '<th style="width:48px;text-align:center">#</th>'+
     '<th style="width:40px">Img</th>'+
     '<th>Product</th>'+
+    '<th class="pl-ctrl-h" style="width:178px">Qty &nbsp;·&nbsp; Row</th>'+
     '<th style="width:58px;text-align:right">MRP</th>'+
     '<th style="width:64px;text-align:right">Best</th>'+
     '<th style="width:70px;text-align:right">Total</th>'+
     '<th style="width:54px;text-align:center">Stock</th>'+
-    '<th class="pl-ctrl-h" style="width:178px">Qty &nbsp;·&nbsp; Row</th>'+
     '</tr></thead><tbody>';
   const heads={}, hidden={};
   if(bathMode()){ let k=0; S.bathrooms.forEach((b,bi)=>{ heads[k]=(heads[k]||'')+bathHeadHTML(b,bi); if(COLLAPSED.has(b)) for(let j=0;j<b.items.length;j++) hidden[k+j]=1; k+=b.items.length; }); heads.end=''; if(heads[k]!=null) heads.end=heads[k]; }
@@ -4138,22 +4179,22 @@ function plistRowsHTML(){
         (empty
           ? '<div class="pl-hint">type a code or a product name, then pick it</div>'
           : '<div class="pl-name" title="'+esc(item.desc)+'">'+esc(item.desc)+'</div>')+'</td>'+
-      '<td class="'+(empty?'pl-dash':'pl-mrp')+'">'+(empty?'—':fmtN(item.mrp))+'</td>'+
-      '<td class="'+(empty?'pl-dash':'pl-best')+'">'+(empty?'—':fmtN(price))+'</td>'+
-      '<td class="'+(empty?'pl-dash':'pl-tot')+'">'+(empty?'—':fmtN(price*item.qty))+'</td>'+
-      '<td class="pl-stk '+si.cls+'" title="GBW stock">'+si.txt+'</td>'+
       '<td class="pl-ctrl"><div class="pl-ctrl-inner">'+
         '<span class="pl-qty">'+
-          '<button onclick="setQtyAt('+i+','+(item.qty-1)+')" title="Less">−</button>'+
-          '<input type="number" min="0" inputmode="numeric" value="'+item.qty+'" onchange="setQtyAt('+i+',this.value)">'+
-          '<button onclick="setQtyAt('+i+','+(item.qty+1)+')" title="More">+</button>'+
+          '<button onclick="setQtyAt('+i+','+(item.qty-1)+')" title="Less" aria-label="Less">−</button>'+
+          '<input type="number" min="0" inputmode="numeric" value="'+item.qty+'" onchange="setQtyAt('+i+',this.value)" onfocus="this.select()" aria-label="Quantity">'+
+          '<button onclick="setQtyAt('+i+','+(item.qty+1)+')" title="More" aria-label="More">+</button>'+
         '</span>'+
         '<span class="pl-acts">'+
           '<button onclick="insertBlankAt('+i+',\'above\')" title="Insert an empty line above">↑</button>'+
           '<button onclick="insertBlankAt('+i+',\'below\')" title="Insert an empty line below">↓</button>'+
           '<button class="del" onclick="delItemAt('+i+')" title="Remove">✕</button>'+
         '</span>'+
-      '</div></td></tr>';
+      '</div></td>'+
+      '<td class="'+(empty?'pl-dash':'pl-mrp')+'" data-l="MRP">'+(empty?'—':fmtN(item.mrp))+'</td>'+
+      '<td class="'+(empty?'pl-dash':'pl-best')+'" data-l="Best">'+(empty?'—':fmtN(price))+'</td>'+
+      '<td class="'+(empty?'pl-dash':'pl-tot')+'" data-l="Total">'+(empty?'—':fmtN(price*item.qty))+'</td>'+
+      '<td class="pl-stk '+si.cls+'" title="GBW stock" data-l="Stock">'+si.txt+'</td></tr>';
   }).join('')+(heads.end||'');
   return html+'</tbody></table></div>';
 }
