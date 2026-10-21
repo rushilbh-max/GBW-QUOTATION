@@ -8792,7 +8792,15 @@ function scanLines(tokens){
     const T=L.toks, out=[]; let i=0;
     while(i<T.length){
       let j=i;
-      if(short(T[i])) while(j+1<T.length && short(T[j+1]) && (T[j+1].x0-T[j].x1)<=0.5*Math.max(T[j].h,T[j+1].h)) j++;
+      /* letters a little apart (up to ¾ of the letter height), evenly spaced — a wider gap ends the word */
+      if(short(T[i])){ let g0=null;
+        while(j+1<T.length && short(T[j+1])){
+          const g=T[j+1].x0-T[j].x1, hh=Math.max(T[j].h,T[j+1].h);
+          if(g>0.75*hh || (g0!==null && g>Math.max(1.3*g0+0.05*hh, 0.3*hh))) break;
+          if(g0===null) g0=Math.max(0,g);
+          j++;
+        }
+      }
       if(j-i>=2){
         const g=T.slice(i,j+1), s=g.map(k=>k.s).join('');
         const w=Object.assign({}, g[0], {s:s, x1:g[g.length-1].x1, y0:Math.min.apply(null,g.map(k=>k.y0)), y1:Math.max.apply(null,g.map(k=>k.y1))});
@@ -9178,14 +9186,19 @@ function scanAnalyzePage(page, pi){
        right under it — sits on the line above a single-line code */
     if(qtyX!==null && L.yc>qtyHeadY && !/^under the QTY heading/.test(row.qtyWhy||'')){
       const tol=qtol(L), inQ=k=>Math.abs(k.xc-qtyX)<=tol;
-      const unitHere=x=>x.toks.some(k=>inQ(k) && /^(PCS?|NOS?|NO|SET|SETS)\.?$/.test(k.u));
-      let st=null;
-      lines.forEach((X,xi)=>{
-        if(st || Math.abs(X.yc-L.yc)>2.4*L.h || X.yc<=qtyHeadY) return;   // (that line may also carry the little MRP / BEST PRICE / TOTAL labels)
-        const n=X.toks.filter(k=>inQ(k) && /^\d{1,4}$/.test(k.u))[0];
-        const U=lines[xi+1];
-        if(n && U && U.y0-X.y1<1.2*L.h && unitHere(U) && (U===L || Math.abs(U.yc-L.yc)<1.5*L.h)) st=parseInt(n.u,10);
-      });
+      /* judged on the words themselves, not on how they were grouped into lines: the number may sit
+         above the code with "pcs" on the code's line, or the code may sit right between the two
+         (number above, "pcs" below) — that line may also carry the little MRP / BEST PRICE / TOTAL labels */
+      const near=[];   // (a TOTAL row below the item is the table's own total, not this item)
+      lines.forEach(X=>{ if(Math.abs(X.yc-L.yc)<=2.6*L.h && X.yc>qtyHeadY && (X.yc<=L.yc+0.5*L.h || !isTotal(X))) X.toks.forEach(k=>{ if(inQ(k)) near.push(k); }); });
+      const ns=near.filter(k=>/^\d{1,4}$/.test(k.u)), us=near.filter(k=>/^(PCS?|NOS?|NO|SET|SETS)\.?$/.test(k.u));
+      let st=null, bestD=1e9;
+      ns.forEach(n=>us.forEach(u=>{
+        if(u.yc<=n.yc || u.y0-n.y1>=1.2*L.h) return;                         // "pcs" right under the number
+        if(u.x1<n.x0-L.h || u.x0>n.x1+L.h) return;                           // …in the same little stack
+        const d=Math.abs((n.y0+u.y1)/2-L.yc);
+        if(d<=1.5*L.h && d<bestD){ bestD=d; st=parseInt(n.u,10); }          // the stack that belongs to this code, not the neighbour's
+      }));
       if(st>0){
         row.qty=st; row.qtyWhy='under the QTY heading ("'+st+' pcs")'; row.qtyOk=!ocr;
         row._needCol=false; row._leftOnly=false; row.qtyWeak=false; row.qtyBad=false; row.qtyDerived=false;
