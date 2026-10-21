@@ -1680,7 +1680,7 @@ function buildStockWorkbook(){
 
   // ===== Sheet 1 · ORDER STATUS — table starts on row 1 =====
   const ws=XL.Sheet("ORDER STATUS");
-  const H=["SR#","CODE","RDMS ORDER","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","SDP NET","RDMS VALUE"];
+  const H=["SR#","CODE","RDMS QTY","ORDER QTY","STATUS","ITEM NAME","BRAND","COLOUR","GBW STOCK","DISPLAY","PENDING ORDERS","NET STOCK","MVP PENDING","MSL","SDP NET","RDMS VALUE"];
   const NC=H.length, HR=1, R1=HR+1, n=results.length, RN=HR+n, TR=RN+1, DR=TR+1;   // DR = row holding the editable RDMS discount %
   // column map — RDMS ORDER sits right after CODE; SDP & RDMS VALUE stay at the end
   const cRO=3, cQTY=4, cST=5, cNAME=6, cBR=7, cCOL=8, cMSL=14, cSDP=15, cRV=16;
@@ -1691,7 +1691,7 @@ function buildStockWorkbook(){
   const rg=c=>`${L(c)}${R1}:${L(c)}${RN}`;
   const ok=results.filter(r=>effStatus(r)==="AVAILABLE").length;
   const qtyTot=results.reduce((s,r)=>s+(+r.qty||0),0);
-  const sdpTot=results.reduce((s,r)=>s+(+r.qty||0)*(+r.sdpNet||0),0);   // Σ ORDER QTY × SDP NET
+  const sdpTot=0;   // RDMS QTY starts empty — Excel fills this in as you type quantities
 
   // column header row — teal for stock data, copper for the RDMS order-entry block
   const hb={l:["thin",C.tealD],r:["thin",C.tealD],t:["thin",C.tealD],b:["medium",C.tealD]};
@@ -1701,8 +1701,7 @@ function buildStockWorkbook(){
   H.forEach((h,i)=>ws.set(HR,i+1,h,[cRO,cSDP,cRV].includes(i+1)?hdrRd:hdrSt));
   // live RDMS total in the (frozen) RDMS ORDER header cell — always on screen while you type quantities
   const discTxt=`ROUND($${L(cSDP)}$${DR}*100,2)&"%"`;
-  ws.set(HR,cRO,"RDMS ORDER\n₹ 0.00\n(SDP NET − 4%)",S.xf({fill:"8A4F2C",f:{b:1,sz:10,c:C.white},bd:{l:["medium","5E3419"],r:["medium","5E3419"],t:["medium","5E3419"],b:["medium","5E3419"]},al:{h:"center",v:"center",wrap:1}}),
-    `"RDMS ORDER"&CHAR(10)&"₹ "&TEXT(SUBTOTAL(109,${rg(cRV)}),"#,##0.00")&CHAR(10)&"(SDP NET − "&${discTxt}&")"`);
+  ws.set(HR,cRO,"RDMS QTY",S.xf({fill:"8A4F2C",f:{b:1,sz:10,c:C.white},bd:{l:["medium","5E3419"],r:["medium","5E3419"],t:["medium","5E3419"],b:["medium","5E3419"]},al:{h:"center",v:"center",wrap:1}}));
   ws.set(HR,cRV,"RDMS VALUE\n(SDP NET − 4%)",hdrRd,`"RDMS VALUE"&CHAR(10)&"(SDP NET − "&${discTxt}&")"`);
 
   // data rows — zebra for available, soft rose for not-available, strong status cell
@@ -1734,9 +1733,9 @@ function buildStockWorkbook(){
   ws.height(TR,24);
   for(let c=1;c<=NC;c++) ws.set(TR,c,null,totSt());
   ws.set(TR,1,"TOTAL",totSt({f:{b:1,sz:8.5,c:C.tealD}}));
-  // under the codes: SDP total = Σ ORDER QTY × SDP NET (visible rows only, follows the filter)
-  ws.set(TR,2,sdpTot,totSt({nf:'"SDP ₹ "#,##0.00',fill:"FCEBC0",f:{b:1,sz:10.5,c:C.tealD}}),
-    `SUMPRODUCT(SUBTOTAL(109,OFFSET(${L(cQTY)}${R1},ROW(${rg(cQTY)})-ROW(${L(cQTY)}${R1}),0)),${rg(cSDP)})`);
+  // under the codes: SDP NET − 4% total of the RDMS QTY you enter = total of RDMS VALUE (follows the filter)
+  ws.set(TR,2,sdpTot,totSt({nf:'"SDP-4% ₹ "#,##0.00',fill:"FCEBC0",f:{b:1,sz:10.5,c:C.tealD}}),
+    `SUBTOTAL(109,${rg(cRV)})`);
   // under ORDER QTY: total quantity
   ws.set(TR,cQTY,qtyTot,totSt({nf:'#,##0" QTY";[Red]-#,##0" QTY";0" QTY"',fill:"FCEBC0",f:{b:1,sz:11,c:C.tealD}}),`SUBTOTAL(109,${rg(cQTY)})`);
   ws.set(TR,cST,n+" lines shown",totSt({f:{b:1,sz:9,c:C.tealD}}),`SUBTOTAL(103,${rg(2)})&" lines shown"`);
