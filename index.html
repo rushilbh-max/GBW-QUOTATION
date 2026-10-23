@@ -1191,6 +1191,50 @@ html, body{
 .pl-tbl tbody tr.pl-bempty td b{color:var(--gold-l);font-style:normal}
 .pl-stk{font-family:'Jost',sans-serif;font-size:10px;font-weight:700;text-align:center}
 .bh-ret{color:#FF9B8F}
+/* ── select lines → move into a bathroom ── */
+.bb .bb-btn.on{background:rgba(201,168,76,0.18);border-color:var(--gold);color:var(--gold-l)}
+.pl-chk,.bh-chk{-webkit-appearance:none;appearance:none;width:20px;height:20px;border:2px solid rgba(201,168,76,0.75);border-radius:5px;background:rgba(201,168,76,0.06) center/14px 14px no-repeat;cursor:pointer;vertical-align:middle;margin:0 6px 0 0;flex-shrink:0;transition:background-color .12s,border-color .12s}
+.pl-chk:hover,.bh-chk:hover{border-color:#E8D08A;background-color:rgba(201,168,76,0.16)}
+.pl-chk:checked,.bh-chk:checked{background-color:#E2C766;border-color:#E2C766;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4l3 3 6.6-7' fill='none' stroke='%230B1118' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.bh-chk:indeterminate{background-color:rgba(226,199,102,0.55);border-color:#E2C766;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' stroke='%230B1118' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E")}
+.pl-chk:focus-visible,.bh-chk:focus-visible{outline:2px solid #E8D08A;outline-offset:2px}
+.pl-chk-ph{display:inline-block;width:20px;margin-right:6px}
+body.selmode #se-toast{bottom:calc(var(--safe-b) + 96px)}
+body.selmode #items-list tr.pl-row:not(.blank){cursor:pointer}
+.pl-tbl tbody tr.pl-row.sel td{background:rgba(201,168,76,0.14)!important}
+.pl-tbl tbody tr.pl-row.sel td:first-child{box-shadow:inset 4px 0 0 #C9A84C!important}
+body.selmode #items-list{padding-bottom:96px}
+#sel-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-b) + 12px);z-index:9000;display:none;align-items:center;gap:10px 16px;flex-wrap:wrap;
+  width:min(1100px,calc(100vw - 24px));background:#121B27;border:1px solid rgba(201,168,76,0.6);border-radius:12px;padding:10px 14px;box-shadow:0 14px 40px rgba(0,0,0,0.6);font-family:'Jost',sans-serif}
+#sel-bar .sb-l{font-size:12px;color:var(--muted2);display:flex;align-items:center;gap:10px;white-space:nowrap}
+#sel-bar .sb-n{font-size:18px;color:var(--gold-l)}
+#sel-bar .sb-lnk{background:none;border:none;color:var(--gold);font-family:'Jost',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-decoration:underline;cursor:pointer;padding:2px}
+#sel-bar .sb-m{display:flex;align-items:center;gap:8px;flex:1 1 380px;min-width:0}
+#sel-bar .sb-lbl{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted2);white-space:nowrap}
+#sel-bar select,#sel-bar input{height:36px;background:var(--ink3);border:1px solid rgba(201,168,76,0.45);border-radius:6px;color:#E6EDF5;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;padding:0 8px;min-width:0}
+#sel-bar select{flex:0 1 220px}
+#sel-bar input{flex:1 1 160px;text-transform:uppercase}
+#sel-bar input::placeholder{text-transform:none;color:var(--muted)}
+#sel-bar .sb-go{height:36px;background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));color:var(--ink);border:none;border-radius:6px;padding:0 16px;font-family:'Jost',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+#sel-bar .sb-go:disabled{opacity:.4;cursor:not-allowed}
+#sel-bar .sb-r{display:flex;gap:8px;margin-left:auto}
+#sel-bar .sb-undo,#sel-bar .sb-done{height:36px;background:transparent;border:1px solid rgba(255,255,255,0.22);color:#C0D4E4;border-radius:6px;padding:0 14px;font-family:'Jost',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+#sel-bar .sb-done{border-color:rgba(201,168,76,0.6);color:var(--gold-l)}
+@media (max-width:600px){
+  #sel-bar{bottom:calc(var(--safe-b) + 6px);width:calc(100vw - 12px);padding:9px 10px;gap:8px}
+  #sel-bar .sb-l{flex:1 1 auto}
+  #sel-bar .sb-r{margin-left:0}
+  #sel-bar .sb-m{flex:1 1 100%;order:3;gap:6px}
+  #sel-bar .sb-lbl{display:none}
+  #sel-bar select{flex:1 1 40%;height:40px;font-size:12.5px}
+  #sel-bar input{flex:1 1 34%;height:40px;font-size:13px}
+  #sel-bar .sb-go{flex:0 0 auto;height:40px;padding:0 12px}
+  #sel-bar .sb-undo,#sel-bar .sb-done{height:34px;padding:0 11px}
+  body.selmode #items-list{padding-bottom:130px}
+  body.selmode #se-toast{bottom:calc(var(--safe-b) + 118px)}
+  .pl-tbl tbody tr.pl-row.sel{background:rgba(201,168,76,0.14);box-shadow:inset 4px 0 0 #C9A84C}
+  .pl-tbl tbody tr.pl-row td.pl-sr .pl-chk{margin:4px 0 0}
+}
 .pl-stk.ok{color:#4ADF90}.pl-stk.no{color:#FF9B8F}.pl-stk.unk{color:var(--muted2)}.pl-stk.ret{color:#FF9B8F;font-weight:600}
 /* a returned line (negative qty): red tint, red qty and amounts, RETURNED mark */
 .pl-tbl tbody tr.pl-row.ret td{background:rgba(224,96,96,0.07)}
@@ -4215,11 +4259,13 @@ function plistRowsHTML(){
     const hot=!!(insertFrom && insertFrom.row===i);
     const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
     const ret=!empty && isRet(item);
-    const cls=[hot?'ins-here':'', empty?'blank':'', ret?'ret':''].filter(Boolean).join(' ');
+    const cls=[hot?'ins-here':'', empty?'blank':'', ret?'ret':'', (SEL_MODE && !empty && SEL.has(item))?'sel':''].filter(Boolean).join(' ');
     const multi=S.items.length>1;
     const si=empty?{cls:'unk',txt:'—'}:edStockInfo(item.code,item.qty);
     return head+'<tr class="pl-row '+cls+(i===_rowFlash.pl?' rmoved':'')+'" data-gi="'+i+'">'+
-      '<td class="pl-sr">'+(multi?'<button class="row-grip" data-grip="'+i+'" title="Drag to move this line (or ↑ ↓ keys)" aria-label="Drag line '+(i+1)+' to reorder">⠿</button>':'')+
+      '<td class="pl-sr">'+(SEL_MODE
+          ? (empty ? '<span class="pl-chk-ph"></span>' : '<input type="checkbox" class="pl-chk" data-gi="'+i+'"'+(SEL.has(item)?' checked':'')+' title="Select this line (Shift = a range)" aria-label="Select line '+(i+1)+'">')
+          : (multi?'<button class="row-grip" data-grip="'+i+'" title="Drag to move this line (or ↑ ↓ keys)" aria-label="Drag line '+(i+1)+' to reorder">⠿</button>':''))+
         '<span class="row-srn">'+(hot?'<span style="color:var(--gold)">'+mark+'</span>':(i+1))+'</span></td>'+
       '<td>'+img+'</td>'+
       '<td class="pl-prod">'+
@@ -4503,6 +4549,7 @@ function refreshList(){
   list.innerHTML=plistViewBar()+plistRowsHTML();
   _rowFlash.pl=-1;
   wirePlistCodeInputs();
+  selAfterRender();
   if(keepF && keepF.ref){
     const gi=S.items.indexOf(keepF.ref);
     const el=gi>=0 ? document.querySelector('#items-list tr.pl-row[data-gi="'+gi+'"] '+(keepF.code?'.pl-code-inp':'.pl-qty input')) : null;
@@ -4642,11 +4689,185 @@ function ungroupAll(){
   if(!bathMode()) return;
   if(!confirm('Make this a plain quotation?\n\nAll '+S.bathrooms.length+' bathrooms are joined into one list, in the same order. Nothing is deleted.')) return;
   const all=[]; S.bathrooms.forEach(b=>b.items.forEach(it=>{ if(!isBlankRow(it)) all.push(it); }));
-  S.bathrooms=[]; S.items=all; ACTIVE_BATH=null; COLLAPSED.clear();
+  S.bathrooms=[]; S.items=all; ACTIVE_BATH=null; COLLAPSED.clear(); SEL_UNDO=null;
   afterStructureChange();
   toast('Now a plain quotation — '+all.length+' lines');
 }
 function clearBathrooms(){ clearAll(); }
+
+/* ═════════════════════════════════════════════════════════════════
+   SELECT LINES → MOVE THEM INTO A BATHROOM
+   ─────────────────────────────────────────────────────────────────
+   ☑ Select lines puts a tick box on every line (and on every bathroom
+   heading, for all of its lines). Tick some — a tap anywhere on a line that
+   is not a box or a button ticks it too, Shift+click ticks a range — then
+   pick a bathroom (or ＋ New bathroom, with a name) and Move.
+   • A plain quotation becomes bathroom-wise on the first move: the lines not
+     ticked wait in “UNASSIGNED”, which disappears once it is empty.
+   • A bathroom that a move leaves with no products is removed.
+   • The moved lines go to the end of the bathroom, in their quotation order.
+   • ↶ Undo puts everything back as it was before the last move.
+   The lines are the same objects throughout — qty, returns, swaps all stay. */
+let SEL_MODE=false, SEL_LAST=null, SEL_UNDO=null, SEL_TARGET='new';
+const SEL=new Set();
+const UNASSIGNED='UNASSIGNED';
+function selBtnHTML(){
+  return '<button class="bb-btn'+(SEL_MODE?' on':'')+'" id="sel-btn" onclick="toggleSelectMode()" title="Tick several lines and move them into a bathroom">☑ '+(SEL_MODE?'Selecting…':'Select lines')+'</button>';
+}
+function selLive(){ return (S.items||[]).filter(i=>!isBlankRow(i)); }
+function selPrune(){ const live=new Set(selLive()); [...SEL].forEach(i=>{ if(!live.has(i)) SEL.delete(i); }); }
+function toggleSelectMode(on){
+  SEL_MODE = on===undefined ? !SEL_MODE : !!on;
+  if(!SEL_MODE){ SEL.clear(); SEL_LAST=null; SEL_UNDO=null; }
+  else { cancelInsert(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+  document.body.classList.toggle('selmode', SEL_MODE);
+  refreshList();
+}
+function selToggleItem(it, on){
+  if(!it || isBlankRow(it)) return;
+  if(on===undefined) on=!SEL.has(it);
+  if(on) SEL.add(it); else SEL.delete(it);
+}
+function selRange(a, b, on){
+  const live=S.items, i=live.indexOf(a), j=live.indexOf(b); if(i<0||j<0) return;
+  for(let k=Math.min(i,j); k<=Math.max(i,j); k++){
+    const it=live[k]; if(isBlankRow(it)) continue;
+    const loc=bathMode()?locateRow(k):null; if(loc && COLLAPSED.has(loc.b)) continue;   // a folded bathroom is not ticked by a range
+    selToggleItem(it, on);
+  }
+}
+function selAll(on){ selLive().forEach(i=>selToggleItem(i, on)); SEL_LAST=null; refreshList(); }
+/* the heading boxes show "some ticked" and the bar shows the count */
+function selAfterRender(){
+  if(!SEL_MODE){ renderSelBar(); return; }
+  selPrune();
+  document.querySelectorAll('#items-list .bh-chk').forEach(c=>{
+    const b=S.bathrooms[+c.dataset.bi]; if(!b) return;
+    const live=b.items.filter(i=>!isBlankRow(i)), n=live.filter(i=>SEL.has(i)).length;
+    c.checked = !!live.length && n===live.length; c.indeterminate = n>0 && n<live.length;
+  });
+  renderSelBar();
+}
+function renderSelBar(){
+  let bar=$('sel-bar');
+  if(!SEL_MODE){ if(bar) bar.style.display='none'; return; }
+  if(!bar){
+    bar=document.createElement('div'); bar.id='sel-bar';
+    ($('screen-builder')||document.body).appendChild(bar);
+    bar.addEventListener('change', e=>{ if(e.target.id==='sel-to'){ SEL_TARGET=e.target.value; renderSelBar(); if(SEL_TARGET==='new'){ const n=$('sel-name'); if(n){ n.focus(); n.select(); } } } });
+    bar.addEventListener('keydown', e=>{ if(e.target.id==='sel-name' && e.key==='Enter'){ e.preventDefault(); moveSelected(); } });
+  }
+  const n=[...SEL].length, live=selLive().length;
+  const baths=S.bathrooms||[];
+  if(SEL_TARGET!=='new' && !baths[+SEL_TARGET]) SEL_TARGET='new';
+  const typed=$('sel-name') ? $('sel-name').value : '';
+  const sugg=uniqueBathName('BATHROOM '+(baths.filter(b=>!b._unassigned).length+1));
+  const opts=baths.map((b,i)=>'<option value="'+i+'"'+(String(i)===String(SEL_TARGET)?' selected':'')+'>'+esc(b.name)+' ('+b.items.filter(x=>!isBlankRow(x)).length+')</option>').join('')
+           + '<option value="new"'+(SEL_TARGET==='new'?' selected':'')+'>＋ New bathroom…</option>';
+  bar.style.display='flex';
+  bar.innerHTML=
+    '<div class="sb-l"><b class="sb-n">'+n+'</b> of '+live+' line'+(live===1?'':'s')+' selected'+
+      '<button class="sb-lnk" onclick="selAll('+(n<live?'true':'false')+')">'+(n<live?'Select all':'Clear')+'</button></div>'+
+    '<div class="sb-m"><span class="sb-lbl">Move to</span>'+
+      '<select id="sel-to" aria-label="Move the selected lines to">'+opts+'</select>'+
+      (SEL_TARGET==='new' ? '<input id="sel-name" list="sel-names" placeholder="'+esc(sugg)+'" value="'+esc(typed)+'" autocomplete="off" spellcheck="false" autocapitalize="characters" aria-label="Name of the new bathroom">'+
+        '<datalist id="sel-names">'+['MASTER BATHROOM','GUEST BATHROOM','KIDS BATHROOM','PARENTS BATHROOM','COMMON BATHROOM','POWDER ROOM','DAUGHTER BATHROOM','SON BATHROOM','KITCHEN','BALCONY','UTILITY'].map(x=>'<option value="'+x+'">').join('')+'</datalist>' : '')+
+      '<button class="sb-go" onclick="moveSelected()"'+(n?'':' disabled')+'>Move '+(n||'')+' →</button></div>'+
+    '<div class="sb-r">'+(SEL_UNDO?'<button class="sb-undo" onclick="undoSelMove()" title="Put the lines back where they were">↶ Undo</button>':'')+
+      '<button class="sb-done" onclick="toggleSelectMode(false)">Done</button></div>';
+}
+function moveSelected(){
+  selPrune();
+  const moving=(S.items||[]).filter(i=>SEL.has(i) && !isBlankRow(i));      // quotation order
+  if(!moving.length){ toast('Tick the lines to move first'); return; }
+  const wasPlain=!bathMode();
+  const snap={plain:wasPlain, order:(S.items||[]).slice(), baths:wasPlain?null:S.bathrooms.map(b=>({b:b, items:b.items.slice()})), active:ACTIVE_BATH, collapsed:[...COLLAPSED]};
+  const mset=new Set(moving);
+  if(wasPlain){
+    const rest=(S.items||[]).filter(i=>!mset.has(i) && !isBlankRow(i));
+    S.bathrooms = rest.length ? [{name:UNASSIGNED, items:rest, _unassigned:true}] : [];
+  }
+  let tb;
+  if(SEL_TARGET==='new' || wasPlain){
+    const nm=bathName(($('sel-name')&&$('sel-name').value)||'') || uniqueBathName('BATHROOM '+(S.bathrooms.filter(b=>!b._unassigned).length+1));
+    tb={name:uniqueBathName(nm), items:[]};
+    const ua=S.bathrooms.findIndex(b=>b._unassigned);
+    if(ua>=0) S.bathrooms.splice(ua,0,tb); else S.bathrooms.push(tb);     // the new one goes before UNASSIGNED
+  } else tb=S.bathrooms[+SEL_TARGET];
+  if(!tb){ toast('Pick a bathroom'); return; }
+  if(!wasPlain && moving.every(i=>tb.items.indexOf(i)>=0) && SEL_TARGET!=='new'){ toast('Those lines are already in '+tb.name); return; }
+  const emptied=[];
+  S.bathrooms.forEach(b=>{
+    if(b===tb) return;
+    const had=b.items.some(i=>!isBlankRow(i));
+    b.items=b.items.filter(i=>!mset.has(i));
+    if(had && !b.items.some(i=>!isBlankRow(i))) emptied.push(b);
+  });
+  tb.items=tb.items.filter(i=>!mset.has(i) && !(isBlankRow(i) && i.auto)).concat(moving);
+  S.bathrooms=S.bathrooms.filter(b=>emptied.indexOf(b)<0);
+  ACTIVE_BATH=tb; COLLAPSED.delete(tb); emptied.forEach(b=>COLLAPSED.delete(b));
+  snap.created = (SEL_TARGET==='new' || wasPlain) ? tb : null;
+  SEL_UNDO=snap; SEL.clear(); SEL_LAST=null;
+  SEL_TARGET='new';
+  const nmI=$('sel-name'); if(nmI) nmI.value='';
+  afterStructureChange();
+  const gone=emptied.filter(b=>!b._unassigned).map(b=>b.name);
+  toast('Moved '+moving.length+' line'+(moving.length===1?'':'s')+' to '+tb.name+(gone.length?' · '+gone.join(', ')+' was left empty and removed':'')+(S.bathrooms.some(b=>b._unassigned)?' · the rest wait in UNASSIGNED':''));
+  setTimeout(()=>{ const h=document.querySelector('#items-list tr.pl-bhead[data-bi="'+S.bathrooms.indexOf(tb)+'"]'); if(h && h.scrollIntoView) h.scrollIntoView({block:'nearest'}); }, 40);
+}
+/* back to just before the last move — lines added or removed since then are respected */
+function undoSelMove(){
+  const u=SEL_UNDO; if(!u) return;
+  const cur=(S.bathrooms||[]).map(b=>({b:b, items:b.items.slice()}));          // as it is now, before anything is put back
+  const now=new Set(selLive()), seen=new Set();
+  const keep=a=>a.filter(i=>{ if(isBlankRow(i)) return !i.auto; if(!now.has(i) || seen.has(i)) return false; seen.add(i); return true; });
+  if(u.plain){
+    const out=keep(u.order);
+    selLive().forEach(i=>{ if(!seen.has(i)){ out.push(i); seen.add(i); } });   // lines added after the move stay
+    S.bathrooms=[]; S.items=out; ACTIVE_BATH=null;
+  }else{
+    u.baths.forEach(x=>{ x.b.items=keep(x.items); });
+    const back=u.baths.map(x=>x.b);
+    cur.forEach(x=>x.items.forEach(i=>{                                     // lines added after the move stay, in their bathroom
+      if(isBlankRow(i) || seen.has(i)) return;
+      (back.indexOf(x.b)>=0 ? x.b : back[back.length-1]).items.push(i); seen.add(i);
+    }));
+    S.bathrooms=back;
+    ACTIVE_BATH = back.indexOf(u.active)>=0 ? u.active : (back[back.length-1]||null);
+  }
+  COLLAPSED.clear(); u.collapsed.forEach(b=>{ if((S.bathrooms||[]).indexOf(b)>=0) COLLAPSED.add(b); });
+  SEL_UNDO=null; SEL.clear();
+  afterStructureChange();
+  toast('↶ Move undone');
+}
+(function wireSelect(){
+  const list=$('items-list'); if(!list) return;
+  list.addEventListener('click', e=>{
+    if(!SEL_MODE) return;
+    const hc=e.target.closest && e.target.closest('.bh-chk');
+    if(hc){
+      e.stopPropagation();
+      const b=S.bathrooms[+hc.dataset.bi]; if(!b) return;
+      const live=b.items.filter(i=>!isBlankRow(i)), all=live.every(i=>SEL.has(i));
+      live.forEach(i=>selToggleItem(i, !all)); SEL_LAST=null;
+      refreshList(); return;
+    }
+    const tr=e.target.closest && e.target.closest('tr.pl-row'); if(!tr) return;
+    const box=e.target.closest('.pl-chk');
+    if(!box && e.target.closest('input,button,select,textarea,a,label')) return;   // the line's own controls keep working
+    const it=S.items[+tr.dataset.gi]; if(!it || isBlankRow(it)) return;
+    const on = box ? box.checked : !SEL.has(it);
+    if(e.shiftKey && SEL_LAST && SEL_LAST!==it) selRange(SEL_LAST, it, on); else selToggleItem(it, on);
+    SEL_LAST=it;
+    if(box && e.shiftKey) e.preventDefault();
+    refreshList();
+  }, true);
+  document.addEventListener('keydown', e=>{
+    if(!SEL_MODE || e.key!=='Escape') return;
+    const t=e.target; if(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !t.classList.contains('pl-chk') && !t.classList.contains('bh-chk')) return;   // Escape in a box belongs to that box
+    toggleSelectMode(false);
+  });
+})();
 
 /* ── ready-made bathroom sets from the GQUOTE sheet ── */
 function openGQ(){
@@ -4707,6 +4928,7 @@ function showBathroomModeBar(){
       '<span class="bb-acts">'+
       '<button class="bb-btn" onclick="addLineAtEnd()" title="An empty line at the end, ready for a code">＋ Add product</button>'+
       '<button class="bb-btn gold" onclick="addBathroom()" title="Make this quotation bathroom-wise">＋ Add Bathroom</button>'+
+      selBtnHTML()+
       '</span>';
     return;
   }
@@ -4717,6 +4939,7 @@ function showBathroomModeBar(){
     '<button class="bb-btn gold" onclick="addBathroom()">＋ Add Bathroom</button>'+
     (a.length>1 ? '<button class="bb-btn" onclick="openArrange()" title="Drag the bathrooms into the order they should print">⇅ Arrange</button>' : '')+
     (a.length>1 ? '<button class="bb-btn" onclick="setAllCollapsed('+(a.every(b=>COLLAPSED.has(b))?'false':'true')+')">'+(a.every(b=>COLLAPSED.has(b))?'▾ Open all':'▸ Fold all')+'</button>' : '')+
+    selBtnHTML()+
     '<button class="bb-btn ghost" onclick="ungroupAll()" title="Join all bathrooms into one plain list">Make plain</button>'+
     '</span>';
 }
@@ -4728,6 +4951,7 @@ function bathHeadHTML(b, bi){
   const bret=qtySplit(live).ret;
   const act=(b===activeBath()), col=COLLAPSED.has(b);
   return '<tr class="pl-bhead'+(act?' act':'')+(col?' col':'')+'" data-bi="'+bi+'"'+' title="'+(col?'Tap to open this bathroom':'Tap to fold this bathroom')+'"'+'><td colspan="8"><div class="bh">'+
+      (SEL_MODE && live.length ? '<input type="checkbox" class="bh-chk" data-bi="'+bi+'"'+(live.every(i=>SEL.has(i))?' checked':'')+' title="Select every line of this bathroom" aria-label="Select all of '+esc(b.name)+'">' : '')+
       '<button class="bh-col" onclick="toggleBathCollapse('+bi+')" title="'+(col?'Show':'Hide')+' its lines">'+(col?'▸':'▾')+'</button>'+
       '<span class="bh-no">'+(bi+1)+'</span>'+
       '<input class="bh-name" value="'+esc(b.name)+'" data-bi="'+bi+'" spellcheck="false" autocomplete="off" title="Tap to rename">'+
@@ -4769,6 +4993,7 @@ function bathHeadHTML(b, bi){
   });
   /* a picture: tap it to see it full size */
   list.addEventListener('click', e=>{
+    if(SEL_MODE) return;                           // while selecting, a tap on the line ticks it (see wireSelect)
     const im=e.target.closest && e.target.closest('img.pl-img'); if(im) openImgZoom(im.dataset.code, im.src);
     const up=e.target.closest && e.target.closest('[data-up]'); if(up) openImgUpload(up.getAttribute('data-up'));
   });
