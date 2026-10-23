@@ -1190,7 +1190,16 @@ html, body{
 .pl-tbl tbody tr.pl-bempty td{font-family:'Jost',sans-serif;font-size:11px;color:var(--muted2);padding:12px 14px;white-space:normal;font-style:italic}
 .pl-tbl tbody tr.pl-bempty td b{color:var(--gold-l);font-style:normal}
 .pl-stk{font-family:'Jost',sans-serif;font-size:10px;font-weight:700;text-align:center}
-.pl-stk.ok{color:#4ADF90}.pl-stk.no{color:#FF9B8F}.pl-stk.unk{color:var(--muted2)}
+.bh-ret{color:#FF9B8F}
+.pl-stk.ok{color:#4ADF90}.pl-stk.no{color:#FF9B8F}.pl-stk.unk{color:var(--muted2)}.pl-stk.ret{color:#FF9B8F;font-weight:600}
+/* a returned line (negative qty): red tint, red qty and amounts, RETURNED mark */
+.pl-tbl tbody tr.pl-row.ret td{background:rgba(224,96,96,0.07)}
+.pl-tbl tbody tr.pl-row.ret td:first-child{box-shadow:inset 3px 0 0 #E06060}
+.pl-tbl tbody tr.pl-row.ret .pl-qty{border-color:rgba(224,96,96,0.65);background:rgba(224,96,96,0.10)}
+.pl-tbl tbody tr.pl-row.ret .pl-qty input{color:#FF8F8F}
+.pl-tbl tbody tr.pl-row.ret .pl-mrp,.pl-tbl tbody tr.pl-row.ret .pl-best,.pl-tbl tbody tr.pl-row.ret .pl-tot{color:#FF9B8F}
+.pl-ret{display:inline-block;font-family:'Jost',sans-serif;font-size:9px;font-weight:800;letter-spacing:1px;color:#1A0F10;background:#E07070;border-radius:3px;padding:0 5px;margin-right:4px;vertical-align:1px;white-space:nowrap}
+@media (max-width:600px){ .pl-stk .stk-w{display:none} .pl-tbl tbody tr.pl-row.ret{background:rgba(224,96,96,0.08);box-shadow:inset 3px 0 0 #E06060} .pl-tbl tbody tr.pl-row.ret td{background:transparent!important;box-shadow:none!important} }
 .plv-tip{font-family:'Jost',sans-serif;font-size:10px;color:var(--muted2);margin-left:auto;text-align:right}
 .px-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;align-items:center;justify-content:center;padding:16px}
 .px-card{background:var(--ink2);border:1px solid rgba(201,168,76,0.3);border-radius:10px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
@@ -2187,8 +2196,23 @@ let PMAP={};ALL.forEach(p=>{PMAP[p.code]=p;});
 const S={items:[],disc:0,mode:'NRP',brandDisc:{},charges:{cartage:0,install:0},stockOverrides:{},stockFilter:'ALL'};   // brandDisc: BRAND → its own %, charges: rupees added after the products total   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const fmtN=n=>new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Math.round(n||0));
-const fmt=n=>'₹'+fmtN(n);
+const fmtN=n=>{ const v=Math.round(n||0)||0, t=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Math.abs(v)); return v<0 ? '−'+t : t; };   // −1,800 for a returned line
+const fmt=n=>{ const v=Math.round(n||0)||0; return v<0 ? '−₹'+fmtN(-v) : '₹'+fmtN(v); };
+/* ── RETURNED ITEMS ──
+   A returned item is a line with a NEGATIVE qty (−2 = two pieces taken back).
+   Every amount is simply qty × price, so returns come off every total by
+   themselves. They are left out of the stock check and the dispatch list
+   (nothing goes out for them) and are marked RETURNED on every document. */
+const isRet=it=>(Number(it&&it.qty)||0)<0;
+const qtyTxt=q=>{ q=Number(q)||0; return q<0 ? '−'+Math.abs(q) : String(q); };
+function qtySplit(items){
+  let out=0, ret=0, retLines=0;
+  (items||[]).forEach(i=>{ if(isBlankRow(i)) return; const q=Number(i.qty)||0; if(q>0) out+=q; else if(q<0){ ret-=q; retLines++; } });
+  return {out:out, ret:ret, net:out-ret, retLines:retLines};
+}
+/* the RETURNED mark used on the printed documents (inline styles: it travels into every print window) */
+const RET_MARK='<span class="ret-mark" style="display:inline-block;margin:3px 0 0;padding:1px 6px;border:1px solid #C0392B;border-radius:3px;color:#C0392B;background:#FFF5F3;font-family:Jost,Arial,sans-serif;font-size:8px;font-weight:800;letter-spacing:1.2px;line-height:1.5;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact">↩ RETURNED</span>';
+const retQtyStyle=it=>isRet(it)?' style="color:#C0392B"':'';
 const bp=item=>{ const d=discOf(item); return S.mode==='NRP'?item.nrp*(100-d)/100:item.sdp_net*(100+d)/100; };
 
 // ── GST-FORMAT HELPERS ──────────────────────────────────────────────────
@@ -2317,8 +2341,8 @@ function renderSummary(){
     $('summary-tbody').insertAdjacentHTML('beforeend', h);
   }
 
-  const totalItems = S.items.reduce((a,i)=>a+i.qty,0);
-  $('summary-item-info').textContent = `${S.items.length} product${S.items.length!==1?'s':''} · ${totalItems} piece${totalItems!==1?'s':''}`;
+  const qsum=qtySplit(S.items);
+  $('summary-item-info').textContent = `${S.items.length} product${S.items.length!==1?'s':''} · ${qsum.out} piece${qsum.out!==1?'s':''}`+(qsum.ret?` · ↩ ${qsum.ret} returned`:'');
 }
 function goPreview(){ dropBlankRows(); dropEmptyBathrooms(); renderPreview(); showScreen('preview'); setTimeout(autoHealQuoteImages, 300); }
 
@@ -2372,7 +2396,7 @@ function renderStockChips(total, avail, notAvail){
 function stockGroups(){
   const by={}, out=[];
   (S.items||[]).forEach(it=>{
-    if(isBlankRow(it)) return;
+    if(isBlankRow(it) || !(it.qty>0)) return;          // returned items: nothing to check
     let g=by[it.code];
     if(!g){ g=by[it.code]={item:Object.assign({}, it, {qty:0}), lines:0}; out.push(g); }
     g.item.qty+=it.qty; g.lines++;
@@ -2386,7 +2410,8 @@ function renderStock(){
   const G=stockGroups();
   if(!G.length){
     wrap.style.display='none'; empty.style.display='block';
-    sum.textContent='No items yet';
+    const rl=qtySplit(S.items).retLines;
+    sum.textContent= rl ? 'Only returned items — nothing goes out, nothing to check' : 'No items yet';
     renderStockChips(0,0,0);
     return;
   }
@@ -2439,8 +2464,10 @@ function renderStock(){
 
   const pct = G.length ? Math.round((avail/G.length)*100) : 0;
   const pctColor = pct>=80 ? '#4ADF90' : (pct>=50 ? '#E8D08A' : '#FF9B8F');
-  const clubbed = liveItemCount()-G.length;
+  const outLines=(S.items||[]).filter(i=>!isBlankRow(i) && i.qty>0).length, retN=qtySplit(S.items).retLines;
+  const clubbed = outLines-G.length;
   let html = `<span style="color:${pctColor};font-weight:800;font-size:13px">${pct}% of products are ready</span><br>${G.length} product${G.length!==1?'s':''}${clubbed>0?' (repeated codes clubbed)':''} · total qty ${totQty} · <span style="color:#4ADF90;font-weight:700">${avail} available</span> · <span style="color:#FF9B8F;font-weight:700">${notAvail} not available</span>`;
+  if(retN) html += `<br><span style="color:#FF9B8F;font-weight:700;font-size:11px">↩ ${retN} returned line${retN!==1?'s':''} not checked — nothing goes out for ${retN!==1?'them':'it'}</span>`;
   if(f !== 'ALL'){
     html += `<br><span style="color:var(--gold-l);font-weight:700;font-size:11px">Showing ${rows.length} ${f==='AVAILABLE'?'available':'not-available'} item${rows.length!==1?'s':''} · PDF export will match this filter</span>`;
   }
@@ -2801,17 +2828,32 @@ function focusPlistRow(i){
   },60);
 }
 
+/* qty may be negative (a returned item). 0 removes the line; an empty box
+   (or a lone "−") changes nothing. */
 function setQtyAt(idx,n){
-  idx=parseInt(idx,10); n=parseInt(n)||0;
+  idx=parseInt(idx,10);
   if(!S.items||!S.items[idx]) return;
+  n=parseInt(String(n==null?'':n).replace(/[−–]/g,'-').trim(),10);
+  if(!isFinite(n)){ refreshAll(); return; }            // nothing usable typed: put the old qty back
+  n=Math.max(-99999, Math.min(99999, n));
   if(bathMode()){
     const loc=locateRow(idx); if(!loc) return;
-    if(n<=0) loc.b.items.splice(loc.i,1); else loc.b.items[loc.i].qty=n;
+    if(n===0) loc.b.items.splice(loc.i,1); else loc.b.items[loc.i].qty=n;
     rebuildItemsFromBathrooms();
   }
-  else if(n<=0) S.items.splice(idx,1); else S.items[idx].qty=n;
+  else if(n===0) S.items.splice(idx,1); else S.items[idx].qty=n;
   pruneStockOverrides();
   refreshAll();
+}
+/* − and + step past 0: one tap below 1 makes the line a return (−1), one tap above −1 brings it back to 1 */
+function stepQtyAt(idx,d){
+  idx=parseInt(idx,10);
+  const it=S.items&&S.items[idx]; if(!it || isBlankRow(it)) return;
+  const was=Number(it.qty)||0;
+  let n=was+d; if(n===0) n=d;
+  setQtyAt(idx,n);
+  if(was>0 && n<0) toast('↩ Marked as RETURNED (−1) — tap + to undo');
+  else if(was<0 && n>0) toast('Back to a normal line (qty 1)');
 }
 function delItemAt(idx){
   idx=parseInt(idx,10);
@@ -3205,8 +3247,8 @@ function parseBathroomRows(text){
       // Determine qty: last token if numeric (or "N pcs"), else 1
       let rawParts=[...parts];
       let lastPart=rawParts[rawParts.length-1];
-      const pcsMatch=lastPart.match(/^(\d+)\s*(pcs|pc|nos?)\.?$/i);
-      const lastIsNum=/^\d+$/.test(lastPart);
+      const pcsMatch=lastPart.match(/^(-?\d+)\s*(pcs|pc|nos?)\.?$/i);
+      const lastIsNum=/^-?\d+$/.test(lastPart);
 
       if(pcsMatch){
         qty=parseInt(pcsMatch[1])||1;
@@ -3389,8 +3431,8 @@ function parseRows(text){
     /* no comma / tab: "CODE 2" or "CODE 2 PCS" → the number at the end is the qty
        (only when the line without it is a known code) */
     if(parts.length===1 && !resolveCode(code)){
-      const m=code.match(/^(.*\S)\s+(\d+)\s*(PCS|PC|NOS?|NO)?\.?$/);
-      if(m && resolveCode(m[1])){ code=m[1]; qty=parseInt(m[2])||1; }
+      const m=code.match(/^(.*\S)\s+([-−]?\d+)\s*(PCS|PC|NOS?|NO)?\.?$/);
+      if(m && resolveCode(m[1])){ code=m[1]; qty=parseInt(m[2].replace('−','-'))||1; }
     }
     return {code, qty, line:i+1};
   }).filter(r=>r.code && r.code.length>2);
@@ -4102,13 +4144,13 @@ function refreshAll(){
 function refreshTotalBar(){
   const st=$('sum-strip'); if(!st) return;
   const tot=totals(), n=liveItemCount();
-  let pcs=0; (S.items||[]).forEach(i=>{ if(!isBlankRow(i)) pcs+=i.qty; });
+  const qs=qtySplit(S.items);
   $('t-mrp').textContent=fmt(tot.mrp);
   $('t-best').textContent=fmt(tot.charges ? tot.grand : tot.best);
   const bl=$('t-best-l');
   if(bl) bl.textContent = tot.charges ? 'Net Payable · incl. charges '+fmt(tot.charges) : 'Best Price';
   const nb=bathMode()?S.bathrooms.length:0;
-  $('t-info').textContent=(nb?nb+' bathroom'+(nb===1?'':'s')+' · ':'')+n+' product'+(n===1?'':'s')+' · '+pcs+' pcs';
+  $('t-info').textContent=(nb?nb+' bathroom'+(nb===1?'':'s')+' · ':'')+n+' product'+(n===1?'':'s')+' · '+qs.out+' pcs'+(qs.ret?' · ↩ '+qs.ret+' returned':'');
   st.classList.toggle('empty', !n);
   syncNameToStrip();
 }
@@ -4172,7 +4214,8 @@ function plistRowsHTML(){
       : (empty ? '<div class="pl-img-ph">—</div>' : '<button class="pl-img-ph pl-img-up" data-up="'+c+'" title="No picture — tap to add one">📷</button>');
     const hot=!!(insertFrom && insertFrom.row===i);
     const mark=hot?(insertFrom.pos==='above'?'▲':'▼'):'';
-    const cls=[hot?'ins-here':'', empty?'blank':''].filter(Boolean).join(' ');
+    const ret=!empty && isRet(item);
+    const cls=[hot?'ins-here':'', empty?'blank':'', ret?'ret':''].filter(Boolean).join(' ');
     const multi=S.items.length>1;
     const si=empty?{cls:'unk',txt:'—'}:edStockInfo(item.code,item.qty);
     return head+'<tr class="pl-row '+cls+(i===_rowFlash.pl?' rmoved':'')+'" data-gi="'+i+'">'+
@@ -4185,12 +4228,12 @@ function plistRowsHTML(){
                'title="'+(empty?'Type a code, or search by name':'Tap to swap this product for another')+'">'+
         (empty
           ? '<div class="pl-hint">type a code or a product name, then pick it</div>'
-          : '<div class="pl-name" title="'+esc(item.desc)+'">'+esc(item.desc)+'</div>')+'</td>'+
+          : '<div class="pl-name" title="'+esc(item.desc)+'">'+(ret?'<b class="pl-ret">↩ RETURNED</b> ':'')+esc(item.desc)+'</div>')+'</td>'+
       '<td class="pl-ctrl"><div class="pl-ctrl-inner">'+
         '<span class="pl-qty">'+
-          '<button onclick="setQtyAt('+i+','+(item.qty-1)+')" title="Less" aria-label="Less">−</button>'+
-          '<input type="number" min="0" inputmode="numeric" value="'+item.qty+'" onchange="setQtyAt('+i+',this.value)" onfocus="this.select()" aria-label="Quantity">'+
-          '<button onclick="setQtyAt('+i+','+(item.qty+1)+')" title="More" aria-label="More">+</button>'+
+          '<button onclick="stepQtyAt('+i+',-1)" title="Less (below 1 = returned item)" aria-label="Less">−</button>'+
+          '<input type="number" step="1" inputmode="numeric" value="'+item.qty+'" onchange="setQtyAt('+i+',this.value)" onfocus="this.select()" aria-label="Quantity" title="Qty — type a minus number (e.g. -2) for a returned item">'+
+          '<button onclick="stepQtyAt('+i+',1)" title="More" aria-label="More">+</button>'+
         '</span>'+
         '<span class="pl-acts">'+
           '<button onclick="insertBlankAt('+i+',\'above\')" title="Insert an empty line above">↑</button>'+
@@ -4681,14 +4724,15 @@ function showBathroomModeBar(){
 /* ── one bathroom's heading inside the list ── */
 function bathHeadHTML(b, bi){
   const live=b.items.filter(i=>!isBlankRow(i));
-  let pcs=0, mrp=0, best=0; live.forEach(it=>{ pcs+=it.qty; mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; });
+  let pcs=0, mrp=0, best=0; live.forEach(it=>{ if(it.qty>0) pcs+=it.qty; mrp+=it.mrp*it.qty; best+=bp(it)*it.qty; });
+  const bret=qtySplit(live).ret;
   const act=(b===activeBath()), col=COLLAPSED.has(b);
   return '<tr class="pl-bhead'+(act?' act':'')+(col?' col':'')+'" data-bi="'+bi+'"'+' title="'+(col?'Tap to open this bathroom':'Tap to fold this bathroom')+'"'+'><td colspan="8"><div class="bh">'+
       '<button class="bh-col" onclick="toggleBathCollapse('+bi+')" title="'+(col?'Show':'Hide')+' its lines">'+(col?'▸':'▾')+'</button>'+
       '<span class="bh-no">'+(bi+1)+'</span>'+
       '<input class="bh-name" value="'+esc(b.name)+'" data-bi="'+bi+'" spellcheck="false" autocomplete="off" title="Tap to rename">'+
       '<span class="bh-br"></span>'+
-      '<span class="bh-meta"><b>'+live.length+'</b> product'+(live.length===1?'':'s')+' · <b>'+pcs+'</b> pcs<span class="bh-money"> · MRP ₹'+fmtN(mrp)+' · Best <b>₹'+fmtN(best)+'</b></span></span>'+
+      '<span class="bh-meta"><b>'+live.length+'</b> product'+(live.length===1?'':'s')+' · <b>'+pcs+'</b> pcs'+(bret?' · <b class="bh-ret">↩ '+bret+' returned</b>':'')+'<span class="bh-money"> · MRP '+fmt(mrp)+' · Best <b>'+fmt(best)+'</b></span></span>'+
       '<span class="bh-acts">'+
         '<button class="bh-add" onclick="addToBathroom('+bi+')" title="Add products to this bathroom">＋ Add product</button>'+
         '<button onclick="duplicateLoadedBathroom('+bi+')" title="Make a copy of this bathroom">⧉ Copy</button>'+
@@ -4822,7 +4866,7 @@ function loadExcelJS(){
 function stockExportRows(){
   const by={}, order=[];
   (S.items||[]).forEach(it=>{
-    if(isBlankRow(it)) return;
+    if(isBlankRow(it) || !(it.qty>0)) return;          // returned items are not ordered
     if(!by[it.code]){ by[it.code]={item:it, qty:0}; order.push(it.code); }
     by[it.code].qty+=it.qty;
   });
@@ -5322,12 +5366,12 @@ function renderPreview(){
     const img=url
       ?`<div style="width:90px;max-width:100%;height:90px;background:#FFFFFF;margin:auto;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${url}" onerror="this.parentNode.innerHTML=''" style="width:100%;max-width:90px;height:90px;object-fit:contain;display:block"/></div>`
       :`<div style="width:85px;max-width:100%;height:85px;background:#FFFFFF;margin:auto"></div>`;
-    return `<tr>
+    return `<tr${isRet(item)?' class="p-ret"':''}>
       <td class="td-sr">${i}</td>
       <td class="td-code"><div class="td-code-val">${esc(item.code)}</div></td>
-      <td class="td-qty">${item.qty}<sub>pcs</sub></td>
+      <td class="td-qty"${retQtyStyle(item)}>${qtyTxt(item.qty)}<sub>pcs</sub></td>
       <td class="td-img">${img}</td>
-      <td class="td-name"><div class="td-name-val">${esc(item.desc||item.code)}</div></td>
+      <td class="td-name"><div class="td-name-val">${esc(item.desc||item.code)}</div>${isRet(item)?RET_MARK:''}</td>
       <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">${fmtN(item.mrp)}</div></td>
       ${gstCells}
       <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">${fmtN(price)}</div></td>
@@ -5380,9 +5424,9 @@ function renderPreview(){
         +    '<div style="font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0A2A55;line-height:1.35;overflow-wrap:anywhere">'+esc(bath.name)+'</div>'
         +  '</div>'
         +  '<div style="display:flex;align-items:stretch;gap:8px;flex-shrink:0">'
-        +    setBox('Total Qty', bQty, 'pcs', false)
-        +    setBox('Total MRP', '₹'+fmtN(bMRP), 'list price', false)
-        +    setBox('Best Price', '₹'+fmtN(bBest), (GST_COLS?'incl. GST':'for this set'), true)
+        +    setBox('Total Qty', qtyTxt(bQty), (qtySplit(bath.items).ret ? 'net · '+qtySplit(bath.items).ret+' returned' : 'pcs'), false)
+        +    setBox('Total MRP', fmt(bMRP), 'list price', false)
+        +    setBox('Best Price', fmt(bBest), (GST_COLS?'incl. GST':'for this set'), true)
         +  '</div>'
         +'</div>'
         +'</td></tr>';
@@ -5398,9 +5442,9 @@ function renderPreview(){
       let bMRP=0,bBest=0,bItems=0;
       bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=unitBest(i)*i.qty;bItems+=i.qty;});
       grandMRP+=bMRP;grandBest+=bBest;grandItems+=bItems;
-      summaryRows+=`<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${bItems} pcs</td><td>₹${fmtN(bMRP)}</td><td style="font-weight:700;color:#1A2535">₹${fmtN(bBest)}</td></tr>`;
+      summaryRows+=`<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${qtyTxt(bItems)} pcs</td><td>${fmt(bMRP)}</td><td style="font-weight:700;color:#1A2535">${fmt(bBest)}</td></tr>`;
     });
-    summaryRows+=`<tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">${grandItems} pcs</td><td style="color:#C9A84C">₹${fmtN(grandMRP)}</td><td style="color:#E8D08A">₹${fmtN(grandBest)}</td></tr>`;
+    summaryRows+=`<tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">${qtyTxt(grandItems)} pcs</td><td style="color:#C9A84C">${fmt(grandMRP)}</td><td style="color:#E8D08A">${fmt(grandBest)}</td></tr>`;
     bsTable.innerHTML=summaryRows;
   } else {
     // FLAT MODE
@@ -5411,7 +5455,7 @@ function renderPreview(){
   }
 
   // Tfoot — div after table, shows totals only once after last item
-  const totQty = S.items.reduce((a,i)=>a+i.qty, 0);
+  const totQty = S.items.reduce((a,i)=>a+i.qty, 0), totRet=qtySplit(S.items).ret;
   $('p-tfoot-wrap').innerHTML=`
     <table style="width:100%;border-collapse:collapse;border-top:2px solid #D8C898">
       <tr style="background:#FEFCF7">
@@ -5419,15 +5463,15 @@ function renderPreview(){
         <td style="padding:12px 10px;width:60px;text-align:center">
           <div style="display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 10px;width:100%">
             <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#7A6830;text-transform:uppercase;margin-bottom:3px">Qty</span>
-            <span style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:#1A2535">${totQty}</span>
-            <span style="font-family:'Jost',sans-serif;font-size:8px;color:#7A6830;margin-top:1px">pcs</span>
+            <span style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:#1A2535">${qtyTxt(totQty)}</span>
+            <span style="font-family:'Jost',sans-serif;font-size:8px;color:#7A6830;margin-top:1px;white-space:nowrap">${totRet?'net · '+totRet+' ret.':'pcs'}</span>
           </div>
         </td>
         <td colspan="2" style="padding:12px 10px"></td>
         <td style="padding:12px 10px;width:78px;text-align:center">
           <div style="display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 10px;width:100%">
             <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#7A6830;text-transform:uppercase;margin-bottom:3px">Total MRP</span>
-            <span style="font-family:'Jost',sans-serif;font-size:15px;font-weight:500;color:#333;letter-spacing:.3px">₹${fmtN(tot.mrp)}</span>
+            <span style="font-family:'Jost',sans-serif;font-size:15px;font-weight:500;color:#333;letter-spacing:.3px">${fmt(tot.mrp)}</span>
           </div>
         </td>
         ${GST_COLS?'<td style="padding:12px 10px;text-align:center"></td><td style="padding:12px 10px;text-align:center"></td>':''}
@@ -5436,7 +5480,7 @@ function renderPreview(){
           <div style="display:inline-flex;flex-direction:column;align-items:center;background:#1A2535;border-radius:5px;padding:6px 10px;width:100%;position:relative;overflow:hidden">
             <span style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,transparent)"></span>
             <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:#C9A84C;text-transform:uppercase;margin-bottom:3px">Best Price</span>
-            <span style="font-family:'Jost',sans-serif;font-size:16px;font-weight:700;color:#E8D08A;letter-spacing:.5px">₹${fmtN(tot.best)}</span>
+            <span style="font-family:'Jost',sans-serif;font-size:16px;font-weight:700;color:#E8D08A;letter-spacing:.5px">${fmt(tot.best)}</span>
           </div>
         </td>
       </tr>
@@ -5449,11 +5493,11 @@ function renderPreview(){
       +'<td style="padding:7px 12px;width:150px;text-align:right;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:600;color:#1A2535;border-bottom:1px solid #EEE4C8;white-space:nowrap">'+v+'</td></tr>';
     $('p-tfoot-wrap').insertAdjacentHTML('beforeend',
       '<table class="p-charges" style="width:100%;border-collapse:collapse;page-break-inside:avoid;break-inside:avoid;background:#FEFCF7;border-top:1px solid #D8C898">'
-      + line('Best Price Total'+(GST_COLS?' (incl. GST)':''), '₹'+fmtN(tot.best))
+      + line('Best Price Total'+(GST_COLS?' (incl. GST)':''), fmt(tot.best))
       + chl.map(c=>line('Add: '+esc(c.label), '₹'+fmtN(c.amt))).join('')
       + '<tr style="background:#1A2535;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
       +   '<td style="padding:10px 12px;text-align:right;font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#C9A84C">Net Payable</td>'
-      +   '<td style="padding:10px 12px;width:150px;text-align:right;font-family:\'Jost\',sans-serif;font-size:17px;font-weight:700;color:#E8D08A;white-space:nowrap">₹'+fmtN(payable)+'</td></tr>'
+      +   '<td style="padding:10px 12px;width:150px;text-align:right;font-family:\'Jost\',sans-serif;font-size:17px;font-weight:700;color:#E8D08A;white-space:nowrap">'+fmt(payable)+'</td></tr>'
       + '</table>');
   }
   const gbox=document.querySelector('#screen-preview .p-grand-box') || document.querySelector('.p-grand-box');
@@ -5464,7 +5508,7 @@ function renderPreview(){
     if(trow && chl.length){
       const mk=(l,v)=>{ const d=document.createElement('div'); d.className='p-grand-row pg-extra';
         d.innerHTML='<span class="p-grand-lbl">'+l+'</span><span class="p-grand-val">'+v+'</span>'; trow.parentNode.insertBefore(d, trow); };
-      mk('Best Price Total', '₹'+fmtN(tot.best));
+      mk('Best Price Total', fmt(tot.best));
       chl.forEach(c=>mk(esc(c.short), '₹'+fmtN(c.amt)));
     }
   }
@@ -5548,8 +5592,8 @@ function buildCoverLayer(){
   const fd=d=>d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
   const valid=new Date(d0.getTime()+GBW_VALID_DAYS*864e5);
   const live=(S.items||[]).filter(i=>!isBlankRow(i));
-  const pcs=live.reduce((a,i)=>a+(Number(i.qty)||0),0);
-  const seen={}; live.forEach(i=>{ seen[i.code]=1; }); const prods=Object.keys(seen).length;
+  const pcs=qtySplit(live).out;                       // pieces supplied (returned items are not part of the scope)
+  const seen={}; live.forEach(i=>{ if(!isRet(i)) seen[i.code]=1; }); const prods=Object.keys(seen).length;
   const sp=(S.bathrooms&&S.bathrooms.length)||0;
   const scope=(sp ? sp+' Space'+(sp===1?'':'s')+' &nbsp;·&nbsp; ' : prods+' Product'+(prods===1?'':'s')+' &nbsp;·&nbsp; ')+pcs+' Piece'+(pcs===1?'':'s');
   const yrs=Math.max(1, d0.getFullYear()-GBW_SINCE);
@@ -6422,12 +6466,12 @@ function doPrintMRP(){
     var img = url
       ? '<div class="m-imgbox"><img src="' + url + '" onerror="this.parentNode.innerHTML=&quot;&quot;" alt=""/></div>'
       : '<div class="m-imgbox"></div>';
-    return '<tr>'
+    return '<tr' + (isRet(item) ? ' class="p-ret"' : '') + '>'
       +  '<td class="td-sr">' + sr + '</td>'
       +  '<td class="td-code"><div class="td-code-val">' + esc(item.code) + '</div></td>'
-      +  '<td class="td-qty">' + item.qty + '<sub>pcs</sub></td>'
+      +  '<td class="td-qty"' + retQtyStyle(item) + '>' + qtyTxt(item.qty) + '<sub>pcs</sub></td>'
       +  '<td class="td-img">' + img + '</td>'
-      +  '<td class="td-name"><div class="td-name-val">' + esc(item.desc || item.code) + '</div></td>'
+      +  '<td class="td-name"><div class="td-name-val">' + esc(item.desc || item.code) + '</div>' + (isRet(item) ? RET_MARK : '') + '</td>'
       +  '<td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">' + fmtN(item.mrp) + '</div></td>'
       +  '<td class="td-mtot"><div class="td-mtot-label">Total</div><div class="td-mtot-val">' + fmtN(item.mrp * item.qty) + '</div></td>'
       + '</tr>';
@@ -6447,7 +6491,7 @@ function doPrintMRP(){
       rowsHTML += '<tr class="m-bath-hd"><td colspan="7">'
                +    '<div class="m-bath-hd-in">'
                +      '<div class="m-bath-name"><span class="m-dia">\u2726</span><span>' + esc(bath.name) + '</span><span class="m-dia">\u2726</span></div>'
-               +      '<div class="m-bath-meta">' + bath.items.length + ' product(s) &nbsp;\u00B7&nbsp; ' + bQty + ' pcs</div>'
+               +      '<div class="m-bath-meta">' + bath.items.length + ' product(s) &nbsp;\u00B7&nbsp; ' + qtyTxt(bQty) + ' pcs</div>'
                +    '</div>'
                + '</td></tr>';
 
@@ -6455,10 +6499,10 @@ function doPrintMRP(){
 
       rowsHTML += '<tr class="m-bath-sub">'
                +    '<td colspan="6">' + esc(bath.name) + ' \u2014 Subtotal</td>'
-               +    '<td><div class="m-sub-box"><div class="m-sub-lbl">MRP Total</div><div class="m-sub-val">\u20B9' + fmtN(bMRP) + '</div></div></td>'
+               +    '<td><div class="m-sub-box"><div class="m-sub-lbl">MRP Total</div><div class="m-sub-val">' + fmt(bMRP) + '</div></div></td>'
                + '</tr>';
 
-      sumBody += '<tr><td><b>' + esc(bath.name) + '</b></td><td>' + bQty + ' pcs</td><td>\u20B9' + fmtN(bMRP) + '</td></tr>';
+      sumBody += '<tr><td><b>' + esc(bath.name) + '</b></td><td>' + qtyTxt(bQty) + ' pcs</td><td>' + fmt(bMRP) + '</td></tr>';
     });
 
     bathSummary = '<div class="m-bsum-wrap">'
@@ -6466,7 +6510,7 @@ function doPrintMRP(){
                 +   '<table class="m-bsum">'
                 +     '<tr><th>Bathroom</th><th>Items</th><th>Total MRP</th></tr>'
                 +     sumBody
-                +     '<tr class="m-bsum-total"><td>TOTAL</td><td>' + sGrandQty + ' pcs</td><td>\u20B9' + fmtN(sGrandMRP) + '</td></tr>'
+                +     '<tr class="m-bsum-total"><td>TOTAL</td><td>' + qtyTxt(sGrandQty) + ' pcs</td><td>' + fmt(sGrandMRP) + '</td></tr>'
                 +   '</table>'
                 + '</div>';
   } else {
@@ -6477,9 +6521,9 @@ function doPrintMRP(){
   var footHTML = '<table class="m-foot">'
                +   '<tr>'
                +     '<td class="m-foot-lbl" colspan="2">Total</td>'
-               +     '<td class="m-foot-qty"><div class="m-foot-box"><span class="m-foot-k">Qty</span><span class="m-foot-v">' + grandQty + '</span><span class="m-foot-u">pcs</span></div></td>'
+               +     '<td class="m-foot-qty"><div class="m-foot-box"><span class="m-foot-k">Qty</span><span class="m-foot-v">' + qtyTxt(grandQty) + '</span><span class="m-foot-u">pcs</span></div></td>'
                +     '<td colspan="3"></td>'
-               +     '<td class="m-foot-tot"><div class="m-foot-tbox"><span class="m-foot-tk">Total MRP</span><span class="m-foot-tv">\u20B9' + fmtN(grandMRP) + '</span></div></td>'
+               +     '<td class="m-foot-tot"><div class="m-foot-tbox"><span class="m-foot-tk">Total MRP</span><span class="m-foot-tv">' + fmt(grandMRP) + '</span></div></td>'
                +   '</tr>'
                + '</table>';
 
@@ -6699,12 +6743,12 @@ function doPlainPrint(){
     const imgCell = url
       ? `<div class="imgbox"><img src="${url}" onerror="this.parentNode.innerHTML=''" alt=""/></div>`
       : `<div class="imgbox"></div>`;
-    return `<tr>
+    return `<tr${isRet(item)?' class="p-ret"':''}>
       <td class="c-sr">${sr}</td>
       <td class="c-code">${esc(item.code)}</td>
-      <td class="c-qty">${item.qty} PCS</td>
+      <td class="c-qty"${retQtyStyle(item)}>${qtyTxt(item.qty)} PCS</td>
       <td class="c-img">${imgCell}</td>
-      <td class="c-name">${esc(item.desc||item.code)}</td>
+      <td class="c-name">${esc(item.desc||item.code)}${isRet(item)?'<br>'+RET_MARK:''}</td>
       <td class="c-num">${fmtG(item.mrp)}</td>
       <td class="c-num">${fmtG(basicUnit(item))}</td>
       <td class="c-gst">${fmtN(gstOf(item))}%</td>
@@ -6722,7 +6766,7 @@ function doPlainPrint(){
       let bMRP=0,bBest=0,bQty=0;
       bath.items.forEach(i=>{ bMRP+=i.mrp*i.qty; bBest+=grossUnit(i)*i.qty; bQty+=i.qty; });
       grandMRP+=bMRP; grandBest+=bBest; grandItems+=bQty;
-      rows += `<tr class="bath-hd"><td colspan="10">${esc(bath.name)} &nbsp;&middot;&nbsp; ${bath.items.length} product(s) &nbsp;&middot;&nbsp; ${bQty} PCS</td></tr>`;
+      rows += `<tr class="bath-hd"><td colspan="10">${esc(bath.name)} &nbsp;&middot;&nbsp; ${bath.items.length} product(s) &nbsp;&middot;&nbsp; ${qtyTxt(bQty)} PCS</td></tr>`;
       bath.items.forEach(item=>{ sr++; rows += itemRow(item, sr); });
       rows += `<tr class="bath-sub">
         <td colspan="5">${esc(bath.name)} — SUBTOTAL</td>
@@ -6732,13 +6776,13 @@ function doPlainPrint(){
         <td></td>
         <td class="c-num">${fmtG(bBest)}</td>
       </tr>`;
-      summaryBody += `<tr><td>${esc(bath.name)}</td><td>${bQty} PCS</td><td>${fmtG(bMRP)}</td><td>${fmtG(bBest)}</td></tr>`;
+      summaryBody += `<tr><td>${esc(bath.name)}</td><td>${qtyTxt(bQty)} PCS</td><td>${fmtG(bMRP)}</td><td>${fmtG(bBest)}</td></tr>`;
     });
     bsum = `<table class="bsum">
       <thead><tr class="pg-sp"><td colspan="4"></td></tr><tr><th>BATHROOM</th><th>ITEMS</th><th>MRP TOTAL</th><th>BEST PRICE</th></tr></thead>
       <tfoot><tr class="pg-sp"><td colspan="4"></td></tr></tfoot>
       <tbody>${summaryBody}
-        <tr class="grand"><td>TOTAL</td><td>${grandItems} PCS</td><td>${fmtG(grandMRP)}</td><td>${fmtG(grandBest)}</td></tr>
+        <tr class="grand"><td>TOTAL</td><td>${qtyTxt(grandItems)} PCS</td><td>${fmtG(grandMRP)}</td><td>${fmtG(grandBest)}</td></tr>
       </tbody></table>`;
   } else {
     rows = S.items.map((item,idx)=>itemRow(item, idx+1)).join('');
@@ -6747,7 +6791,7 @@ function doPlainPrint(){
   const footRow = `<tr class="foot">
       <td></td>
       <td></td>
-      <td class="c-qty foot-strong">${totQty} PCS</td>
+      <td class="c-qty foot-strong">${qtyTxt(totQty)} PCS</td>
       <td colspan="5" class="foot-mrp">TOTAL MRP= RS.${fmtG(tot.mrp)}/-</td>
       <td class="foot-grand-lbl">GRAND TOTAL</td>
       <td class="c-num foot-grand-val">${fmtG(GT.gross)}</td>
@@ -7376,8 +7420,8 @@ function parseQuoteMatrix(text){
     for(let k=0;k<cols.length;k++){
       const v=row[cols[k]];
       const qty=(v==null||v==='')?0:Number(String(v).replace(/[, ]/g,''));
-      if(qty>0){
-        quots[k].items.push({code,qty});   // same code in two AREA rows = two lines
+      if(qty && isFinite(qty)){
+        quots[k].items.push({code,qty});   // same code in two AREA rows = two lines (negative = returned)
       }
     }
   }
@@ -7506,7 +7550,7 @@ async function syncQuotes(manual){
 /* ── stats helpers ── */
 function quoteAvail(q){
   let loaded=false, tot=0, ok=0;
-  q.items.forEach(it=>{ const st=getStock(it.code); if(st!==null){ loaded=true; tot++; if(st>=it.qty) ok++; } });
+  q.items.forEach(it=>{ if(!(it.qty>0)) return; const st=getStock(it.code); if(st!==null){ loaded=true; tot++; if(st>=it.qty) ok++; } });
   return {loaded, pct: tot? Math.round(ok/tot*100):0};
 }
 function quoteMRP(q){ let m=0; q.items.forEach(it=>{ const p=PMAP[it.code]; if(p) m+=p.mrp*it.qty; }); return m; }
@@ -7547,6 +7591,7 @@ function closeQuoteDD(){ const dd=$('se-quote-dd'); if(dd) dd.classList.remove('
 
 
 function edStockInfo(code,qty){
+  if((Number(qty)||0)<0) return {cls:'ret',txt:'↩<span class="stk-w"> return</span>'};      // coming back, not going out
   const st=getStock(code);
   if(st===null) return {cls:'unk',txt:'—'};
   return (st>=qty)?{cls:'ok',txt:'✓ '+fmtN(st)}:{cls:'no',txt:'✕ '+fmtN(st)};
@@ -7929,7 +7974,8 @@ async function saveQuoteApiSettings(){
     toast('That does not look like a /exec web app URL'); return;
   }
   if(!s){ toast('Enter the secret from your script'); return; }
-  try{ localStorage.setItem(QAPI_URL_KEY,u); localStorage.setItem(QAPI_SEC_KEY,s); }catch(e){}
+  try{ localStorage.setItem(QAPI_URL_KEY,u); localStorage.setItem(QAPI_SEC_KEY,s); localStorage.removeItem('gbw_qapi_v'); }catch(e){}
+  SRV_V=0;                                          // a different script: learn its version again
   setFqStatus('⏳ Testing connection…');
   const r=await qapiGet('ping');
   if(r && r.ok){ toast('Connected ✓'); fillQuoteApiPanel(); $('fq-setup').style.display='none'; syncSavedQuotes(true); }
@@ -7953,6 +7999,25 @@ function netErr(e){
 }
 
 /* GET helper — Apps Script answers simple GETs with Access-Control-Allow-Origin:* */
+/* ── server version ──
+   Returned items (negative qty) need the v4 quotes script: an older one drops
+   those lines when it saves. The version comes back on every reply.        */
+let SRV_V=0;
+try{ const c=JSON.parse(localStorage.getItem('gbw_qapi_v')||'null'); if(c && c.v) SRV_V=+c.v||0; }catch(e){}
+function noteSrvV(j){ if(j && typeof j.v==='number' && j.v!==SRV_V){ SRV_V=j.v; try{ localStorage.setItem('gbw_qapi_v', JSON.stringify({v:SRV_V})); }catch(e){} } return j; }
+function payloadHasReturns(p){ return payloadItems(p).some(i=>i.qty<0); }
+async function srvSupportsReturns(){            // true · false · null (could not ask: offline)
+  if(SRV_V>=4) return true;
+  const r=await qapiGet('ping');
+  if(r && r.ok && typeof r.v==='number') return r.v>=4;
+  return null;
+}
+function returnsBackendHelp(){
+  return 'This quotation has RETURNED items (minus qty).\n\nThe quotes web app needs a one-time update before it can save them — an older version would drop those lines:\n\n'+
+    '1. Open the Apps Script of the GBW QUOTES DB sheet, paste the new GBW_QUOTES_API.gs, save.\n'+
+    '2. Deploy → Manage deployments → ✏ → Version: New version → Deploy.\n\n'+
+    'Nothing was saved. You can still print and export this quotation.';
+}
 async function qapiGet(action, extra){
   if(!qapiReady()) return {ok:false,error:'not configured'};
   let url = qapiUrl()+'?secret='+encodeURIComponent(qapiSecret())+'&action='+encodeURIComponent(action)+'&_cb='+Date.now();
@@ -7960,7 +8025,7 @@ async function qapiGet(action, extra){
   try{
     const r=await qFetch(url,{method:'GET',cache:'no-store',redirect:'follow'});
     if(!r.ok) return {ok:false, net:(r.status>=500||r.status===429), error:'HTTP '+r.status};
-    return await r.json();
+    return noteSrvV(await r.json());
   }catch(e){ return netErr(e); }
 }
 
@@ -7974,7 +8039,7 @@ async function qapiPost(payload){
       body: JSON.stringify(payload)
     });
     if(!r.ok) return {ok:false, net:(r.status>=500||r.status===429), error:'HTTP '+r.status};
-    return await r.json();
+    return noteSrvV(await r.json());
   }catch(e){ return netErr(e); }
 }
 
@@ -8004,8 +8069,8 @@ function payloadItems(p){
   const out=[];
   baths.forEach(b=>(b.items||[]).forEach(it=>{
     const code=String(it.code||'').trim().toUpperCase();
-    const qty=Math.max(0, parseInt(it.qty,10)||0);
-    if(code && qty>0) out.push({bathroom:String(b.name||'').trim(), code:code, qty:qty});
+    const qty=parseInt(it.qty,10)||0;                  // negative = returned item
+    if(code && qty!==0) out.push({bathroom:String(b.name||'').trim(), code:code, qty:qty});
   }));
   return out;
 }
@@ -8053,6 +8118,10 @@ async function saveQuoteToCloud(){
   const payload=quotePayload(qno);
   if(builderOn()) refreshAll();                     // the empty lines the payload dropped: repaint the page
   if(!payloadItems(payload).length){ toast('Nothing to save — every line has qty 0'); return; }
+  if(payloadHasReturns(payload)){
+    const okV = qno && SRV_V>=4 ? true : await srvSupportsReturns();
+    if(okV===false){ alert(returnsBackendHelp()); return; }
+  }
 
   /* UPDATE — the quote number is already known, so apply it here instantly
      and let the outbox carry it to the sheet. Nothing to wait for. */
@@ -8094,6 +8163,8 @@ async function saveQuoteToCloud(){
    instead of being thrown away and fetched again. */
 function acceptServerSave(r, payload, sentAs){
   const qno=r.quoteNo;
+  if(payloadHasReturns(payload) && typeof r.v==='number' && r.v<4)        // should never happen (checked before sending) — but never silently
+    setTimeout(()=>alert(qno+' was saved WITHOUT its returned lines — the quotes web app is an older version.\n\n'+returnsBackendHelp().split('\n\n').slice(1).join('\n\n').replace('Nothing was saved.','Save it again after the update.')),50);
   if(sentAs && sentAs!==qno){
     // the quote had been removed from the sheet by hand — the server saved it as a new number
     dropHead(sentAs); forgetCachedItems(sentAs);
@@ -8166,6 +8237,15 @@ async function flushOutbox(){
     while(OUTBOX.length){
       const e=OUTBOX[0]; e.inFlight=true; renderSyncState();
       let r;
+      if(e.op==='save' && payloadHasReturns(e.payload) && !(SRV_V>=4)){
+        const okV=await srvSupportsReturns();
+        if(okV!==true){
+          e.inFlight=false; e.lastErr = okV===false ? 'quotes web app needs the update for returned items' : 'no reply'; saveOutbox();
+          if(okV===false && !e._warned){ e._warned=true; saveOutbox(); alert(returnsBackendHelp().replace('Nothing was saved.', e.quoteNo+' is waiting on this device and will be sent once the web app is updated.')); }
+          scheduleFlush();
+          break;
+        }
+      }
       if(e.op==='save'){
         const q=Object.assign({}, e.payload);
         // only a change that waited (failed once, or came from an earlier
@@ -8490,7 +8570,7 @@ function renderQuoteResults(){
       '<div class="fq-l"><div class="fq-n">'+esc(q.customer||'(no name)')+badge+'</div>'+
       '<div class="fq-q">'+esc(q.quoteNo)+(q.phone?' · '+esc(q.phone):'')+'</div>'+
       '<div class="fq-m">'+esc(meta)+'</div>'+
-      (HIT[q.quoteNo] ? '<div class="fq-has">🔎 '+HIT[q.quoteNo].slice(0,3).map(h=>'<span class="fq-hb"><b>'+esc(h.code)+'</b> × '+h.qty+(h.baths.length?' · '+esc(h.baths.slice(0,2).join(', '))+(h.baths.length>2?'…':''):'')+'</span>').join('')+(HIT[q.quoteNo].length>3?' +'+(HIT[q.quoteNo].length-3)+' more':'')+'</div>' : '')+
+      (HIT[q.quoteNo] ? '<div class="fq-has">🔎 '+HIT[q.quoteNo].slice(0,3).map(h=>'<span class="fq-hb"><b>'+esc(h.code)+'</b> × '+qtyTxt(h.qty)+(h.baths.length?' · '+esc(h.baths.slice(0,2).join(', '))+(h.baths.length>2?'…':''):'')+'</span>').join('')+(HIT[q.quoteNo].length>3?' +'+(HIT[q.quoteNo].length-3)+' more':'')+'</div>' : '')+
       '</div>'+
       (function(){
         const f=quoteFigures(q, cache), lv=priceLevelOf(q);
@@ -9956,7 +10036,7 @@ function quoteXlLines(){
 }
 function quoteXlClub(lines){
   const by={}, out=[];
-  lines.forEach(l=>{ const k=l.code+'|'+l.rate;
+  lines.forEach(l=>{ const k=l.code+'|'+l.rate+'|'+(l.qty<0?'R':'S');      // a return stays its own row
     if(!by[k]){ by[k]={code:l.code, qty:0, rate:l.rate, amt:0, brand:l.brand}; out.push(by[k]); }
     by[k].qty+=l.qty; by[k].amt+=l.amt; });
   return out;
