@@ -7787,9 +7787,17 @@ function renderSearchResults(){
   const dd=$('se-quote-dd'); if(!dd) return;
   const term=($('se-search-box')?$('se-search-box').value:'').trim().toUpperCase();
   if(!QUOTES.length){ dd.innerHTML='<div class="qd-empty">No saved quotations yet.<br>Add quotes to your sheet, then tap ↻ Refresh.</div>'; return; }
-  const res=QUOTES.map((q,i)=>({q,i,mrp:quoteMRP(q)}))
-    .filter(o=>!term||o.q.name.toUpperCase().includes(term))
-    .sort((a,b)=>a.mrp-b.mrp)            // smallest MRP total first
+  /* forgiving match: dashes, spaces, dots and case are ignored ("COPCHR" finds
+     "COP-CHR…"), and several words may come in any order. A set whose NAME
+     does not match but which CONTAINS that item code is listed after them. */
+  const an=t=>String(t||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const words=term.split(/\s+/).map(an).filter(Boolean), whole=an(term);
+  const nameHit=q=>{ const n=an(q.name); return !words.length || n.includes(whole) || words.every(w=>n.includes(w)); };
+  const codeHit=q=>whole.length>=4 && /\d/.test(whole) && q.items.some(it=>an(it.code).includes(whole));
+  const res=QUOTES.map((q,i)=>({q,i,mrp:quoteMRP(q), byName:nameHit(q)}))
+    .map(o=>{ o.byCode=!o.byName && codeHit(o.q); return o; })
+    .filter(o=>o.byName||o.byCode)
+    .sort((a,b)=>(a.byName===b.byName?0:(a.byName?-1:1)) || a.mrp-b.mrp)   // name matches first, then smallest MRP total
     .slice(0,400);
   if(!res.length){ dd.innerHTML='<div class="qd-empty">No quotation matches “'+esc(term)+'”.</div>'; return; }
   dd.innerHTML=res.map(o=>{
@@ -7798,7 +7806,7 @@ function renderSearchResults(){
     const avHTML=av.loaded?'<span class="qd-av '+avCls+'">'+av.pct+'% stock</span>':'';
     return '<div class="qd-row" data-qi="'+o.i+'">'+
       '<div class="qd-l"><div class="qd-n">'+esc(o.q.name)+'</div>'+
-      '<div class="qd-m">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs</div></div>'+
+      '<div class="qd-m">'+o.q.items.length+' items · '+quotePcs(o.q)+' pcs'+(o.byCode?' · <span style="color:var(--gold-l)">has '+esc((o.q.items.find(it=>an(it.code).includes(whole))||{}).code||'')+'</span>':'')+'</div></div>'+
       '<div class="qd-r"><div class="qd-mrp">₹'+fmtN(o.mrp)+'</div>'+avHTML+'</div></div>';
   }).join('');
 }
