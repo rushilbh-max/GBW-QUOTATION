@@ -5928,7 +5928,7 @@ function buildBrandedPrintHTML(){
   const printHTML=`<!DOCTYPE html><html><head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Quotation ${$('f-qno').value||''}</title>
+<title>${esc(pdfTitle())}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root{--gold:#C9A84C;--gold-l:#E8D08A;--gold-d:#8B6914;--champagne:#F0E6C8;--ink:#080C14;--cream:#FAF6EE;--cream2:#F2EAD8;--cream3:#E8DCC0;--green:#2A9D60;--muted:#5A7888;--slate:#3A5068;}
@@ -6278,6 +6278,20 @@ html, body{
    you send out. Writing into a blank window instead keeps the address as
    about:blank, which reveals nothing. Falls back to the old blob route only
    if a popup blocker refuses the window. */
+/* The name a saved PDF gets: the browser takes it from the document title,
+   so the title is the customer's name and nothing else. */
+function pdfTitle(){
+  const n=String(printName()||'').replace(/[\\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim();
+  return n || 'Quotation';
+}
+/* no pop-up allowed: the page itself is printed, under the same name */
+function printMainAs(name){
+  const was=document.title; document.title=name;
+  const back=()=>{ document.title=was; window.removeEventListener('afterprint', back); };
+  window.addEventListener('afterprint', back);
+  window.print();
+  setTimeout(back, 1500);
+}
 function openPrintDoc(html){
   let win=null;
   try{ win=window.open('','_blank'); }catch(e){}
@@ -6291,7 +6305,7 @@ function openPrintDoc(html){
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const w2=window.open(url,'_blank');
-  if(!w2) setTimeout(()=>window.print(),300);
+  if(!w2) setTimeout(()=>printMainAs(pdfTitle()),300);
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
@@ -6756,7 +6770,7 @@ function doPrintMRP(){
   var html = '<!DOCTYPE html><html><head>'
   + '<meta charset="UTF-8"/>'
   + '<meta name="viewport" content="width=device-width,initial-scale=1.0"/>'
-  + '<title>Quotation ' + esc(qno) + ' \u2014 MRP</title>'
+  + '<title>' + esc(pdfTitle()) + '</title>'
   + '<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600;700;800&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>'
   + '<style>'
   + '*{box-sizing:border-box;margin:0;padding:0}'
@@ -6949,7 +6963,7 @@ function doPrintMRP(){
   var blob = new Blob([html], {type:'text/html'});
   var url  = URL.createObjectURL(blob);
   var win  = window.open(url, '_blank');
-  if(!win) setTimeout(function(){ window.print(); }, 300);
+  if(!win) setTimeout(function(){ printMainAs(pdfTitle()); }, 300);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 
@@ -7026,7 +7040,7 @@ function doPlainPrint(){
   const html = `<!DOCTYPE html><html><head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>${esc(printName()||'Quotation')}</title>
+<title>${esc(pdfTitle())}</title>
 <style>
   /* No page margin = no room for the browser's own header / footer, so the
      print-out carries no date, time, page title (quote no.) or web address.
