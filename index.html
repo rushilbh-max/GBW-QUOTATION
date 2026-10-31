@@ -207,6 +207,11 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 #bw-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .bw-clear{background:transparent;border:1px solid rgba(255,255,255,0.22);color:#C0D4E4;border-radius:5px;padding:6px 10px;font-family:'Jost',sans-serif;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 .chg-rows{display:flex;gap:10px;flex-wrap:wrap}
+.chg-rows .chg-row{flex:1 1 calc(50% - 10px)}
+.chg-sg{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1px;border-radius:3px;padding:1px 5px;margin-right:4px;vertical-align:1px}
+.chg-sg.add{background:rgba(201,168,76,0.18);color:var(--gold-l)}
+.chg-sg.less{background:rgba(42,157,96,0.2);color:#4ADF90}
+.chg-row.less .chg-inp{color:#4ADF90}
 .chg-row{flex:1;min-width:210px;display:flex;align-items:center;gap:10px}
 .chg-n{font-family:'Jost',sans-serif;font-size:12px;font-weight:700;color:#C0D4E4;white-space:nowrap;min-width:128px}
 .chg-inp{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--gold-l);font-family:'Jost',sans-serif;font-size:16px;font-weight:700;letter-spacing:.4px}
@@ -1638,6 +1643,8 @@ body.selmode #items-list{padding-bottom:96px}
     <div class="chg-rows">
       <label class="chg-row"><span class="chg-n">Cartage + Handling</span><div class="net-inp-wrap"><span>₹</span><input id="f-chg-cartage" class="chg-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></label>
       <label class="chg-row"><span class="chg-n">Installation</span><div class="net-inp-wrap"><span>₹</span><input id="f-chg-install" class="chg-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></label>
+      <label class="chg-row"><span class="chg-n"><b class="chg-sg add">ADD</b> Old due amount</span><div class="net-inp-wrap"><span>₹</span><input id="f-chg-olddue" class="chg-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></label>
+      <label class="chg-row less"><span class="chg-n"><b class="chg-sg less">LESS</b> Advance</span><div class="net-inp-wrap"><span>−₹</span><input id="f-chg-advance" class="chg-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></label>
     </div>
     <div id="chg-sum" class="net-hint"></div>
   </div>
@@ -2237,7 +2244,7 @@ function fixMojibake(t){
 let ALL=PRODUCTS_RAW.map(r=>({code:r[0],desc:fixMojibake(r[1]),brand:r[2]||'',sdp:r[3]||0,nrp:r[4],mrp:r[5],hsn:r[6]||'',gst:r[7]||0,sdp_net:r[8],nrp_basic:r[9]||0,sdp_basic:r[10]||0}));
 let PMAP={};ALL.forEach(p=>{PMAP[p.code]=p;});
 
-const S={items:[],disc:0,mode:'NRP',brandDisc:{},charges:{cartage:0,install:0},stockOverrides:{},stockFilter:'ALL'};   // brandDisc: BRAND → its own %, charges: rupees added after the products total   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
+const S={items:[],disc:0,mode:'NRP',brandDisc:{},charges:{cartage:0,install:0,olddue:0,advance:0},stockOverrides:{},stockFilter:'ALL'};   // brandDisc: BRAND → its own %, charges: rupees added after the products total   // stockOverrides: code → 'AVAILABLE'|'NOT AVAILABLE' (manual override of auto status)
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fmtN=n=>{ const v=Math.round(n||0)||0, t=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Math.abs(v)); return v<0 ? '−'+t : t; };   // −1,800 for a returned line
@@ -2374,14 +2381,14 @@ function renderSummary(){
 
   /* this quotation as it is priced now — only when brand-wise % or charges make it differ from a plain level */
   const T=totals();
-  if(hasBrandDisc() || T.charges){
+  if(hasBrandDisc() || chargeList().length){
     const row=(l,v,p,bg,col)=>'<tr style="background:'+bg+';border-bottom:2px solid rgba(0,0,0,0.15)">'
       +'<td style="padding:9px 12px;font-family:\'Jost\',sans-serif;font-weight:700;font-size:13px;color:'+col+';border-right:2px solid rgba(0,0,0,0.15)">'+l+'</td>'
       +'<td style="padding:9px 12px;font-family:\'Jost\',sans-serif;font-weight:700;font-size:13px;color:'+col+';text-align:right;border-right:2px solid rgba(0,0,0,0.15)">'+v+'</td>'
       +'<td style="padding:9px 12px;font-family:\'Jost\',sans-serif;font-weight:700;font-size:13px;color:'+col+';text-align:right">'+p+'</td></tr>';
     let h=row('THIS QUOTATION'+(hasBrandDisc()?' · brand-wise':''), fmtN(T.best), pctOnMrp(T.best), '#1A2535', '#E8D08A');
-    chargeList().forEach(c=>{ h+=row('+ '+esc(c.short), fmtN(c.amt), '', '#EFE6D2', '#000'); });
-    if(T.charges) h+=row('NET PAYABLE', fmtN(T.grand), '', '#1A2535', '#E8D08A');
+    chargeList().forEach(c=>{ h+=row(esc(c.tag), fmtN(c.val), '', '#EFE6D2', '#000'); });
+    if(chargeList().length) h+=row('NET PAYABLE', fmtN(T.grand), '', '#1A2535', '#E8D08A');
     $('summary-tbody').insertAdjacentHTML('beforeend', h);
   }
 
@@ -2932,9 +2939,13 @@ function _rerenderPreviewIfOpen(){ const p=$('screen-preview'); if(p && p.classL
      the products total. No GST is added to them and no discount touches them.
    • Both travel with a saved quotation (in its NOTE cell), so reopening a
      quote brings back exactly the same figures.                              */
+/* sgn +1 = added to the amount payable, −1 = taken off it (an advance already received).
+   Every amount is typed as a plain positive number; the sign lives here. */
 var CHARGE_DEFS=[
-  {k:'cartage', label:'Cartage & Handling Charges', short:'Cartage + Handling'},
-  {k:'install', label:'Installation Charges',       short:'Installation'}
+  {k:'cartage', label:'Cartage & Handling Charges', short:'Cartage + Handling', sgn:1},
+  {k:'install', label:'Installation Charges',       short:'Installation',       sgn:1},
+  {k:'olddue',  label:'Old Due Amount',             short:'Old due',            sgn:1},
+  {k:'advance', label:'Advance Received',           short:'Advance',            sgn:-1}
 ];
 function brandKey(item){
   if(!item) return '';
@@ -2949,8 +2960,11 @@ function discOf(item){
 }
 function hasBrandDisc(){ return Object.keys(S.brandDisc||{}).length>0; }
 function chargeAmt(k){ const v=Number((S.charges||{})[k]); return (isFinite(v) && v>0) ? Math.round(v) : 0; }
-function chargeList(){ return CHARGE_DEFS.map(d=>({k:d.k, label:d.label, short:d.short, amt:chargeAmt(d.k)})).filter(c=>c.amt>0); }
-function chargesTotal(){ let t=0; CHARGE_DEFS.forEach(d=>{ t+=chargeAmt(d.k); }); return t; }
+function chargeSgn(k){ const d=CHARGE_DEFS.filter(x=>x.k===k)[0]; return d && d.sgn<0 ? -1 : 1; }
+/* each charge as listed on the documents: "Add: Old Due Amount" … "Less: Advance Received", val is signed */
+function chargeList(){ return CHARGE_DEFS.map(d=>{ const a=chargeAmt(d.k), g=d.sgn<0?-1:1;
+  return {k:d.k, label:d.label, short:d.short, amt:a, sgn:g, val:g*a, line:(g<0?'Less: ':'Add: ')+d.label, tag:(g<0?'− ':'+ ')+d.short}; }).filter(c=>c.amt>0); }
+function chargesTotal(){ let t=0; CHARGE_DEFS.forEach(d=>{ t+=(d.sgn<0?-1:1)*chargeAmt(d.k); }); return t; }
 
 /* brands of the lines now in the quotation, in order of first appearance */
 function brandsInQuote(){
@@ -3090,9 +3104,10 @@ function setCharge(k, raw){
 function renderChargeSum(){
   const el=$('chg-sum'); if(!el) return;
   const ch=chargesTotal(), t=totals();
-  el.innerHTML = !ch
-    ? 'Type an amount in rupees. It is added after the products total — no GST and no discount is applied to it. Leave both empty for no charges.'
-    : 'Products <b>₹'+fmtN(t.best)+'</b> + charges <b>₹'+fmtN(ch)+'</b> = net payable <b class="gold">₹'+fmtN(t.grand)+'</b>';
+  const cl=chargeList();
+  el.innerHTML = !cl.length
+    ? 'Type amounts in rupees. Cartage, installation and an old due are <b>added</b> after the products total; an advance already received is <b>taken off</b>. No GST and no discount is applied to them. Leave a box empty for none.'
+    : 'Products <b>'+fmt(t.best)+'</b>'+cl.map(c=>(c.sgn<0?' − ':' + ')+esc(c.short.toLowerCase())+' <b>₹'+fmtN(c.amt)+'</b>').join('')+' = net payable <b class="gold">'+fmt(t.grand)+'</b>';
 }
 function clearCharges(){
   resetCharges();
@@ -3115,9 +3130,9 @@ function syncExtrasUI(){
     bb.innerHTML='🏷 Brand-wise %'+(n?' <b>· '+n+'</b>':'');
   }
   if(cb){
-    const ch=chargesTotal();
-    cb.classList.toggle('on', _boxOpen('chg-box')); cb.classList.toggle('live', ch>0);
-    cb.innerHTML='➕ Charges'+(ch?' <b>₹'+fmtN(ch)+'</b>':'');
+    const ch=chargesTotal(), any=chargeList().length>0;
+    cb.classList.toggle('on', _boxOpen('chg-box')); cb.classList.toggle('live', any);
+    cb.innerHTML='➕ Charges'+(any?' <b>'+(ch<0?'−₹'+fmtN(-ch):'₹'+fmtN(ch))+'</b>':'');
   }
 }
 
@@ -3183,7 +3198,7 @@ function renderNetOpts(){
   const el=$('net-opts'); if(!el) return;
   if(!S.items || !S.items.length){ el.innerHTML='<div class="net-hint">Add products to the quotation first — then type the final amount here.</div>'; return; }
   const target=parseNet($('f-net').value), B=netBases();
-  const extra=(B.charges ? ' The amount includes the charges of ₹'+fmtN(B.charges)+'.' : '')+(B.fixed ? ' Brands with a % of their own keep it; only the main % is worked out.' : '');
+  const extra=(chargeList().length ? ' The amount includes the extra charges'+(chargeList().some(c=>c.sgn<0)?' and the advance':'')+' (net '+fmt(B.charges)+').' : '')+(B.fixed ? ' Brands with a % of their own keep it; only the main % is worked out.' : '');
   if(!(target>0)){ el.innerHTML='<div class="net-hint">Type the final amount the customer will pay. NRP total is ₹'+fmtN(B.nrp+B.fixNrp)+', SDP Net total is ₹'+fmtN(B.sdp+B.fixSdp)+'.'+extra+'</div>'; return; }
   const r=netSolve(target), b=r.bases;
   const card=(mode, title, meta, ok)=>
@@ -3194,10 +3209,10 @@ function renderNetOpts(){
   if(!r.nrp) h+=card('NRP','NRP', B.fixed ? allFixed : '<span class="warn">No NRP prices on these products</span>',false);
   else if(r.nrp.pct<0)    h+=card('NRP','Above NRP','<span class="warn">₹'+fmtN(target)+' is ₹'+fmtN(r.nrp.want-b.nrp)+' more than the NRP total'+(B.charges||B.fixed?' with charges / brand-wise lines':'')+' (₹'+fmtN(b.nrp+b.fixNrp+b.charges)+') — no discount gives this</span>',false);
   else if(r.nrp.pct>=100) h+=card('NRP','NRP','<span class="warn">'+((B.charges||B.fixed)?'The charges / brand-wise lines alone come to ₹'+fmtN(b.charges+b.fixNrp)+' — nothing is left for the other products':'Amount is zero')+'</span>',false);
-  else h+=card('NRP','NRP − '+pct2(r.nrp.pct)+'%','NRP total <b>₹'+fmtN(b.nrp)+'</b> · discount <b>₹'+fmtN(b.nrp-r.nrp.want)+'</b>'+(b.mrp>0?' · <b>'+pct2(100*(1-(target-b.charges)/b.mrp))+'%</b> off MRP':'')+(b.fixed?' · brand-wise lines <b>₹'+fmtN(b.fixNrp)+'</b>':'')+(b.charges?' · charges <b>₹'+fmtN(b.charges)+'</b>':''),true);
+  else h+=card('NRP','NRP − '+pct2(r.nrp.pct)+'%','NRP total <b>₹'+fmtN(b.nrp)+'</b> · discount <b>₹'+fmtN(b.nrp-r.nrp.want)+'</b>'+(b.mrp>0?' · <b>'+pct2(100*(1-(target-b.charges)/b.mrp))+'%</b> off MRP':'')+(b.fixed?' · brand-wise lines <b>₹'+fmtN(b.fixNrp)+'</b>':'')+(b.charges?' · charges <b>'+fmt(b.charges)+'</b>':''),true);
   if(!r.sdp) h+=card('SDP','SDP Net', B.fixed ? allFixed : '<span class="warn">No SDP Net prices on these products</span>',false);
   else if(r.sdp.pct<0)    h+=card('SDP','Below SDP Net','<span class="warn">₹'+fmtN(target)+' is ₹'+fmtN(b.sdp-r.sdp.want)+' less than the SDP Net total'+(B.charges||B.fixed?' with charges / brand-wise lines':'')+' (₹'+fmtN(b.sdp+b.fixSdp+b.charges)+') — this would sell below cost</span>',false);
-  else h+=card('SDP','SDP Net + '+pct2(r.sdp.pct)+'%','SDP Net total <b>₹'+fmtN(b.sdp)+'</b> · margin <b>₹'+fmtN(r.sdp.want-b.sdp)+'</b>'+(b.fixed?' · brand-wise lines <b>₹'+fmtN(b.fixSdp)+'</b>':'')+(b.charges?' · charges <b>₹'+fmtN(b.charges)+'</b>':''),true);
+  else h+=card('SDP','SDP Net + '+pct2(r.sdp.pct)+'%','SDP Net total <b>₹'+fmtN(b.sdp)+'</b> · margin <b>₹'+fmtN(r.sdp.want-b.sdp)+'</b>'+(b.fixed?' · brand-wise lines <b>₹'+fmtN(b.fixSdp)+'</b>':'')+(b.charges?' · charges <b>'+fmt(b.charges)+'</b>':''),true);
   el.innerHTML=h+(extra?'<div class="net-hint" style="flex-basis:100%">'+extra.trim()+'</div>':'');
 }
 function applyNet(mode){
@@ -3485,7 +3500,7 @@ function parseRows(text){
 /* heading / total / charge rows of an exported quotation are not products */
 function xlSummaryRow(){
   const L=CHARGE_DEFS.map(d=>d.label.toUpperCase());
-  return [].slice.call(arguments).some(v=>{ const u=String(v||'').trim().toUpperCase();
+  return [].slice.call(arguments).some(v=>{ const u=String(v||'').trim().toUpperCase().replace(/^(ADD|LESS)\s*:\s*/,'');
     return /^(CODE|AREA NAME|TOTAL|PRODUCTS TOTAL|TOTAL QUOTE AMOUNT|GRAND TOTAL|SUB ?TOTAL)$/.test(u) || L.indexOf(u)>=0; });
 }
 function importRows(rows){
@@ -4192,7 +4207,7 @@ function refreshTotalBar(){
   $('t-mrp').textContent=fmt(tot.mrp);
   $('t-best').textContent=fmt(tot.charges ? tot.grand : tot.best);
   const bl=$('t-best-l');
-  if(bl) bl.textContent = tot.charges ? 'Net Payable · incl. charges '+fmt(tot.charges) : 'Best Price';
+  if(bl) bl.textContent = chargeList().length ? 'Net Payable · '+(tot.charges<0?'after advance ':'incl. charges ')+fmt(tot.charges) : 'Best Price';
   const nb=bathMode()?S.bathrooms.length:0;
   $('t-info').textContent=(nb?nb+' bathroom'+(nb===1?'':'s')+' · ':'')+n+' product'+(n===1?'':'s')+' · '+qs.out+' pcs'+(qs.ret?' · ↩ '+qs.ret+' returned':'');
   st.classList.toggle('empty', !n);
@@ -5719,7 +5734,7 @@ function renderPreview(){
     $('p-tfoot-wrap').insertAdjacentHTML('beforeend',
       '<table class="p-charges" style="width:100%;border-collapse:collapse;page-break-inside:avoid;break-inside:avoid;background:#FEFCF7;border-top:1px solid #D8C898">'
       + line('Best Price Total'+(GST_COLS?' (incl. GST)':''), fmt(tot.best))
-      + chl.map(c=>line('Add: '+esc(c.label), '₹'+fmtN(c.amt))).join('')
+      + chl.map(c=>line(esc(c.line), fmt(c.val))).join('')
       + '<tr style="background:#1A2535;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
       +   '<td style="padding:10px 12px;text-align:right;font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#C9A84C">Net Payable</td>'
       +   '<td style="padding:10px 12px;width:150px;text-align:right;font-family:\'Jost\',sans-serif;font-size:17px;font-weight:700;color:#E8D08A;white-space:nowrap">'+fmt(payable)+'</td></tr>'
@@ -5734,7 +5749,7 @@ function renderPreview(){
       const mk=(l,v)=>{ const d=document.createElement('div'); d.className='p-grand-row pg-extra';
         d.innerHTML='<span class="p-grand-lbl">'+l+'</span><span class="p-grand-val">'+v+'</span>'; trow.parentNode.insertBefore(d, trow); };
       mk('Best Price Total', fmt(tot.best));
-      chl.forEach(c=>mk(esc(c.short), '₹'+fmtN(c.amt)));
+      chl.forEach(c=>mk(esc(c.tag), fmt(c.val)));
     }
   }
 
@@ -7034,8 +7049,8 @@ function doPlainPrint(){
       <td colspan="5" class="foot-mrp">TOTAL MRP= RS.${fmtG(tot.mrp)}/-</td>
       <td class="foot-grand-lbl">GRAND TOTAL</td>
       <td class="c-num foot-grand-val">${fmtG(GT.gross)}</td>
-    </tr>` + chargeList().map(c=>'<tr class="foot"><td colspan="9" class="foot-mrp" style="text-align:right;padding-right:10px">ADD: '+esc(c.label.toUpperCase())+'</td><td class="c-num foot-strong">'+fmtG(c.amt)+'</td></tr>').join('')
-      + (GT.charges ? '<tr class="foot"><td colspan="8"></td><td class="foot-grand-lbl">NET PAYABLE</td><td class="c-num foot-grand-val">'+fmtG(GT.grand)+'</td></tr>' : '');
+    </tr>` + chargeList().map(c=>'<tr class="foot"><td colspan="9" class="foot-mrp" style="text-align:right;padding-right:10px">'+esc(c.line.toUpperCase())+'</td><td class="c-num foot-strong">'+fmtG(c.val)+'</td></tr>').join('')
+      + (chargeList().length ? '<tr class="foot"><td colspan="8"></td><td class="foot-grand-lbl">NET PAYABLE</td><td class="c-num foot-grand-val">'+fmtG(GT.grand)+'</td></tr>' : '');
 
   const html = `<!DOCTYPE html><html><head>
 <meta charset="UTF-8"/>
@@ -8645,7 +8660,7 @@ function priceLevelOf(q){
 function quoteFigures(q, cache){
   const c=cache[q.quoteNo];
   const fresh=c && Array.isArray(c.items) && String(c.at||'')===String(q.savedAt||'');
-  const X=parseExtras(q.note); let ch=0; Object.keys(X.ch).forEach(k=>{ ch+=X.ch[k]; });
+  const X=parseExtras(q.note); let ch=0; Object.keys(X.ch).forEach(k=>{ ch+=chargeSgn(k)*X.ch[k]; });   // an advance is taken off
   if(!fresh || !ALL.length) return {mrp:Number(q.mrpTotal)||0, amt:null, missing:0, charges:ch};
   const sdp=String(q.mode||'').toUpperCase()==='SDP', d0=Number(q.disc)||0;
   let mrp=0, amt=0, missing=0;
@@ -8825,10 +8840,10 @@ function renderQuoteResults(){
         return '<div class="fq-r">'+
           '<span class="fq-lvl '+lv.cls+'">'+esc(lv.label)+'</span>'+
           (f.amt!=null
-            ? '<div class="fq-amt" title="Quotation amount at today\'s prices">₹'+fmtN(f.amt)+'</div>'
+            ? '<div class="fq-amt" title="Quotation amount at today\'s prices">'+fmt(f.amt)+'</div>'
             : '<div class="fq-amt wait">calculating…</div>')+
           '<div class="fq-mrpline">MRP <b class="fq-mrp">₹'+fmtN(f.mrp)+'</b>'+(off!=null && off>0 ? ' <span class="fq-off">'+off+'% off</span>' : '')+'</div>'+
-          (f.charges ? '<div class="fq-mrpline">incl. charges ₹'+fmtN(f.charges)+'</div>' : '')+
+          (f.charges ? '<div class="fq-mrpline">'+(f.charges<0?'after advance ':'incl. charges ')+fmt(f.charges)+'</div>' : '')+
           (f.missing ? '<div class="fq-mrpline" style="color:#FFB870">'+f.missing+' code'+(f.missing===1?'':'s')+' not in catalogue</div>' : '')+
           '<div class="fq-acts">'+
             '<button class="fq-b" onclick="event.stopPropagation();openSavedQuote(\''+esc(q.quoteNo)+'\',\'edit\')" title="Open this quotation for changes — saving updates it">✎ Edit</button>'+
@@ -10328,7 +10343,7 @@ function buildQuoteWorkbook(EJ){
     } else {
       const pr=total('PRODUCTS TOTAL', sumQty, sumAmt, false);
       const refs=[L(cols.amt)+pr.number];
-      ch.forEach(c=>{ const r=total(c.label, null, c.amt, false); r.getCell(cols.label).font={bold:false,size:10.5}; r.getCell(cols.amt).font={bold:false,size:10.5}; refs.push(L(cols.amt)+r.number); });
+      ch.forEach(c=>{ const r=total(c.line, null, c.val, false); r.getCell(cols.label).font={bold:false,size:10.5}; r.getCell(cols.amt).font={bold:false,size:10.5}; refs.push(L(cols.amt)+r.number); });
       total('TOTAL QUOTE AMOUNT', null, {formula:refs.join('+'), result:r2(amtSum+chargesTotal())}, true);
     }
     return ws;
