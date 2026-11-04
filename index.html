@@ -449,6 +449,13 @@ tr.rmoved td{animation:rowFlash .9s ease}
 
 /* ══ ADD PRODUCTS: totals strip, one tools line, bigger pictures ══ */
 #search-zone{padding:10px 12px 8px}
+/* the totals line on Summary / Stock Availability / Quotation */
+.ss-host{flex-shrink:0;padding:10px 12px 2px}
+.ss-host.in-prev{flex:1 1 100%;padding:0 0 4px}
+body[data-strip="preview"] #sum-strip .ss-go{display:none}              /* already on the quotation */
+body[data-strip="preview"] .prev-bar > div > .btn-print-alt.js-save{display:none}   /* Save is in the line above */
+@media print{ .ss-host{display:none!important} }
+@media (max-width:560px){ body[data-strip="preview"] #sum-strip .ss-gap{flex:1 1 100%;height:0} }   /* phone: totals on one row, name + Save on the next */
 #sum-strip{display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,rgba(201,168,76,0.10),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.35);border-radius:8px;padding:6px 8px 6px 14px}
 #sum-strip .ss-tot{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
 #sum-strip .ss-l{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted2)}
@@ -2332,6 +2339,30 @@ function showScreen(id){
   if(id==='quotes') renderQuotesPage();
   if(id==='builder'){ refreshList(); refreshTotalBar(); }
   else syncNameFromStrip();
+  placeSumStrip(id);
+}
+
+/* The totals line (MRP · Best price · counts · customer · Save · View) is ONE
+   element. It sits at the top of Add Products, and is moved to the top of
+   Summary, Stock Availability and the Quotation when one of them is opened —
+   same element, same boxes, nothing to keep in step. */
+function placeSumStrip(id){
+  const st=$('sum-strip'); if(!st) return;
+  let host=null;
+  if(id==='builder') host=$('search-zone');
+  else if(id==='summary' || id==='stock' || id==='preview'){
+    const scr=$('screen-'+id); if(!scr) return;
+    host=scr.querySelector(':scope > .ss-host, :scope > .prev-bar > .ss-host');
+    if(!host){
+      host=document.createElement('div'); host.className='ss-host'+(id==='preview'?' in-prev':'');
+      if(id==='preview'){ const pb=scr.querySelector('.prev-bar'); pb.insertBefore(host, pb.firstChild); }
+      else scr.insertBefore(host, scr.firstChild);
+    }
+  }
+  if(!host) return;                                  // Find Quotes / Customer Form: the line is not shown there
+  if(host.firstElementChild!==st) host.insertBefore(st, host.firstChild);
+  document.body.dataset.strip=id;
+  refreshTotalBar();
 }
 
 function renderSummary(){
