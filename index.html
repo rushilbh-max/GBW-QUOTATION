@@ -110,7 +110,9 @@ input,textarea,button,select{font-family:'Jost',sans-serif;-webkit-appearance:no
 .lsp-ic{font-size:15px;text-align:center}
 .lsp-name{font-size:12.5px;font-weight:700;color:var(--text)}
 .lsp-tab{display:block;font-size:10px;color:var(--muted2);letter-spacing:.5px;font-weight:500}
-.lsp-n{font-size:15px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.lsp-n{font-size:15px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;line-height:1.15}
+/* the unit sits UNDER the number, so every count lines up on the right edge */
+.lsp-u{display:block;font-size:9.5px;font-weight:700;color:var(--muted2);letter-spacing:.8px;text-transform:uppercase;margin-top:1px}
 .lsp-b{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:3px 7px;border-radius:4px;white-space:nowrap}
 .lsp-b.live{background:rgba(42,157,96,0.16);color:#3CCB80}
 .lsp-b.cache{background:rgba(232,163,58,0.14);color:#F0B85A}
@@ -7389,28 +7391,37 @@ function syncClock(ts){
   if(d.toDateString()===now.toDateString()) return t;
   return d.toLocaleDateString([], {day:'numeric', month:'short'})+', '+t;
 }
+/* total pieces in the GBW STOCK tab: every code's qty added up. A code
+   below zero (sold ahead of stock in Tally) is not taken off the total —
+   it is counted separately so the figure is never smaller than what is on the shelves. */
+function stockTotals(){
+  let pcs=0, codes=0, neg=0;
+  Object.keys(STOCK_MAP).forEach(k=>{ const v=Number(STOCK_MAP[k])||0; codes++; if(v>0) pcs+=v; else if(v<0) neg++; });
+  return {pcs:Math.round(pcs*100)/100, codes:codes, neg:neg};
+}
 function renderSyncBadge(){
   const ts=+(cacheGet(SYNC_TS_KEY)||0);
-  const nP=ALL.length, nI=Object.keys(IMAGE_MAP).length, nS=Object.keys(STOCK_MAP).length;
+  const nP=ALL.length, nI=Object.keys(IMAGE_MAP).length, nS=Object.keys(STOCK_MAP).length, SQ=stockTotals();
   const partial = SYNC.state==='live' && ['prod','img','stock'].some(k=>SYNC.tabs[k]!=='live');   // one tab could not be read
   const st = partial ? 'cache' : SYNC.state;
   const chip=$('lsync-chip'); if(!chip) return;
   chip.dataset.st=st;
   $('lsync-state').textContent = partial ? 'Partly live' : st==='live' ? 'Live' : st==='busy' ? 'Syncing' : st==='cache' ? 'Offline' : 'Not synced';
   $('lsync-when').textContent  = ts ? syncClock(ts) : '';
-  $('lsync-counts').innerHTML  = nP ? '<b>'+nP.toLocaleString()+'</b> products · <b>'+nI.toLocaleString()+'</b> images · <b>'+nS.toLocaleString()+'</b> stock' : 'catalogue not loaded yet';
-  chip.title = SYNC.msg + (nP ? '\n'+nP.toLocaleString()+' products · '+nI.toLocaleString()+' image URLs · '+nS.toLocaleString()+' stock rows' : '');
+  $('lsync-counts').innerHTML  = nP ? '<b>'+nP.toLocaleString()+'</b> products · <b>'+nI.toLocaleString()+'</b> images · <b>'+SQ.pcs.toLocaleString('en-IN')+'</b> pcs stock' : 'catalogue not loaded yet';
+  chip.title = SYNC.msg + (nP ? '\n'+nP.toLocaleString()+' products · '+nI.toLocaleString()+' image URLs · '+SQ.pcs.toLocaleString('en-IN')+' pcs in stock ('+nS.toLocaleString()+' codes)' : '');
   const re=$('lsync-re'); if(re) re.classList.toggle('spin', st==='busy');
   const msg=$('lsync-msg'); if(msg){ msg.dataset.st=st; msg.textContent=SYNC.msg; }
   const lab={live:'✔ live', cache:'saved copy', fail:'✕ failed', busy:'checking…', none:'—'};
-  const row=(key,ic,name,tab,n)=>{
+  const row=(key,ic,name,tab,n,sub,unit)=>{
     const t=SYNC.tabs[key]||'none';
-    return '<div class="lsp-row" data-k="'+key+'"><span class="lsp-ic">'+ic+'</span><span class="lsp-name">'+name+'<span class="lsp-tab">tab '+tab+'</span></span>'
-      +'<span class="lsp-n">'+n.toLocaleString()+'</span><span class="lsp-b '+t+'">'+lab[t]+'</span>'
+    return '<div class="lsp-row" data-k="'+key+'"><span class="lsp-ic">'+ic+'</span><span class="lsp-name">'+name+'<span class="lsp-tab">tab '+tab+(sub?' · '+sub:'')+'</span></span>'
+      +'<span class="lsp-n">'+n+(unit?'<small class="lsp-u">'+unit+'</small>':'')+'</span><span class="lsp-b '+t+'">'+lab[t]+'</span>'
       +(t==='fail' && SYNC.errs[key] ? '<span class="lsp-err">'+esc(SYNC.errs[key])+'</span>' : '')+'</div>';
   };
   const rows=$('lsync-rows');
-  if(rows) rows.innerHTML = row('prod','📦','Products','CODE NEW',nP) + row('img','🖼','Image URLs','IMAGE NEW',nI) + row('stock','📊','Stock','GBW STOCK',nS);
+  if(rows) rows.innerHTML = row('prod','📦','Products','CODE NEW',nP.toLocaleString()) + row('img','🖼','Image URLs','IMAGE NEW',nI.toLocaleString())
+    + row('stock','📊','Stock','GBW STOCK',SQ.pcs.toLocaleString('en-IN'), nS.toLocaleString()+' code'+(nS===1?'':'s')+(SQ.neg?' · '+SQ.neg+' below zero not counted':''), 'pcs');
   const last=$('lsync-last');
   if(last) last.innerHTML = ts ? 'Last synced <b>'+syncClock(ts)+'</b> · '+syncAgo(ts) : 'Not synced on this device yet';
 }
@@ -7787,7 +7798,7 @@ async function syncFromGoogleSheet(manual){
     const parts=[];
     if(prodOK) parts.push(prodN.toLocaleString()+' products');
     if(imgOK)  parts.push(imgN.toLocaleString()+' image URLs');
-    if(stockOK)parts.push(stockN.toLocaleString()+' stock rows');
+    if(stockOK)parts.push(stockN.toLocaleString()+' stock rows ('+stockTotals().pcs.toLocaleString('en-IN')+' pcs)');
     let msg='✔ Live-synced '+parts.join(' & ')+(changed?'':' · no changes')+' · '+new Date().toLocaleTimeString();
     if(errs.length) msg+=' (partial — '+errs.join('; ')+')';
     setSyncStatus(msg, true);
