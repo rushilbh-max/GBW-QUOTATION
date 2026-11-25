@@ -1995,6 +1995,7 @@ Guest Bath, AQT-CHR-3057, 2"></textarea>
       <button class="btn-print-alt" onclick="doPrintMRP()">💎 MRP Only</button>
       <button class="btn-print-alt" onclick="doPlainPrint()">📄 Plain GST</button>
       <button class="btn-print-alt" onclick="doPlainGstPDF()" title="Plain GST without pictures — saved straight to this device as a PDF">⬇ Plain GST · No Image</button>
+      <button class="btn-print-alt" onclick="doPrintSelection()" title="SR# · Code · Qty · Product Image · Item Name — no prices">🗂 Selection Sheet</button>
       <button class="btn-print" onclick="doPrintGST()">🧾 GST Format</button>
     </div>
   </div>
@@ -2303,6 +2304,9 @@ const fmtGr=n=>fmt(_rndINR(n));
 // When true, renderPreview() emits the 10-column GST layout (Rate + GST %)
 // instead of the standard 8-column one. Only doPrintGST() turns it on.
 let GST_COLS=false;
+/* SELECTION SHEET: the GST-format document with only SR · CODE · QTY · PRODUCT IMAGE · ITEM NAME —
+   no prices anywhere (for the customer / site to approve the selection) */
+let SELSHEET=false;
 const unitBest=item=>GST_COLS?grossUnit(item):bp(item);
 function gstTotals(){
   let basic=0, gross=0, mrp=0, qty=0;
@@ -5600,10 +5604,13 @@ function auditMarkUploaded(code, url, live){
 // ── RENDER PREVIEW ──
 function renderPreview(){
   const tot=totals();
-  const NCOL=GST_COLS?10:8;
+  const NCOL=SELSHEET?5:(GST_COLS?10:8);
   if(GST_COLS){ const G=gstTotals(); tot.best=G.gross; tot.save=tot.mrp-G.gross; }
   const pth=$('p-thead');
-  if(pth) pth.innerHTML = GST_COLS
+  if(pth) pth.innerHTML = SELSHEET
+    ? '<tr><th class="td-sr">Sr#</th><th class="td-code">Code</th><th class="td-qty">Qty</th>'
+      +'<th class="td-img">Product Image</th><th class="td-name">Item Name</th></tr>'
+    : GST_COLS
     ? '<tr><th class="td-sr">Sr</th><th class="td-code">Code</th><th class="td-qty">Qty</th>'
       +'<th class="td-img">Image</th><th class="td-name">Description</th><th class="td-mrp">MRP</th>'
       +'<th class="td-rate">Rate</th><th class="td-gst">GST %</th>'
@@ -5650,12 +5657,12 @@ function renderPreview(){
       <td class="td-code"><div class="td-code-val">${esc(item.code)}</div></td>
       <td class="td-qty"${retQtyStyle(item)}>${qtyTxt(item.qty)}<sub>pcs</sub></td>
       <td class="td-img">${img}</td>
-      <td class="td-name"><div class="td-name-val">${esc(item.desc||item.code)}</div>${isRet(item)?RET_MARK:''}</td>
+      <td class="td-name"><div class="td-name-val">${esc(item.desc||item.code)}</div>${isRet(item)?RET_MARK:''}</td>${SELSHEET?'</tr>':`
       <td class="td-mrp"><div class="td-mrp-label">MRP</div><div class="td-mrp-val">${fmtN(item.mrp)}</div></td>
       ${gstCells}
       <td class="td-bp"><div class="td-bp-label">Best Price</div><div class="td-bp-val">${fmtN(price)}</div></td>
       <td class="td-total"><div class="td-bp-label" style="color:#A09060">Total</div><div class="td-total-val">${fmtN(price*item.qty)}</div></td>
-    </tr>`;
+    </tr>`}`;
   }
 
   if(S.bathrooms && S.bathrooms.length>0){
@@ -5703,9 +5710,10 @@ function renderPreview(){
         +    '<div style="font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0A2A55;line-height:1.35;overflow-wrap:anywhere">'+esc(bath.name)+'</div>'
         +  '</div>'
         +  '<div style="display:flex;align-items:stretch;gap:8px;flex-shrink:0">'
-        +    setBox('Total Qty', qtyTxt(bQty), (qtySplit(bath.items).ret ? 'net · '+qtySplit(bath.items).ret+' returned' : 'pcs'), false)
-        +    setBox('Total MRP', fmt(bMRP), 'list price', false)
-        +    setBox('Best Price', fmt(bBest), (GST_COLS?'incl. GST':'for this set'), true)
+        +    (SELSHEET ? setBox('Products', String(bath.items.filter(i=>!isBlankRow(i)).length), 'items', false) : '')
+        +    setBox('Total Qty', qtyTxt(bQty), (qtySplit(bath.items).ret ? 'net · '+qtySplit(bath.items).ret+' returned' : 'pcs'), SELSHEET)
+        +    (SELSHEET ? '' : setBox('Total MRP', fmt(bMRP), 'list price', false)
+        +    setBox('Best Price', fmt(bBest), (GST_COLS?'incl. GST':'for this set'), true))
         +  '</div>'
         +'</div>'
         +'</td></tr>';
@@ -5715,15 +5723,19 @@ function renderPreview(){
     const bsDiv=$('p-bathroom-summary');
     const bsTable=$('p-bath-summary-table');
     bsDiv.style.display='block';
-    let summaryRows='<tr><th>Bathroom</th><th>Items</th><th>Total MRP</th><th>Best Price</th></tr>';
+    let summaryRows=SELSHEET ? '<tr><th>Bathroom</th><th>Products</th><th>Total Qty</th></tr>' : '<tr><th>Bathroom</th><th>Items</th><th>Total MRP</th><th>Best Price</th></tr>';
     let grandMRP=0,grandBest=0,grandItems=0;
     S.bathrooms.forEach(bath=>{
       let bMRP=0,bBest=0,bItems=0;
       bath.items.forEach(i=>{bMRP+=i.mrp*i.qty;bBest+=unitBest(i)*i.qty;bItems+=i.qty;});
       grandMRP+=bMRP;grandBest+=bBest;grandItems+=bItems;
-      summaryRows+=`<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${qtyTxt(bItems)} pcs</td><td>${fmt(bMRP)}</td><td style="font-weight:700;color:#1A2535">${fmt(bBest)}</td></tr>`;
+      summaryRows+= SELSHEET
+        ? `<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${bath.items.filter(i=>!isBlankRow(i)).length}</td><td style="font-weight:700;color:#1A2535">${qtyTxt(bItems)} pcs</td></tr>`
+        : `<tr><td style="color:#0A2A55"><b>${esc(bath.name)}</b></td><td>${qtyTxt(bItems)} pcs</td><td>${fmt(bMRP)}</td><td style="font-weight:700;color:#1A2535">${fmt(bBest)}</td></tr>`;
     });
-    summaryRows+=`<tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">${qtyTxt(grandItems)} pcs</td><td style="color:#C9A84C">${fmt(grandMRP)}</td><td style="color:#E8D08A">${fmt(grandBest)}</td></tr>`;
+    summaryRows+= SELSHEET
+      ? `<tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">${S.items.filter(i=>!isBlankRow(i)).length}</td><td style="color:#E8D08A">${qtyTxt(grandItems)} pcs</td></tr>`
+      : `<tr class="bath-total-row"><td style="color:#E8D08A">TOTAL</td><td style="color:#C9A84C">${qtyTxt(grandItems)} pcs</td><td style="color:#C9A84C">${fmt(grandMRP)}</td><td style="color:#E8D08A">${fmt(grandBest)}</td></tr>`;
     bsTable.innerHTML=summaryRows;
   } else {
     // FLAT MODE
@@ -5746,6 +5758,7 @@ function renderPreview(){
             <span style="font-family:'Jost',sans-serif;font-size:8px;color:#7A6830;margin-top:1px;white-space:nowrap">${totRet?'net · '+totRet+' ret.':'pcs'}</span>
           </div>
         </td>
+        ${SELSHEET ? `<td style="padding:12px 10px;text-align:right;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#7A6830;text-transform:uppercase">${S.items.filter(i=>!isBlankRow(i)).length} product${S.items.filter(i=>!isBlankRow(i)).length===1?'':'s'}</td><td style="padding:12px 10px"></td></tr></table>` : `
         <td colspan="2" style="padding:12px 10px"></td>
         <td style="padding:12px 10px;width:78px;text-align:center">
           <div style="display:inline-flex;flex-direction:column;align-items:center;background:#F5F0E8;border:1px solid #D8C898;border-radius:5px;padding:6px 10px;width:100%">
@@ -5763,10 +5776,10 @@ function renderPreview(){
           </div>
         </td>
       </tr>
-    </table>`;
+    </table>`}`;
 
   /* extra charges: listed under the products total, then the amount payable */
-  const chl=chargeList(), chT=chargesTotal(), payable=Math.round(tot.best)+chT;
+  const chl=SELSHEET ? [] : chargeList(), chT=chargesTotal(), payable=Math.round(tot.best)+chT;
   if(chl.length){
     const line=(l,v)=>'<tr><td style="padding:7px 12px;text-align:right;font-family:\'Jost\',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#5A4A1E;border-bottom:1px solid #EEE4C8">'+l+'</td>'
       +'<td style="padding:7px 12px;width:150px;text-align:right;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:600;color:#1A2535;border-bottom:1px solid #EEE4C8;white-space:nowrap">'+v+'</td></tr>';
@@ -5912,15 +5925,15 @@ function buildCoverLayer(){
   return '<div class="gc">'+deco+'<div class="gc-col">'
     + '<div>'
     +   '<div class="gc-lock"><img class="l1" src="'+GBW_COVER_LOGO.gbw+'" alt="Grace Bath World"><span class="x">×</span><img class="l2" src="'+GBW_COVER_LOGO.jaq+'" alt="Jaquar"></div>'
-    +   '<div class="gc-eye">◆ &nbsp;Quotation&nbsp; ◆</div>'
+    +   '<div class="gc-eye">◆ &nbsp;'+(SELSHEET?'Selection Sheet':'Quotation')+'&nbsp; ◆</div>'
     +   (name ? '<div class="gc-for">Prepared exclusively for</div><div class="gc-name'+(name.length>30?' sm':'')+'">'+esc2(name)+'</div>'
               : '<div class="gc-for">A proposal prepared for you</div>')
     +   (addr ? '<div class="gc-site">'+esc2(addr)+'</div>' : '')
     +   (pcs ? '<div class="gc-scope">'+scope+'</div>' : '')
     +   '<div class="gc-meta">'
-    +     (qno ? '<div><span>Quotation No.</span><b>'+esc2(qno)+'</b></div>' : '')
+    +     (qno ? '<div><span>'+(SELSHEET?'Ref. No.':'Quotation No.')+'</span><b>'+esc2(qno)+'</b></div>' : '')
     +     '<div><span>Date</span><b>'+fd(d0)+'</b></div>'
-    +     '<div><span>Valid till</span><b>'+fd(valid)+'</b></div>'
+    +     (SELSHEET ? '' : '<div><span>Valid till</span><b>'+fd(valid)+'</b></div>')
     +   '</div>'
     + '</div>'
     + '<div>'
@@ -5977,6 +5990,12 @@ function buildBrandedPrintHTML(){
   const ppageClone = ppage.cloneNode(true);
   const coverInClone = ppageClone.querySelector('.p-cover');
   if(coverInClone) ppageClone.removeChild(coverInClone);
+  if(SELSHEET){
+    const w=ppageClone.querySelector('.p-quote-word'); if(w) w.textContent='Selection Sheet';
+    const g=ppageClone.querySelector('.p-grand-section'); if(g) g.remove();          // payment details + price totals
+    const t=ppageClone.querySelector('.p-sign-section > div:nth-child(2) > div');
+    if(t) t.innerHTML='Products selected for your approval<br>Subject to availability &nbsp;·&nbsp; E &amp; OE';
+  }
   const quotationHTML = ppageClone.outerHTML;
 
   const printHTML=`<!DOCTYPE html><html><head>
@@ -7360,6 +7379,35 @@ function doPrintGST(){
   } finally {
     GST_COLS = false;
     renderPreview();          // put the on-screen preview back to 8 columns
+  }
+}
+
+/* SELECTION SHEET export — the GST Format document, columns
+   SR# · CODE · QTY · PRODUCT IMAGE · ITEM NAME, qty totals only */
+const SEL_COL_CSS = '\n<style id="sel-column-widths">\n'
+  + '.td-sr{width:7% !important}\n'
+  + '.td-code{width:22% !important}\n'
+  + '.td-qty{width:10% !important}\n'
+  + '.td-img{width:21% !important}\n'
+  + '.td-name{width:40% !important;text-align:center !important}\n'
+  + '.td-code{text-align:center !important}\n'
+  + '.td-img{overflow:hidden !important}\n'
+  + '.td-img > div{width:104px !important;height:104px !important;max-width:100% !important;margin:0 auto !important}\n'
+  + '.td-img > div > img{width:104px !important;height:104px !important;max-width:100% !important;object-fit:contain !important}\n'
+  + '.td-name-val{font-size:11px !important;word-break:break-word !important;overflow-wrap:anywhere !important}\n'
+  + '.p-table th{letter-spacing:1.5px !important;white-space:nowrap !important}\n'
+  + '.p-bath-summary th:not(:first-child),.p-bath-summary td:not(:first-child){text-align:center !important}\n'
+  + '</style>\n';
+function doPrintSelection(){
+  if(!S.items || !S.items.filter(i=>!isBlankRow(i)).length){ alert('Add some products to the quotation first.'); return; }
+  SELSHEET = true;
+  try{
+    renderPreview();
+    const html = buildBrandedPrintHTML().replace('</head>', SEL_COL_CSS + '</head>');
+    openPrintDoc(html);
+  } finally {
+    SELSHEET = false;
+    renderPreview();          // the on-screen preview goes back to the quotation
   }
 }
 
