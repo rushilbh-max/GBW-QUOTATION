@@ -215,6 +215,7 @@ mark{background:#ffe9a8;color:inherit;padding:0}
 .t-mrp{font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;max-width:100%}
 .t-mrp .rs{font-size:.72em;color:#9b7b4b;margin-right:.6mm;font-weight:600}
 .t-q{font-weight:600;color:#fff;background:#9b7b4b;border-radius:.8mm;padding:.15mm .9mm;margin-top:.5mm;line-height:1.2;white-space:nowrap}
+.t-desc{line-height:1.16;max-height:2.34em;overflow:hidden;text-align:center;color:#4a443c;font-weight:500;word-break:break-word}
 .tt-foot{flex:none;display:flex;align-items:flex-end;justify-content:center;font-size:1.6mm;letter-spacing:.18em;text-transform:uppercase;color:#9b8f7c;white-space:nowrap}
 #printRoot{display:none}
 @page{size:A4 portrait;margin:0}
@@ -376,12 +377,12 @@ function fetchText(url){ return fetch(url,{cache:'no-store'}).then(function(r){ 
 /* ================= PANELS DATA ================= */
 function buildPanels(areas, meta){
   var map={}, order=[];
-  (meta||[]).forEach(function(m){ var a=String(m[0]||'').trim().toUpperCase(); if(!a||map[a]) return; var sz=String(m[2]||'AUTO').trim().toUpperCase(); if(!/^[1-9]$/.test(sz)) sz='AUTO'; map[a]={uid:uid(),name:a,title:String(m[1]||'').trim(),size:sz,showTotal:!/^(N|NO|FALSE|0|HIDE)$/i.test(String(m[3]==null?'':m[3]).trim()),items:[]}; order.push(map[a]); });
+  (meta||[]).forEach(function(m){ var a=String(m[0]||'').trim().toUpperCase(); if(!a||map[a]) return; var sz=String(m[2]||'AUTO').trim().toUpperCase(); if(!/^[1-9]$/.test(sz)) sz='AUTO'; map[a]={uid:uid(),name:a,title:String(m[1]||'').trim(),size:sz,showTotal:!/^(N|NO|FALSE|0|HIDE)\b/i.test(String(m[3]==null?'':m[3]).trim()),showDesc:/DESC/i.test(String(m[3]==null?'':m[3])),items:[]}; order.push(map[a]); });
   var tmp={};
   (areas||[]).forEach(function(r,i){
     var code=String(r[0]||'').trim(), a=String(r[1]||'').trim().toUpperCase(); if(!code||!a) return;
     var q=num(r[2]); if(!(q>0)) q=0; var s=num(r[3]);
-    if(!map[a]){ map[a]={uid:uid(),name:a,title:'',size:'AUTO',showTotal:true,items:[]}; order.push(map[a]); }
+    if(!map[a]){ map[a]={uid:uid(),name:a,title:'',size:'AUTO',showTotal:true,showDesc:false,items:[]}; order.push(map[a]); }
     (tmp[a]=tmp[a]||[]).push({code:code.toUpperCase(),qty:q,s:isFinite(s)?s:1e9,i:i});
   });
   Object.keys(tmp).forEach(function(a){ tmp[a].sort(function(x,y){ return (x.s-y.s)||(x.i-y.i); }); map[a].items=tmp[a].map(function(x){ return {code:x.code,qty:x.qty}; }); });
@@ -390,12 +391,12 @@ function buildPanels(areas, meta){
 function serialize(panels){
   var areas=[], meta=[];
   panels.forEach(function(p){
-    meta.push([p.name, p.title||'', p.size||'AUTO', p.showTotal===false?'N':'Y']);
+    meta.push([p.name, p.title||'', p.size||'AUTO', (p.showTotal===false?'N':'Y')+(p.showDesc?' DESC':'')]);
     var s=0; p.items.forEach(function(it){ var c=canon(it.code); if(!c) return; s++; areas.push([c, p.name, it.qty>0?it.qty:'', s]); });
   });
   return {areas:areas, panels:meta};
 }
-function sigPanel(p){ return JSON.stringify([p.title||'', p.size||'AUTO', p.showTotal!==false, p.items.filter(function(i){return canon(i.code);}).map(function(i){ return [canon(i.code), i.qty]; })]); }
+function sigPanel(p){ return JSON.stringify([p.title||'', p.size||'AUTO', p.showTotal!==false, !!p.showDesc, p.items.filter(function(i){return canon(i.code);}).map(function(i){ return [canon(i.code), i.qty]; })]); }
 function changedSet(){
   var bm={}; S.base.forEach(function(b){ bm[b.name]=sigPanel(b); });
   var ch={}; S.panels.forEach(function(p){ if(bm[p.name]===undefined || bm[p.name]!==sigPanel(p)) ch[p.uid]=true; });
@@ -533,8 +534,9 @@ function plain(n){ return isFinite(n)?String(Math.round(n)):'—'; }
 function renderTag(t){
   var p=t.p, d=tagDims(), H=headH(p), total=panelTotal(p);
   var raw=rowSpace(p)/Math.max(t.per,1), r=Math.min(raw,28);
-  var fCode=clamp(r*0.29,2,3.8), fMrp=clamp(r*0.33,2.3,4.4), fQ=clamp(r*0.17,1.5,2.2);
-  var cw=TT.cw, h='<div class="ttag" style="width:'+mm(d.w)+';height:'+mm(d.h)+';padding:'+mm(TT.pad)+'">';
+  var D=!!p.showDesc;
+  var fCode=D?clamp(r*0.24,1.7,3.1):clamp(r*0.29,2,3.8), fMrp=D?clamp(r*0.28,1.9,3.6):clamp(r*0.33,2.3,4.4), fQ=clamp(r*0.17,1.5,2.2), fDesc=clamp(r*0.165,1.45,2.15);
+  var cw=D?[23,40,22,15]:TT.cw, h='<div class="ttag" style="width:'+mm(d.w)+';height:'+mm(d.h)+';padding:'+mm(TT.pad)+'">';
   if(P.banner) h+='<div class="tt-banner" style="height:'+mm(H.bh)+'"><img src="'+BANNER+'" alt=""></div>';
   if(p.title) h+='<div class="tt-title fit1" style="height:'+mm(H.th)+';font-size:'+mm(H.th*0.52)+'">'+esc(p.title)+'</div>';
   h+='<div class="tt-box">';
@@ -542,7 +544,8 @@ function renderTag(t){
   h+='<div class="tt-head" style="height:'+mm(H.hh)+'">';
   h+='<div class="th-c" style="width:'+cw[0]+'%"><span class="th-k">DISPLAY</span><span class="th-name fit1" style="font-size:'+mm(4.3)+'">'+esc(p.name)+(t.of>1?'<small> '+(t.idx+1)+'/'+t.of+'</small>':'')+'</span></div>';
   h+='<div class="th-c th-mid" style="width:'+cw[1]+'%"><span class="th-lbl">PRODUCT</span></div>';
-  h+='<div class="th-c" style="width:'+cw[2]+'%">'+(p.showTotal!==false&&total>0?'<span class="th-k">MRP TOTAL</span><span class="th-tot fit1" style="font-size:'+mm(3.3)+'">₹ '+inr(total)+'/-</span>':'<span class="th-lbl">MRP ₹</span>')+'</div>';
+  if(D) h+='<div class="th-c th-mid" style="width:'+cw[2]+'%;border-left:0"><span class="th-lbl fit1" style="font-size:1.75mm;letter-spacing:.16em">DESCRIPTION</span></div>';
+  h+='<div class="th-c" style="width:'+cw[D?3:2]+'%">'+(p.showTotal!==false&&total>0?'<span class="th-k">MRP TOTAL</span><span class="th-tot fit1" style="font-size:'+mm(D?2.9:3.3)+'">₹ '+inr(total)+'/-</span>':'<span class="th-lbl">MRP ₹</span>')+'</div>';
   h+='</div>';
   /* rows */
   t.items.forEach(function(it, i){
@@ -550,7 +553,8 @@ function renderTag(t){
     h+='<div class="tt-row'+(i%2?' alt':'')+'" style="height:'+mm(r)+'">';
     h+='<div class="tc" style="width:'+cw[0]+'%"><div class="t-code fitw" style="font-size:'+mm(fCode)+'">'+esc(f.code)+'</div></div>';
     h+='<div class="tc t-img" style="width:'+cw[1]+'%">'+(f.img?'<img src="'+esc(f.img)+'" alt="" style="max-height:'+mm(r-0.6)+'" onerror="this.outerHTML=\'<span class=noimg>image coming soon</span>\'">':'<span class="noimg">image coming soon</span>')+'</div>';
-    h+='<div class="tc t-mrpc" style="width:'+cw[2]+'%"><div class="t-mrp fitw" style="font-size:'+mm(fMrp)+'"><span class="rs">₹</span>'+inr(f.mrp)+'</div>'+(it.qty>1?'<div class="t-q" style="font-size:'+mm(fQ)+'">× '+it.qty+' pcs</div>':'')+'</div>';
+    if(D) h+='<div class="tc" style="width:'+cw[2]+'%"><div class="t-desc fith" style="font-size:'+mm(fDesc)+'">'+esc(f.desc||'')+'</div></div>';
+    h+='<div class="tc t-mrpc" style="width:'+cw[D?3:2]+'%"><div class="t-mrp fitw" style="font-size:'+mm(fMrp)+'"><span class="rs">₹</span>'+inr(f.mrp)+'</div>'+(it.qty>1?'<div class="t-q" style="font-size:'+mm(fQ)+'">× '+it.qty+' pcs</div>':'')+'</div>';
     h+='</div>';
   });
   h+='</div>';
@@ -616,6 +620,7 @@ function renderEditor(){
   var cur=parseInt(p.size,10)>0?String(parseInt(p.size,10)):'AUTO';
   [['AUTO','Auto ('+auto+')'],['1','1'],['2','2'],['3','3']].forEach(function(o){ h+='<button data-sz="'+o[0]+'" class="'+(cur===o[0]?'on':'')+'">'+o[1]+'</button>'; });
   h+='</div></div><div class="field"><label>MRP total on tag</label><div class="seg" id="pTot"><button data-t="1" class="'+(p.showTotal!==false?'on':'')+'">Show</button><button data-t="0" class="'+(p.showTotal===false?'on':'')+'">Hide</button></div></div>';
+  h+='<div class="field"><label>Description on tag</label><div class="seg" id="pDesc"><button data-d="1" class="'+(p.showDesc?'on':'')+'">Show</button><button data-d="0" class="'+(p.showDesc?'':'on')+'">Hide</button></div></div>';
   h+='<div class="ed-actions"><button class="btn sm" id="pDup" title="Duplicate this panel">⧉ Duplicate</button><button class="btn sm danger" id="pDel" title="Delete this panel">🗑 Delete</button><button class="btn sm" id="pPrint" title="Open Print Tags with only this panel selected">🖨 Print this panel</button></div></div>';
   h+='<table class="items"><thead><tr><th></th><th>#</th><th>Image</th><th>Code</th><th>Description</th><th class="r">MRP</th><th title="Enter a quantity to add this item to the tag MRP total. Leave blank to show it on the tag without adding it.">Qty</th><th class="r" title="MRP × QTY">In total</th><th class="r">Actions</th></tr></thead><tbody id="itBody">';
   if(!p.items.length) h+='<tr><td colspan="9" class="empty">No items yet — add them below</td></tr>';
@@ -661,6 +666,7 @@ function bindEditor(p){
   $('pSize').onclick=function(e){ var b=e.target.closest('button'); if(!b) return; mutate(function(){ p.size=b.dataset.sz; }); };
   $('pDup').onclick=function(){ dupPanel(p); };
   $('pPrint').onclick=function(){ S.printSel={}; S.pSeq=0; setSel(p.uid,true); S.pFind=''; savePsel(); setView('print'); };
+  $('pDesc').onclick=function(e){ var b=e.target.closest('button'); if(!b) return; mutate(function(){ p.showDesc=b.dataset.d==='1'; }); };
   $('pTot').onclick=function(e){ var b=e.target.closest('button'); if(!b) return; mutate(function(){ p.showTotal=b.dataset.t==='1'; }); };
   $('pDel').onclick=function(){ ask({title:'Delete panel '+p.name+'?',text:'All '+liveItems(p).length+' items of this panel will be removed. You can undo this until you save.',ok:'Delete panel',danger:true}).then(function(r){ if(!r) return; mutate(function(){ var i=S.panels.indexOf(p); S.panels.splice(i,1); S.sel=(S.panels[i]||S.panels[i-1]||{}).uid||null; }); }); };
   $('btnPaste').onclick=function(){ pasteList(p); };
@@ -742,7 +748,7 @@ function newPanel(){
   ask({title:'New display panel',fields:[{id:'name',label:'Panel name (as written on the panel, e.g. R16)',value:''},{id:'title',label:'Title on tag (optional)',value:''}],ok:'Create panel'}).then(function(r){
     if(!r) return; var nm=String(r.name||'').trim().toUpperCase(); if(!nm){ toast('Name is required', true); return; }
     if(S.panels.some(function(p){ return p.name===nm; })){ toast(nm+' already exists', true); return; }
-    var cur=curPanel(), at=cur?S.panels.indexOf(cur)+1:S.panels.length, np={uid:uid(),name:nm,title:String(r.title||'').trim(),size:'AUTO',showTotal:true,items:[]};
+    var cur=curPanel(), at=cur?S.panels.indexOf(cur)+1:S.panels.length, np={uid:uid(),name:nm,title:String(r.title||'').trim(),size:'AUTO',showTotal:true,showDesc:false,items:[]};
     mutate(function(){ S.panels.splice(at,0,np); S.sel=np.uid; });
     setTimeout(function(){ var q=$('qa'); if(q) q.focus(); },50);
   });
@@ -892,12 +898,13 @@ function renderPrintSide(){
   var groups=[], gmap={}; S.panels.forEach(function(p){ var g=groupOf(p); if(!gmap[g]){ gmap[g]={g:g,ps:[]}; groups.push(gmap[g]); } gmap[g].ps.push(p); });
   h+='<div class="sec"><h4>Choose panels to print · <span style="color:var(--ink)">'+np+' selected</span></h4>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><button class="btn sm" data-ps="all">All</button><button class="btn sm" data-ps="none">Clear</button><button class="btn sm" data-ps="chg" title="Panels changed since they were last printed on this computer">Changed since last print</button></div>';
+  if(np) h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center"><span style="font-size:12px;color:var(--muted)">Description on the '+np+' selected:</span><button class="btn sm" data-dd="1">Show</button><button class="btn sm" data-dd="0">Hide</button></div>';
   h+='<div style="font-size:11px;color:var(--muted);margin:2px 0 5px;letter-spacing:.06em">GROUPS — click to add / remove a whole row of panels</div><div class="gchips">';
   groups.forEach(function(G){ var on=G.ps.filter(function(p){ return S.printSel[p.uid]; }).length; h+='<button class="gchip'+(on===G.ps.length?' on':on?' part':'')+'" data-g="'+esc(G.g)+'">'+esc(G.g)+' <small>'+(on?on+'/':'')+G.ps.length+'</small></button>'; });
   h+='</div><input class="search" id="psFind" placeholder="Find panel… e.g. R1" value="'+esc(S.pFind||'')+'" style="margin:8px 0 6px">';
   h+='<div id="pRows">';
   S.panels.forEach(function(p){ var n=liveItems(p).length, ch=isChangedSincePrint(p,pm), w=panelWarn(p), cur=parseInt(p.size,10)>0?String(parseInt(p.size,10)):'AUTO';
-    h+='<div class="prow" data-nm="'+esc(p.name+' '+(p.title||''))+'"><input type="checkbox" data-u="'+p.uid+'" '+(S.printSel[p.uid]?'checked':'')+(n?'':' disabled')+'><span class="nm">'+esc(p.name)+(p.title?'<small>'+esc(p.title)+'</small>':'')+'</span>'+(w.total?'<span class="warn" title="'+w.total+' item(s) need attention">!</span>':'')+(ch&&pm[p.name]!==undefined?'<span class="chg" title="Changed since last print"></span>':'')+'<span style="font-size:12px;color:var(--muted)">'+n+'</span><select data-u="'+p.uid+'" title="Number of tags">';
+    h+='<div class="prow" data-nm="'+esc(p.name+' '+(p.title||''))+'"><input type="checkbox" data-u="'+p.uid+'" '+(S.printSel[p.uid]?'checked':'')+(n?'':' disabled')+'><span class="nm">'+esc(p.name)+(p.title?'<small>'+esc(p.title)+'</small>':'')+(p.showDesc?'<small title="Description column on">· desc</small>':'')+'</span>'+(w.total?'<span class="warn" title="'+w.total+' item(s) need attention">!</span>':'')+(ch&&pm[p.name]!==undefined?'<span class="chg" title="Changed since last print"></span>':'')+'<span style="font-size:12px;color:var(--muted)">'+n+'</span><select data-u="'+p.uid+'" title="Number of tags">';
     [['AUTO','Auto · '+autoTags(p)+' tag'+(autoTags(p)>1?'s':'')],['1','1 tag'],['2','2 tags'],['3','3 tags']].forEach(function(o){ h+='<option value="'+o[0]+'"'+(cur===o[0]?' selected':'')+'>'+o[1]+'</option>'; });
     h+='</select></div>'; });
   h+='</div><div class="field" style="margin-top:8px"><label>Print order</label><select id="psOrder" style="border:1px solid var(--line);border-radius:8px;padding:6px"><option value="NAME"'+(P.pOrder==='NAME'?' selected':'')+'>By name: R1, R2 … R10</option><option value="LIST"'+(P.pOrder==='LIST'?' selected':'')+'>Same order as the panel list</option><option value="PICK"'+(P.pOrder==='PICK'?' selected':'')+'>In the order I ticked them</option></select></div></div>';
@@ -913,6 +920,7 @@ function bindPrintSide(){
   var side=$('printSide');
   side.querySelectorAll('button[data-ps]').forEach(function(b){ b.onclick=function(){ var m=b.dataset.ps, pm=printedMap(); S.panels.forEach(function(p){ setSel(p.uid, m==='all'?true: m==='none'?false: (isChangedSincePrint(p,pm) && liveItems(p).length>0)); }); savePsel(); renderPrint(); }; });
   side.querySelectorAll('#pRows input[type=checkbox]').forEach(function(c){ c.onchange=function(){ setSel(c.dataset.u,c.checked); savePsel(); renderPrint(); }; });
+  side.querySelectorAll('button[data-dd]').forEach(function(b){ b.onclick=function(){ var v=b.dataset.dd==='1', ps=selectedPanels(); mutate(function(){ ps.forEach(function(p){ p.showDesc=v; }); }); toast('Description '+(v?'shown':'hidden')+' on '+ps.length+' panel'+(ps.length>1?'s':'')+' — Save to Sheet to keep it'); }; });
   side.querySelectorAll('.gchip').forEach(function(b){ b.onclick=function(){ var ps=S.panels.filter(function(p){ return groupOf(p)===b.dataset.g; }), all=ps.every(function(p){ return S.printSel[p.uid]; }); ps.forEach(function(p){ setSel(p.uid,!all); }); savePsel(); renderPrint(); }; });
   var fi=$('psFind'); function filt(){ var q=fi.value.trim().toUpperCase(); S.pFind=fi.value; side.querySelectorAll('#pRows .prow').forEach(function(r){ r.style.display=(!q||r.dataset.nm.toUpperCase().indexOf(q)>=0)?'':'none'; }); } fi.oninput=filt; filt();
   on('psOrder','onchange',function(){ setP('pOrder',this.value); });
