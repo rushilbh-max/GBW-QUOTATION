@@ -535,15 +535,20 @@ function renderTag(t){
   var p=t.p, d=tagDims(), H=headH(p), total=panelTotal(p);
   var raw=rowSpace(p)/Math.max(t.per,1), r=Math.min(raw,28);
   var D=!!p.showDesc;
-  var fCode=D?clamp(r*0.24,1.7,3.1):clamp(r*0.29,2,3.8), fMrp=D?clamp(r*0.28,1.9,3.6):clamp(r*0.33,2.3,4.4), fQ=clamp(r*0.17,1.5,2.2), fDesc=clamp(r*0.165,1.45,2.15);
-  var cw=D?[23,40,22,15]:TT.cw, h='<div class="ttag" style="width:'+mm(d.w)+';height:'+mm(d.h)+';padding:'+mm(TT.pad)+'">';
+  var fCode=D?clamp(r*0.27,1.8,3.4):clamp(r*0.29,2,3.8), fMrp=D?clamp(r*0.30,2.1,4.0):clamp(r*0.33,2.3,4.4), fQ=clamp(r*0.17,1.5,2.2), fDesc=clamp(r*0.19,1.6,2.5);
+  var cw=TT.cw;
+  if(D){ /* picture column only as wide as the picture needs (picture size is set by row height), rest goes to code / description / MRP */
+    var W=d.w-2*TT.pad-0.6, imgMM=Math.min((r-0.6)*1.14*1.15+2, W*0.40), rest=100-imgMM/W*100;
+    cw=[rest*0.33, imgMM/W*100, rest*0.41, rest*0.26];
+  }
+  var h='<div class="ttag" style="width:'+mm(d.w)+';height:'+mm(d.h)+';padding:'+mm(TT.pad)+'">';
   if(P.banner) h+='<div class="tt-banner" style="height:'+mm(H.bh)+'"><img src="'+BANNER+'" alt=""></div>';
   if(p.title) h+='<div class="tt-title fit1" style="height:'+mm(H.th)+';font-size:'+mm(H.th*0.52)+'">'+esc(p.title)+'</div>';
   h+='<div class="tt-box">';
   /* header bar */
   h+='<div class="tt-head" style="height:'+mm(H.hh)+'">';
   h+='<div class="th-c" style="width:'+cw[0]+'%"><span class="th-k">DISPLAY</span><span class="th-name fit1" style="font-size:'+mm(4.3)+'">'+esc(p.name)+(t.of>1?'<small> '+(t.idx+1)+'/'+t.of+'</small>':'')+'</span></div>';
-  h+='<div class="th-c th-mid" style="width:'+cw[1]+'%"><span class="th-lbl">PRODUCT</span></div>';
+  h+='<div class="th-c th-mid" style="width:'+cw[1]+'%">'+(D?'<span class="th-lbl fit1" style="font-size:1.75mm;letter-spacing:.14em;max-width:100%">PRODUCT</span>':'<span class="th-lbl">PRODUCT</span>')+'</div>';
   if(D) h+='<div class="th-c th-mid" style="width:'+cw[2]+'%;border-left:0"><span class="th-lbl fit1" style="font-size:1.75mm;letter-spacing:.16em">DESCRIPTION</span></div>';
   h+='<div class="th-c" style="width:'+cw[D?3:2]+'%">'+(p.showTotal!==false&&total>0?'<span class="th-k">MRP TOTAL</span><span class="th-tot fit1" style="font-size:'+mm(D?2.9:3.3)+'">₹ '+inr(total)+'/-</span>':'<span class="th-lbl">MRP ₹</span>')+'</div>';
   h+='</div>';
